@@ -1,0 +1,36 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password      String
+  role          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  managedTeams  Team[]   @relation("ManagerToTeam")
+  leadTeams     Team[]   @relation("TeamLeaderToTeam")
+  team          Team?    @relation(fields: [teamId], references: [id])
+  teamId        Int?
+}
+
+model Team {
+  id            Int      @id @default(autoincrement())
+  name          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  manager       User     @relation("ManagerToTeam", fields: [managerId], references: [id])
+  managerId     Int
+  teamLeader    User     @relation("TeamLeaderToTeam", fields: [teamLeaderId], references: [id])
+  teamLeaderId  Int
+  members       User[]
+}
