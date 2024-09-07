@@ -1,35 +1,36 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import DashboardBase from '@/app/dashboard/DashboardBase';
-import { getUserData } from '@/lib/auth';
+import { getUserData, verifyAccessToken } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
-export default async function ManagerDashboard() {
+export default async function Dashboard() {
   try {
-    const user = await getUserData();
-
-    if (user.role !== 'manager') {
-      // Redirect to appropriate dashboard or show an error
-      redirect('/dashboard');
+    // Get the token from cookies
+    const token = cookies().get('auth_token')?.value;
+    
+    if (!token) {
+      throw new Error('No authentication token found');
     }
 
+    const decoded = verifyAccessToken(token);
+    
+    if (!decoded || !decoded.sub) {
+      throw new Error('Invalid token');
+    }
+
+    const user = await getUserData(decoded.sub);
+
+    // Ensure user.role is one of the expected values
+    const userRole = user.role === 'user' ? 'user' : 
+                     user.role === 'manager' ? 'manager' : 
+                     user.role === 'team_leader' ? 'team_leader' : 
+                     'user'; // Default to 'user' if role is unexpected
+
     return (
-      <DashboardBase userRole="manager">
+      <DashboardBase userRole={userRole}>
         <h1 className="text-3xl font-bold mb-6">Bienvenido, {user.name}</h1>
-        {/* Add your manager specific dashboard content here */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-xl font-semibold mb-2">Resumen de Equipos</h2>
-            {/* Add team overview features */}
-          </div>
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-xl font-semibold mb-2">Métricas de Rendimiento</h2>
-            {/* Add performance metrics */}
-          </div>
-          <div className="bg-white p-4 rounded shadow">
-            <h2 className="text-xl font-semibold mb-2">Proyectos Activos</h2>
-            {/* Add active projects list */}
-          </div>
-        </div>
+        {/* Resto del contenido del dashboard */}
       </DashboardBase>
     );
   } catch (error) {
