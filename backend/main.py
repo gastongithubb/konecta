@@ -1,15 +1,12 @@
-# backend/main.py
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-import models
-from fastapi import File, UploadFile
-import csv
-import io
+import models, schemas
+from auth import get_password_hash, get_current_user, authenticate_user, create_access_token
+from typing import List
 from fastapi.security import OAuth2PasswordRequestForm
-from auth import authenticate_user, create_access_token, get_current_user
-
+from datetime import timedelta
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -32,51 +29,26 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/")
-async def read_root():
-    return {"message": "Welcome to the Health Metrics API"}
-
-@app.get("/teams")
-async def read_teams(db: Session = Depends(get_db)):
-    teams = db.query(models.Team).all()
-    return teams
-
-@app.post("/upload-csv")
-async def upload_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    contents = await file.read()
-    buffer = io.StringIO(contents.decode('utf-8'))
-    csvreader = csv.DictReader(buffer)
-    
-    for row in csvreader:
-        # Aquí procesarías cada fila del CSV y la guardarías en la base de datos
-        # Por ejemplo:
-        metric = models.Metric(
-            name=row['metric_name'],
-            value=float(row['metric_value']),
-            team_id=int(row['team_id'])
-        )
-        db.add(metric)
-    
+@app.post("/users", response_model=schemas.User)
+async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="El correo electrónico ya está registrado")
+    hashed_password = get_password_hash(user.password)
+    db_user = models.User(email=user.email, hashed_password=hashed_password, full_name=user.name, role=user.role)
+    db.add(db_user)
     db.commit()
-    return {"message": "CSV processed successfully"}
+    db.refresh(db_user)
+    return db_user
 
-@app.get("/metrics")
-async def read_metrics(db: Session = Depends(get_db)):
-    metrics = db.query(models.Metric).all()
-    return metrics
+@app.get("/users/me", response_model=schemas.User)
+async def read_users_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
 
-@app.get("/teams/{team_id}/metrics")
-async def read_team_metrics(team_id: int, db: Session = Depends(get_db)):
-    metrics = db.query(models.Metric).filter(models.Metric.team_id == team_id).all()
-    return metrics
-
-@app.post("/teams")
-async def create_team(name: str, leader_id: int, db: Session = Depends(get_db)):
-    team = models.Team(name=name, leader_id=leader_id)
-    db.add(team)
-    db.commit()
-    db.refresh(team)
-    return team
+@app.get("/users", response_model=List[schemas.User])
+async def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    users = db.query(models.User).offset(skip).limit(limit).all()
+    return users
 
 @app.post("/token")
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -87,12 +59,52 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token_expires = timedelta(minutes=30)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.get("/users/me")
-async def read_users_me(current_user: models.User = Depends(get_current_user)):
-    return current_user
+@app.get("/")
+async def read_root():
+    return {"message": "Bienvenido a la API de Métricas de Salud"}
+
+@app.get("/teams")
+async def read_teams(db: Session = Depends(get_db)):
+    teams = db.query(models.Team).all()
+    return teams
+
+@app.post("/teams")
+async def create_team(team: schemas.TeamCreate, db: Session = Depends(get_db)):
+    db_team = models.Team(**team.dict())
+    db.add(db_team)
+    db.commit()
+    db.refresh(db_team)
+    return db_team
+
+@app.get("/teams/{team_id}")
+async def read_team(team_id: int, db: Session = Depends(get_db)):
+    team = db.query(models.Team).filter(models.Team.id == team_id).first()
+    if team is None:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    return team
+
+@app.put("/teams/{team_id}")
+async def update_team(team_id: int, team: schemas.TeamUpdate, db: Session = Depends(get_db)):
+    db_team = db.query(models.Team).filter(models.Team.id == team_id).first()
+    if db_team is None:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    for key, value in team.dict(exclude_unset=True).items():
+        setattr(db_team, key, value)
+    db.commit()
+    db.refresh(db_team)
+    return db_team
+
+@app.delete("/teams/{team_id}")
+async def delete_team(team_id: int, db: Session = Depends(get_db)):
+    db_team = db.query(models.Team).filter(models.Team.id == team_id).first()
+    if db_team is None:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    db.delete(db_team)
+    db.commit()
+    return {"message": "Equipo eliminado"}

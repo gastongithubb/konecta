@@ -6,10 +6,15 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import SessionLocal
 import models
+from dotenv import load_dotenv
+import os
 
-# to get a string like this run:
-# openssl rand -hex 32
-SECRET_KEY = "tu_clave_secreta"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("No se ha definido SECRET_KEY en el archivo .env")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -41,7 +46,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(SessionLocal)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
+        detail="No se pudieron validar las credenciales",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:

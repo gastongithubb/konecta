@@ -1,18 +1,7 @@
-# backend/models.py
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
-
-class Team(Base):
-    __tablename__ = "teams"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    leader_id = Column(Integer, ForeignKey("users.id"))
-
-    leader = relationship("User", back_populates="team")
-    members = relationship("User", back_populates="team")
-    metrics = relationship("Metric", back_populates="team")
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -21,11 +10,21 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     full_name = Column(String)
-    role = Column(String)  # 'manager', 'leader', or 'team_member'
-    team_id = Column(Integer, ForeignKey("teams.id"))
+    role = Column(String)
+    team_id = Column(Integer, ForeignKey("teams.id"), nullable=True)
 
     team = relationship("Team", back_populates="members")
-    led_team = relationship("Team", back_populates="leader")
+
+class Team(Base):
+    __tablename__ = "teams"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    leader_id = Column(Integer, ForeignKey("users.id"))
+
+    leader = relationship("User", foreign_keys=[leader_id])
+    members = relationship("User", back_populates="team")
+    metrics = relationship("Metric", back_populates="team")
 
 class Metric(Base):
     __tablename__ = "metrics"
@@ -33,6 +32,7 @@ class Metric(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     value = Column(Float)
+    timestamp = Column(DateTime, default=datetime.utcnow)
     team_id = Column(Integer, ForeignKey("teams.id"))
 
     team = relationship("Team", back_populates="metrics")
