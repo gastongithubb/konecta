@@ -1,26 +1,24 @@
 import { NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-import { hashPassword } from '@/lib/auth'
-
-const prisma = new PrismaClient()
-
-export async function POST(request: Request) {
-  const { email, name, password, role } = await request.json()
-
-  const existingUser = await prisma.user.findUnique({ where: { email } })
-  if (existingUser) {
-    return NextResponse.json({ error: 'Email already registered' }, { status: 400 })
-  }
-
-  const hashedPassword = await hashPassword(password)
-  const user = await prisma.user.create({
-    data: { email, name, password: hashedPassword, role }
-  })
-
-  return NextResponse.json(user, { status: 201 })
-}
+import { verifyAccessToken, getUserData } from '@/lib/auth'
+import { cookies } from 'next/headers'
 
 export async function GET() {
-  const users = await prisma.user.findMany()
-  return NextResponse.json(users)
+  const cookieStore = cookies()
+  const token = cookieStore.get('auth_token')?.value
+
+  if (!token) {
+    return NextResponse.json({ error: 'Missing or invalid token' }, { status: 401 })
+  }
+
+  const decoded = await verifyAccessToken(token)
+  if (!decoded) {
+    return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+  }
+
+  try {
+    const userData = await getUserData(decoded.sub)
+    return NextResponse.json(userData)
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
+  }
 }

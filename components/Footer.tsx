@@ -1,18 +1,44 @@
-import React from 'react';
+'use client';
 
-const Footer = () => {
+import React, { useEffect, useState } from 'react';
+import Image from "next/legacy/image";
+
+const Footer: React.FC = () => {
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(false);
+  const [hasShownPopup, setHasShownPopup] = useState(false);
+
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+
+    const handleScroll = () => {
+      if (window.scrollY > 300 && !showWhatsAppPopup && !hasShownPopup) {
+        setShowWhatsAppPopup(true);
+        setHasShownPopup(true);
+        setTimeout(() => setShowWhatsAppPopup(false), 5000);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [showWhatsAppPopup, hasShownPopup]);
+
   return (
-    <footer className="bg-gray-800 text-white py-4">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center">
-          <p>&copy; 2024 Telefónica. Todos los derechos reservados.</p>
-          <div>
-            <a href="#" className="hover:text-indigo-400 mr-4">Política de Privacidad</a>
-            <a href="#" className="hover:text-indigo-400">Términos de Servicio</a>
+    <>
+      <footer className="bg-[#f5f5f5] text-zinc-900 font-SpaceGrotesk">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-between py-6">
+            <div className="mb-4 md:mb-0">
+              <Image src="/logo-footer.png" alt="Logo" width={200} height={50} className="w-44" />
+            </div>
+            <div className="text-center md:text-right">
+              <p>© {currentYear} Administración y Soporte <em>Gastón Alvarez</em></p>
+              <p>Hecho con <a href="https://nextjs.org/" target="_blank" rel="noopener noreferrer" className="underline transition-colors duration-300 hover:text-gray-600">Next.js</a></p>
+            </div>
           </div>
         </div>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 };
 

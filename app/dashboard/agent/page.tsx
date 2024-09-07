@@ -4,16 +4,15 @@ import DashboardBase from '@/app/dashboard/DashboardBase';
 import { getUserData, verifyAccessToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
-export default async function AgentDashboard() {
+export default async function Dashboard() {
   try {
-    // Get the token from cookies
     const token = cookies().get('auth_token')?.value;
     
     if (!token) {
       throw new Error('No authentication token found');
     }
 
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
     
     if (!decoded || !decoded.sub) {
       throw new Error('Invalid token');

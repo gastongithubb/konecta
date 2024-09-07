@@ -3,34 +3,34 @@ import { redirect } from 'next/navigation';
 import DashboardBase from '@/app/dashboard/DashboardBase';
 import { getUserData, verifyAccessToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import TeamLeaderManagement from '@/components/admin/TeamLeaderManagement';
 
-export default async function Dashboard() {
+export default async function DashboardManager() {
   try {
-    // Get the token from cookies
     const token = cookies().get('auth_token')?.value;
     
     if (!token) {
-      throw new Error('No authentication token found');
+      redirect('/login');
     }
 
-    const decoded = verifyAccessToken(token);
+    const decoded = await verifyAccessToken(token);
     
     if (!decoded || !decoded.sub) {
-      throw new Error('Invalid token');
+      redirect('/login');
     }
 
     const user = await getUserData(decoded.sub);
 
-    // Ensure user.role is one of the expected values
     const userRole = user.role === 'user' ? 'user' : 
                      user.role === 'manager' ? 'manager' : 
                      user.role === 'team_leader' ? 'team_leader' : 
-                     'user'; // Default to 'user' if role is unexpected
+                     'user';
 
     return (
       <DashboardBase userRole={userRole}>
-        <h1 className="text-3xl font-bold mb-6">Bienvenido, {user.name}</h1>
-        {/* Resto del contenido del dashboard */}
+        <h1 className="text-3xl font-bold mb-6">Bienvenida\o, {user.name}</h1>
+        {userRole === 'manager' && <TeamLeaderManagement />}
+        {/* Otro contenido del dashboard específico para cada rol */}
       </DashboardBase>
     );
   } catch (error) {

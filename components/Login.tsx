@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { signIn } from 'next-auth/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
@@ -29,38 +30,39 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+  
     if (!validateForm()) return;
-
+  
     setIsLoading(true);
-
+  
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-        callbackUrl: '/dashboard',
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
-
-      if (result?.error) {
-        setError(result.error);
-      } else {
-        const response = await fetch('/api/user');
-        const userData = await response.json();
-
-        switch (userData.role) {
-          case 'manager':
-            router.push('/dashboard/manager');
-            break;
-          case 'team_leader':
-            router.push('/dashboard/leader');
-            break;
-          case 'user':
-            router.push('/dashboard/agent');
-            break;
-          default:
-            setError('Rol de usuario no reconocido');
-        }
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.error || 'Error en el inicio de sesión');
+      }
+  
+      // No necesitas guardar el token manualmente, se guarda como una cookie HttpOnly
+  
+      // Redirige basado en el rol
+      switch (data.user.role) {
+        case 'manager':
+          router.push('/dashboard/manager');
+          break;
+        case 'team_leader':
+          router.push('/dashboard/leader');
+          break;
+        case 'user':
+          router.push('/dashboard/agent');
+          break;
+        default:
+          setError('Rol de usuario no reconocido');
       }
     } catch (error) {
       setError('Ocurrió un error durante el inicio de sesión. Por favor, inténtelo de nuevo.');
