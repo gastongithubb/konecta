@@ -28,7 +28,7 @@ export default async function DashboardManager() {
 
     return (
       <DashboardBase userRole={userRole}>
-        <h1 className="text-3xl font-bold mb-6">Bienvenida\o, {user.name}</h1>
+        <h1 className="text-3xl font-bold mb-6">Bienvenid@, {user.name}</h1>
         {userRole === 'manager' && <TeamLeaderManagement />}
         {/* Otro contenido del dashboard específico para cada rol */}
       </DashboardBase>

@@ -1,16 +1,28 @@
-// components/admin/TeamLeaderForm.tsx
 'use client'
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { z } from 'zod';
+
+const schema = z.object({
+  name: z.string().min(1, "El nombre es requerido"),
+  email: z.string().email("Dirección de correo electrónico inválida"),
+});
 
 const TeamLeaderForm: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
     try {
+      schema.parse({ name, email });
+
       const response = await fetch('/api/team-leaders', {
         method: 'POST',
         headers: {
@@ -18,24 +30,33 @@ const TeamLeaderForm: React.FC = () => {
         },
         body: JSON.stringify({ name, email, role: 'team_leader' }),
       });
+
       if (response.ok) {
         setName('');
         setEmail('');
         router.refresh();
       } else {
-        console.error('Failed to create team leader');
+        const data = await response.json();
+        setError(data.error || 'Error al crear el líder de equipo');
       }
     } catch (error) {
-      console.error('Error creating team leader:', error);
+      if (error instanceof z.ZodError) {
+        setError(error.errors[0].message);
+      } else {
+        setError('Error inesperado. Por favor, inténtelo de nuevo.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 bg-white shadow-md rounded-lg p-6">
-      <h2 className="text-xl font-semibold mb-4">Add New Team Leader</h2>
+      <h2 className="text-xl font-semibold mb-4">Agregar Nuevo Líder</h2>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
       <div className="mb-4">
         <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">
-          Name
+          Nombre
         </label>
         <input
           type="text"
@@ -62,8 +83,9 @@ const TeamLeaderForm: React.FC = () => {
       <button
         type="submit"
         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+        disabled={isSubmitting}
       >
-        Add Team Leader
+        {isSubmitting ? 'Agregando...' : 'Añadir Líder'}
       </button>
     </form>
   );

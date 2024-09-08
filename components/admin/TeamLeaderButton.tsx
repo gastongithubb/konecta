@@ -14,7 +14,7 @@ const TeamLeaderButton: React.FC = () => {
       onClick={handleClick} 
       className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
     >
-      Ver Team Leaders
+      Ver Lideres
     </button>
   );
 };

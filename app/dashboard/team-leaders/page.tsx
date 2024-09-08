@@ -38,7 +38,7 @@ export default async function TeamLeadersPage() {
     return (
       <DashboardBase userRole={user.role}>
         <div className="container mx-auto p-4">
-          <h1 className="text-2xl font-bold mb-4">Gestión de Team Leaders</h1>
+          <h1 className="text-2xl font-bold mb-4">Gestión de Lideres</h1>
           <TeamLeaderList teamLeaders={teamLeaders} />
           <TeamLeaderForm />
         </div>
