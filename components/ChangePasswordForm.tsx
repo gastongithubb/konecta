@@ -1,3 +1,4 @@
+'use client'
 import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';  // Cambiado de 'next/router' a 'next/navigation'
 
