@@ -27,6 +27,7 @@ const TeamLeaderForm: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken')}` // Asegúrate de enviar el token de autenticación
         },
         body: JSON.stringify({ name, email, role: 'team_leader' }),
       });

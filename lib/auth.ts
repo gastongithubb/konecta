@@ -17,10 +17,10 @@ export async function authenticateUser(email: string, password: string) {
   if (!user || !(await verifyPassword(password, user.password))) {
     return null
   }
-  return { id: user.id, email: user.email, role: user.role }
+  return { id: user.id, email: user.email, role: user.role, isPasswordChanged: user.isPasswordChanged }
 }
 
-export async function createAccessToken(data: { sub: string; role: string }, expiresIn: string = '15m') {
+export async function createAccessToken(data: { sub: string; role: string; isPasswordChanged: boolean }, expiresIn: string = '15m') {
   const secret = new TextEncoder().encode(process.env.SECRET_KEY!)
   return await new SignJWT(data)
     .setProtectedHeader({ alg: 'HS256' })
@@ -28,11 +28,11 @@ export async function createAccessToken(data: { sub: string; role: string }, exp
     .sign(secret)
 }
 
-export async function verifyAccessToken(token: string): Promise<{ sub: string; role: string } | null> {
+export async function verifyAccessToken(token: string): Promise<{ sub: string; role: string; isPasswordChanged: boolean } | null> {
   try {
     const secret = new TextEncoder().encode(process.env.SECRET_KEY!)
     const { payload } = await jwtVerify(token, secret)
-    return payload as { sub: string; role: string }
+    return payload as { sub: string; role: string; isPasswordChanged: boolean }
   } catch (error) {
     console.error('Error verifying token:', error)
     return null
@@ -52,6 +52,7 @@ export async function getUserData(userId: string) {
         name: true,
         email: true,
         role: true,
+        isPasswordChanged: true,
       },
     })
     if (!user) {
