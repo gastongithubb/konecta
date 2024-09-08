@@ -53,6 +53,7 @@ export async function getUserData(userId: string) {
         email: true,
         role: true,
         isPasswordChanged: true,
+        teamId: true,
       },
     })
     if (!user) {
