@@ -1,0 +1,36 @@
+# Next.js
+.next/
+out/
+
+# Node.js
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build
+build/
+dist/
+
+# Database
+*.sqlite3
+
+# Temporary files
+*.tmp
