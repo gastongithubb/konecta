@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { verifyAccessToken, getUserData } from '@/app/lib/auth'
+import { verifyAccessToken } from '@/app/lib/auth';
+import { getUserData } from '@/app/lib/auth.server'
 import { cookies } from 'next/headers'
 
 export async function GET() {

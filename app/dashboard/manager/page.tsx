@@ -1,7 +1,8 @@
 import React from 'react';
 import { redirect } from 'next/navigation';
 import DashboardBase from '@/app/dashboard/DashboardBase';
-import { getUserData, verifyAccessToken } from '@/app/lib/auth';
+import { verifyAccessToken } from '@/app/lib/auth';
+import { getUserData } from '@/app/lib/auth.server'
 import { cookies } from 'next/headers';
 import TeamLeaderManagement from '@/components/admin/TeamLeaderManagement';
 

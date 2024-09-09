@@ -1,5 +1,5 @@
 // app/api/auth/route.ts
-import { authenticateUser, createAccessToken } from '@/app/lib/auth';
+import { authenticateUser, createAccessToken } from '@/app/lib/auth.server';
 import { NextRequest } from 'next/server';
 
 export async function POST(req: NextRequest) {

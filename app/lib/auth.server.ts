@@ -1,6 +1,8 @@
+import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client'
 import { compare, hash } from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
+import { NextRequest } from 'next/server';
 
 const prisma = new PrismaClient()
 
@@ -64,4 +66,21 @@ export async function getUserData(userId: string) {
     console.error('Error fetching user data:', error)
     throw error
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function authenticateRequest(_request: NextRequest) {
+    const cookieStore = cookies();
+    const token = cookieStore.get('auth_token')?.value;
+  
+    if (!token) {
+      return null;
+    }
+  
+    const decodedToken = await verifyAccessToken(token);
+    if (!decodedToken) {
+      return null;
+    }
+  
+    return await getUserData(decodedToken.sub);
 }

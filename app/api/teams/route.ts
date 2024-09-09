@@ -1,7 +1,7 @@
 // app/api/teams/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/app/lib/auth';
+import { authenticateRequest } from '@/app/lib/auth.server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
