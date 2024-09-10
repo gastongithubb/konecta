@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import TeamLeaderList from '@/components/admin/TeamLeaderList';
 import TeamLeaderForm from '@/components/admin/TeamLeaderForm';
 import DashboardBase from '@/app/dashboard/DashboardBase';
-import { verifyAccessToken } from '@/app/lib/auth';
+import { verifyAccessToken } from '@/app/lib/auth.server';
 import { getUserData } from '@/app/lib/auth.server'
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';

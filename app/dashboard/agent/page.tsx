@@ -1,40 +1,27 @@
-import React from 'react';
-import { redirect } from 'next/navigation';
-import DashboardBase from '@/app/dashboard/DashboardBase';
-import { verifyAccessToken } from '@/app/lib/auth';
-import { getUserData } from '@/app/lib/auth.server'
+// app/dashboard/agent/page.tsx
 import { cookies } from 'next/headers';
+import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
+import AgentDashboardClient from './AgentDashboardClient';
 
-export default async function Dashboard() {
+export default async function AgentDashboardPage() {
+  const cookieStore = cookies();
+  const token = cookieStore.get('auth_token')?.value;
+
+  if (!token) {
+    return { redirect: { destination: '/login', permanent: false } };
+  }
+
   try {
-    const token = cookies().get('auth_token')?.value;
-    
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     const decoded = await verifyAccessToken(token);
-    
     if (!decoded || !decoded.sub) {
-      throw new Error('Invalid token');
+      return { redirect: { destination: '/login', permanent: false } };
     }
 
-    const user = await getUserData(decoded.sub);
+    const userData = await getUserData(decoded.sub);
 
-    // Ensure user.role is one of the expected values
-    const userRole = user.role === 'user' ? 'user' : 
-                     user.role === 'manager' ? 'manager' : 
-                     user.role === 'team_leader' ? 'team_leader' : 
-                     'user'; // Default to 'user' if role is unexpected
-
-    return (
-      <DashboardBase userRole={userRole}>
-        <h1 className="text-3xl font-bold mb-6">Bienvenido, {user.name}</h1>
-        {/* Resto del contenido del dashboard */}
-      </DashboardBase>
-    );
+    return <AgentDashboardClient userData={userData} />;
   } catch (error) {
     console.error('Error fetching user data:', error);
-    redirect('/login');
+    return { redirect: { destination: '/login', permanent: false } };
   }
 }

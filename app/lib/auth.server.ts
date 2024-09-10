@@ -1,17 +1,16 @@
 import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client'
-import { compare, hash } from 'bcryptjs'
+import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
-import { NextRequest } from 'next/server';
 
 const prisma = new PrismaClient()
 
 export async function verifyPassword(plainPassword: string, hashedPassword: string) {
-  return await compare(plainPassword, hashedPassword)
+  return await bcrypt.compare(plainPassword, hashedPassword)
 }
 
 export async function hashPassword(password: string) {
-  return await hash(password, 10)
+  return await bcrypt.hash(password, 10)
 }
 
 export async function authenticateUser(email: string, password: string) {
@@ -68,19 +67,18 @@ export async function getUserData(userId: string) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function authenticateRequest(_request: NextRequest) {
-    const cookieStore = cookies();
-    const token = cookieStore.get('auth_token')?.value;
-  
-    if (!token) {
-      return null;
-    }
-  
-    const decodedToken = await verifyAccessToken(token);
-    if (!decodedToken) {
-      return null;
-    }
-  
-    return await getUserData(decodedToken.sub);
+export async function authenticateRequest() {
+  const cookieStore = cookies();
+  const token = cookieStore.get('auth_token')?.value;
+
+  if (!token) {
+    return null;
+  }
+
+  const decodedToken = await verifyAccessToken(token);
+  if (!decodedToken) {
+    return null;
+  }
+
+  return await getUserData(decodedToken.sub);
 }

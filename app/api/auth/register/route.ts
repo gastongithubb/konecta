@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { hashPassword } from '@/app/lib/auth'
+import { hashPassword } from '@/app/lib/auth.server'
 
 const prisma = new PrismaClient()
 

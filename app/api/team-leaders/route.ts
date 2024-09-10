@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { verifyAccessToken, hashPassword } from '@/app/lib/auth';
+import { verifyAccessToken, hashPassword } from '@/app/lib/auth.server';
 import { sendWelcomeEmail } from '@/app/lib/email';
 
 const prisma = new PrismaClient();

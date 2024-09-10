@@ -6,15 +6,17 @@ import Navbar from '@/components/NavBarAdmin';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/Loading'
 
+export type UserRole = 'manager' | 'team_leader' | 'user';
+
 interface DashboardBaseProps {
   children: ReactNode;
   userRole?: UserRole;
 }
 
-type UserRole = 'manager' | 'team_leader' | 'user';
-
 const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propUserRole }) => {
   const [userRole, setUserRole] = useState<UserRole | null>(propUserRole || null);
+  const [loading, setLoading] = useState(!propUserRole);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -30,11 +32,14 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
             throw new Error('Failed to fetch user role');
           }
           const data = await response.json();
-          const mappedRole: UserRole = mapApiRoleToNavbarRole(data.role);
+          const mappedRole = mapApiRoleToNavbarRole(data.role);
           setUserRole(mappedRole);
         } catch (error) {
           console.error('Error fetching user role:', error);
+          setError('Failed to fetch user role. Please try logging in again.');
           router.push('/login');
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -42,8 +47,16 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
     }
   }, [router, propUserRole]);
 
-  if (!userRole) {
+  if (loading) {
     return <LoadingSpinner />;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
+  }
+
+  if (!userRole) {
+    return <div className="text-center">Unauthorized access. Please log in.</div>;
   }
 
   return (

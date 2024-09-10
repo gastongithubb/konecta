@@ -6,7 +6,7 @@ const PrivacyPolicy: NextPage = () => {
       <h1 className="text-4xl font-bold mb-4">Política de Privacidad</h1>
 
       <p className="mb-4">
-        En <span className="font-semibold">[Nombre del Call Center]</span>, nos
+        En <span className="font-semibold">Konecta Group Argentina</span>, nos
         comprometemos a proteger la privacidad y la seguridad de la información
         personal de nuestros clientes y usuarios. Esta política de privacidad
         describe cómo recopilamos, utilizamos, almacenamos y protegemos su
@@ -93,8 +93,8 @@ const PrivacyPolicy: NextPage = () => {
       <p className="mb-4">
         Si tiene alguna pregunta sobre esta política de privacidad, puede
         comunicarse con nosotros a través de{' '}
-        <span className="font-semibold">[correo electrónico de contacto]</span> o{' '}
-        <span className="font-semibold">[teléfono de contacto]</span>.
+        <span className="font-semibold">gastonalvarez18@outlook.com</span> o{' '}
+        <span className="font-semibold">+54 9 3572506949</span>.
       </p>
     </div>
   );

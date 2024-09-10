@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { verifyAccessToken } from '@/app/lib/auth';
+import { verifyAccessToken } from '@/app/lib/auth.server';
 
 export async function GET() {
   const cookieStore = cookies();

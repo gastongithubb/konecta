@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client';
-import { verifyAccessToken } from '@/app/lib/auth';
+import { verifyAccessToken } from '@/app/lib/auth.server';
 
 const prisma = new PrismaClient();
 

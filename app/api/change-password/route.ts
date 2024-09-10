@@ -1,7 +1,7 @@
 // app/api/change-password/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { verifyAccessToken, hashPassword, verifyPassword } from '@/app/lib/auth';
+import { verifyAccessToken, hashPassword, verifyPassword } from '@/app/lib/auth.server';
 
 const prisma = new PrismaClient();
 

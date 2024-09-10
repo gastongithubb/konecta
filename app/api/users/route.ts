@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { verifyAccessToken } from '@/app/lib/auth';
-import { getUserData } from '@/app/lib/auth.server'
+import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
 import { cookies } from 'next/headers'
 
 export async function GET() {
@@ -11,15 +10,26 @@ export async function GET() {
     return NextResponse.json({ error: 'Missing or invalid token' }, { status: 401 })
   }
 
-  const decoded = await verifyAccessToken(token)
-  if (!decoded) {
-    return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
-  }
-
   try {
+    const decoded = await verifyAccessToken(token)
+    if (!decoded || !decoded.sub) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
     const userData = await getUserData(decoded.sub)
-    return NextResponse.json(userData)
+    
+    // Ensure user role is one of the expected values
+    const userRole = ['user', 'manager', 'team_leader'].includes(userData.role) 
+      ? userData.role 
+      : 'user'; // Default to 'user' if role is unexpected
+
+    return NextResponse.json({
+      name: userData.name,
+      role: userRole,
+      // Add any other necessary user data fields here
+    })
   } catch (error) {
+    console.error('Error fetching user data:', error)
     return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
   }
 }

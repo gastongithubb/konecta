@@ -11,14 +11,10 @@ import {
 } from "@/components/ui/select";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 
-// Definimos los tipos para nuestros usuarios
 type User = {
   id: number;
   name: string;
 };
-
-// Importamos las funciones de la API
-import { fetchTeamLeaders, fetchAgents, saveTeam } from '@/app/api/teams/route';
 
 const TeamCreationComponent: React.FC = () => {
   const [teamLeaders, setTeamLeaders] = useState<User[]>([]);
@@ -29,8 +25,10 @@ const TeamCreationComponent: React.FC = () => {
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const leaders = await fetchTeamLeaders();
-        const agentList = await fetchAgents();
+        const leadersResponse = await fetch('/api/users?role=team_leader');
+        const agentsResponse = await fetch('/api/users?role=agent');
+        const leaders = await leadersResponse.json();
+        const agentList = await agentsResponse.json();
         setTeamLeaders(leaders);
         setAgents(agentList);
       } catch (error) {
@@ -53,10 +51,21 @@ const TeamCreationComponent: React.FC = () => {
   const handleSaveTeam = async () => {
     if (selectedLeader && selectedAgents.length > 0) {
       try {
-        await saveTeam({
-          leaderId: selectedLeader,
-          agentIds: selectedAgents
+        const response = await fetch('/api/teams', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            leaderId: selectedLeader,
+            agentIds: selectedAgents
+          }),
         });
+        
+        if (!response.ok) {
+          throw new Error('Error al guardar el equipo');
+        }
+        
         alert('Equipo guardado exitosamente');
         // Aquí podrías resetear el formulario o redirigir al usuario
       } catch (error) {
@@ -85,8 +94,8 @@ const TeamCreationComponent: React.FC = () => {
             <SelectContent>
               {teamLeaders.map((leader) => (
                 <SelectItem key={leader.id} value={String(leader.id)}>
-                {leader.name}
-              </SelectItem>                            
+                  {leader.name}
+                </SelectItem>                            
               ))}
             </SelectContent>
           </Select>
@@ -98,14 +107,13 @@ const TeamCreationComponent: React.FC = () => {
           <div className="grid grid-cols-2 gap-2">
             {agents.map((agent) => (
               <Button
-              key={agent.id}
-              variant={selectedAgents.includes(String(agent.id)) ? "default" : "outline"}
-              onClick={() => handleAgentChange(String(agent.id))}
-              className="justify-start"
-            >
-              {agent.name}
-            </Button>
-            
+                key={agent.id}
+                variant={selectedAgents.includes(String(agent.id)) ? "default" : "outline"}
+                onClick={() => handleAgentChange(String(agent.id))}
+                className="justify-start"
+              >
+                {agent.name}
+              </Button>
             ))}
           </div>
         </div>

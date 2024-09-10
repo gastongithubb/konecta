@@ -1,11 +1,9 @@
-// app/api/teams/[id]/route.ts
-
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/prisma';
 import { authenticateRequest } from '@/app/lib/auth.server';
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const user = await authenticateRequest(request);
+  const user = await authenticateRequest();
   if (!user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
@@ -27,7 +25,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const user = await authenticateRequest(request);
+  const user = await authenticateRequest();
   if (!user || user.role !== 'manager') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
@@ -44,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       data: { 
         name,
         teamLeader: teamLeaderId ? { connect: { id: teamLeaderId } } : undefined,
-        members: memberIds ? { set: memberIds.map((id: unknown) => ({ id })) } : undefined
+        members: memberIds ? { set: memberIds.map((id: number) => ({ id })) } : undefined
       },
       include: {
         manager: true,
@@ -61,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const user = await authenticateRequest(request);
+  const user = await authenticateRequest();
   if (!user || user.role !== 'manager') {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
