@@ -21,18 +21,40 @@ const TeamCreationComponent: React.FC = () => {
   const [agents, setAgents] = useState<User[]>([]);
   const [selectedLeader, setSelectedLeader] = useState<string>('');
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUsers = async () => {
       try {
         const leadersResponse = await fetch('/api/users?role=team_leader');
         const agentsResponse = await fetch('/api/users?role=agent');
-        const leaders = await leadersResponse.json();
-        const agentList = await agentsResponse.json();
-        setTeamLeaders(leaders);
-        setAgents(agentList);
+        
+        if (!leadersResponse.ok || !agentsResponse.ok) {
+          throw new Error('Failed to fetch users');
+        }
+
+        const leadersData = await leadersResponse.json();
+        const agentsData = await agentsResponse.json();
+
+        console.log('Leaders data:', leadersData);
+        console.log('Agents data:', agentsData);
+
+        if (Array.isArray(leadersData)) {
+          setTeamLeaders(leadersData);
+        } else {
+          console.error('Leaders data is not an array:', leadersData);
+          setTeamLeaders([]);
+        }
+
+        if (Array.isArray(agentsData)) {
+          setAgents(agentsData);
+        } else {
+          console.error('Agents data is not an array:', agentsData);
+          setAgents([]);
+        }
       } catch (error) {
         console.error('Error al cargar usuarios:', error);
+        setError('Error al cargar usuarios. Por favor, intenta de nuevo más tarde.');
       }
     };
     loadUsers();
@@ -70,12 +92,16 @@ const TeamCreationComponent: React.FC = () => {
         // Aquí podrías resetear el formulario o redirigir al usuario
       } catch (error) {
         console.error('Error al guardar el equipo:', error);
-        alert('Hubo un error al guardar el equipo');
+        setError('Hubo un error al guardar el equipo. Por favor, intenta de nuevo.');
       }
     } else {
-      alert('Por favor, selecciona un líder y al menos un agente');
+      setError('Por favor, selecciona un líder y al menos un agente');
     }
   };  
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>;
+  }
 
   return (
     <Card className="w-full max-w-md mx-auto">
