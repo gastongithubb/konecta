@@ -57,6 +57,7 @@ export async function sendWelcomeEmail(email: string, name: string, password: st
 Aquí están los detalles de tu cuenta:
 Correo electrónico: ${email}
 Contraseña temporal: ${password}
+Pagina del equipo: https://sancor-konectagroup.vercel.app/
 
 Por razones de seguridad, por favor cambia tu contraseña después de tu primer inicio de sesión.
 
