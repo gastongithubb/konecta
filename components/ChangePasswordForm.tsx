@@ -1,6 +1,37 @@
 'use client'
 import React, { useState, FormEvent, ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';  // Cambiado de 'next/router' a 'next/navigation'
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
+
+const PasswordInput: React.FC<{
+  id: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+}> = ({ id, value, onChange, placeholder }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div className="relative">
+      <input
+        type={showPassword ? "text" : "password"}
+        id={id}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required
+        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 pr-10"
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+      >
+        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+      </button>
+    </div>
+  );
+};
 
 const ChangePasswordForm: React.FC = () => {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -28,14 +59,13 @@ const ChangePasswordForm: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
         },
-        body: JSON.stringify({ currentPassword, newPassword })
+        body: JSON.stringify({ currentPassword, newPassword }),
+        credentials: 'include', // This is important for including cookies in the request
       });
 
       if (response.ok) {
         setSuccess('Contraseña cambiada exitosamente');
-        // Redirigir al usuario después de un cambio exitoso
         setTimeout(() => router.push('/dashboard'), 2000);
       } else {
         const data = await response.json();
@@ -58,39 +88,33 @@ const ChangePasswordForm: React.FC = () => {
         <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
           Contraseña actual
         </label>
-        <input
-          type="password"
+        <PasswordInput
           id="currentPassword"
           value={currentPassword}
           onChange={handleInputChange(setCurrentPassword)}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          placeholder="Ingrese su contraseña actual"
         />
       </div>
       <div>
         <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
           Nueva contraseña
         </label>
-        <input
-          type="password"
+        <PasswordInput
           id="newPassword"
           value={newPassword}
           onChange={handleInputChange(setNewPassword)}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          placeholder="Ingrese su nueva contraseña"
         />
       </div>
       <div>
         <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
           Confirmar nueva contraseña
         </label>
-        <input
-          type="password"
+        <PasswordInput
           id="confirmPassword"
           value={confirmPassword}
           onChange={handleInputChange(setConfirmPassword)}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          placeholder="Confirme su nueva contraseña"
         />
       </div>
       {error && <p className="text-red-500">{error}</p>}

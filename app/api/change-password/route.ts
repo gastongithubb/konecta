@@ -1,33 +1,34 @@
-// app/api/change-password/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { verifyAccessToken, hashPassword, verifyPassword } from '@/app/lib/auth.server';
+import { cookies } from 'next/headers';
 
 const prisma = new PrismaClient();
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const cookieStore = cookies();
+    const token = cookieStore.get('auth_token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'No se encontró token de autenticación' }, { status: 401 });
     }
 
-    const token = authHeader.split(' ')[1];
     const decodedToken = await verifyAccessToken(token);
     if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
     const { currentPassword, newPassword } = await request.json();
 
     const user = await prisma.user.findUnique({ where: { id: parseInt(decodedToken.sub) } });
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
     }
 
     const isPasswordValid = await verifyPassword(currentPassword, user.password);
     if (!isPasswordValid) {
-      return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 });
+      return NextResponse.json({ error: 'La contraseña actual es incorrecta' }, { status: 400 });
     }
 
     const hashedNewPassword = await hashPassword(newPassword);
@@ -36,13 +37,13 @@ export async function POST(request: Request) {
       where: { id: user.id },
       data: { 
         password: hashedNewPassword,
-        isPasswordChanged: true // Añade este campo a tu modelo de usuario
+        isPasswordChanged: true
       }
     });
 
-    return NextResponse.json({ message: 'Password changed successfully' });
+    return NextResponse.json({ message: 'Contraseña cambiada exitosamente' });
   } catch (error) {
-    console.error('Error changing password:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error al cambiar la contraseña:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
