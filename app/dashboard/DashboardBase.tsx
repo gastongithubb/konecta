@@ -2,7 +2,6 @@
 
 import React, { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/NavBarAdmin';
 import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/Loading'
 
