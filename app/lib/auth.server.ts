@@ -82,3 +82,7 @@ export async function authenticateRequest() {
 
   return await getUserData(decodedToken.sub);
 }
+
+export async function logout() {
+  cookies().delete('auth_token');
+}

@@ -1,48 +1,103 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
+import { logoutClient } from '@/app/lib/auth';
+import { useRouter } from 'next/navigation';
 
 interface NavbarProps {
-  userRole: 'manager' | 'team_leader' | 'user';
+  user: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    isPasswordChanged: boolean;
+    teamId: number | null;
+  } | null;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ userRole }) => {
+const UserInitials: React.FC<{ name: string }> = ({ name }) => {
+  const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+  
+  return (
+    <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold">
+      {initials}
+    </div>
+  );
+};
+
+const Navbar: React.FC<NavbarProps> = ({ user }) => {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const router = useRouter();
+
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+
+  const handleLogout = async () => {
+    try {
+      await logoutClient();
+      router.push('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  if (!user) {
+    return null; // O podrías mostrar un componente de carga aquí
+  }
+
+  const dashboardLink = `/dashboard/${user.role.toLowerCase()}`;
+
   return (
     <nav className="bg-blue-900 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-             <Link href="/dashboard" className="font-bold text-xl">
-              Menu
-            </Link> 
+            <Link href={dashboardLink} className="font-bold text-xl">
+              Dashboard
+            </Link>
             <div className="ml-10 flex items-baseline space-x-4">
-              {userRole === 'manager' && (
+              {user.role.toLowerCase() === 'manager' && (
                 <>
-                  <Link href="/dashboard/users" className="hover:bg-blue-800 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/manager/users" className="hover:bg-blue-800 px-3 py-2 rounded-md">
                     Gestionar Usuarios
                   </Link>
-                  <Link href="/dashboard/teams" className="hover:bg-blue-800 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/manager/teams" className="hover:bg-blue-800 px-3 py-2 rounded-md">
                     Gestionar Equipos
                   </Link>
                 </>
               )}
-              {userRole === 'team_leader' && (
-                <Link href="/dashboard/team" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+              {user.role.toLowerCase() === 'leader' && (
+                <Link href="/dashboard/leader/team" className="hover:bg-blue-500 px-3 py-2 rounded-md">
                   Mi Equipo
                 </Link>
               )}
-              <Link href="/dashboard/profile" className="hover:bg-blue-700 px-3 py-2 rounded-md">
+              {user.role.toLowerCase() === 'agent' && (
+                <Link href="/dashboard/agent/tasks" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                  Mis Tareas
+                </Link>
+              )}
+              <Link href={`${dashboardLink}/profile`} className="hover:bg-blue-700 px-3 py-2 rounded-md">
                 Perfil
               </Link>
             </div>
           </div>
-          <div>
+          <div className="relative">
             <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-md"
+              onClick={toggleDropdown}
+              className="flex items-center focus:outline-none"
             >
-              Cerrar Sesión
+              <UserInitials name={user.name} />
             </button>
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
+                <button
+                  onClick={handleLogout}
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                >
+                  Cerrar Sesión
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

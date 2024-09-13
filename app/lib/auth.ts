@@ -1,13 +1,3 @@
-// Funciones de utilidad para el cliente
-
-export function isAuthenticated() {
-  return document.cookie.includes('auth_token=');
-}
-
-export function logout() {
-  document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-}
-
 export async function login(email: string, password: string) {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
@@ -24,6 +14,23 @@ export async function login(email: string, password: string) {
   return response.json();
 }
 
+export async function logoutClient() {
+  const response = await fetch('/api/auth/logout', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Logout failed');
+  }
+
+  // Redirigir al usuario a la página de login después de cerrar sesión
+  window.location.href = '/login';
+}
+
+export function isAuthenticated() {
+  return document.cookie.includes('auth_token=');
+}
+
 export async function getUser() {
   const response = await fetch('/api/auth/user', {
     method: 'GET',
@@ -38,5 +45,3 @@ export async function getUser() {
 
   return response.json();
 }
-
-// Puedes agregar más funciones relacionadas con la autenticación del lado del cliente aquí
