@@ -2,6 +2,7 @@
 import { cookies } from 'next/headers';
 import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
 import AgentDashboardClient from './AgentDashboardClient';
+import RootLayout from '@/app/layout';
 
 export default async function AgentDashboardPage() {
   const cookieStore = cookies();
@@ -19,7 +20,7 @@ export default async function AgentDashboardPage() {
 
     const userData = await getUserData(decoded.sub);
 
-    return <AgentDashboardClient userData={userData} />;
+    return <RootLayout><AgentDashboardClient userData={userData} /></RootLayout>;
   } catch (error) {
     console.error('Error fetching user data:', error);
     return { redirect: { destination: '/login', permanent: false } };

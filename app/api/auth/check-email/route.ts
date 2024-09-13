@@ -6,17 +6,17 @@ const prisma = new PrismaClient()
 export async function POST(request: Request) {
   const { email } = await request.json()
 
+  if (!email.endsWith('@sancor.konecta.ar')) {
+    return NextResponse.json({ error: 'Dominio de correo no válido' }, { status: 400 })
+  }
+
   try {
     const user = await prisma.user.findUnique({
       where: { email },
       select: { email: true }
     })
 
-    if (user) {
-      return NextResponse.json({ exists: true })
-    } else {
-      return NextResponse.json({ exists: false })
-    }
+    return NextResponse.json({ exists: !!user })
   } catch (error) {
     console.error('Error checking email:', error)
     return NextResponse.json({ error: 'Error checking email' }, { status: 500 })

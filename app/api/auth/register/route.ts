@@ -1,12 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '@/app/lib/auth.server'
+import { sendWelcomeEmail } from '@/app/lib/email' // Asegúrate de tener esta función implementada
 
 const prisma = new PrismaClient()
 
 export async function POST(request: Request) {
   const { name, email, password, role } = await request.json()
+
+  if (!email.endsWith('@sancor.konecta.ar')) {
+    return NextResponse.json({ error: 'Dominio de correo no válido' }, { status: 400 })
+  }
 
   try {
     const existingUser = await prisma.user.findUnique({ where: { email } })
@@ -16,13 +20,16 @@ export async function POST(request: Request) {
 
     const hashedPassword = await hashPassword(password)
     const user = await prisma.user.create({
-      data: { 
-        name, 
-        email, 
-        password: hashedPassword, 
+      data: {
+        name,
+        email,
+        password: hashedPassword,
         role: role || 'user'
       }
     })
+
+    // Enviar email de bienvenida
+    await sendWelcomeEmail(email, name, password)
 
     // Usamos la sintaxis de rest para omitir la contraseña
     const { password: _, ...userWithoutPassword } = user

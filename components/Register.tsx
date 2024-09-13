@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Eye, EyeOff } from 'lucide-react';
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ const RegisterForm = () => {
   const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -24,7 +26,7 @@ const RegisterForm = () => {
     if (name === 'email') {
       setIsEmailValid(false);
       setError('');
-      if (value) {
+      if (value.endsWith('@sancor.konecta.ar')) {
         try {
           const response = await fetch('/api/auth/check-email', {
             method: 'POST',
@@ -32,14 +34,16 @@ const RegisterForm = () => {
             body: JSON.stringify({ email: value }),
           });
           const data = await response.json();
-          setIsEmailValid(data.exists);
-          if (!data.exists) {
-            setError('El correo electrónico no está autorizado para registrarse.');
+          setIsEmailValid(!data.exists);
+          if (data.exists) {
+            setError('Este correo electrónico ya está registrado.');
           }
         } catch (err) {
           console.error('Error checking email:', err);
           setError('Error al verificar el correo electrónico.');
         }
+      } else {
+        setError('Por favor, use un correo electrónico con dominio @sancor.konecta.ar');
       }
     }
   };
@@ -47,7 +51,7 @@ const RegisterForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isEmailValid) {
-      setError('Por favor, use un correo electrónico autorizado.');
+      setError('Por favor, use un correo electrónico válido y no registrado.');
       return;
     }
     setError('');
@@ -66,13 +70,17 @@ const RegisterForm = () => {
         throw new Error(errorData.error || 'Error al registrarse');
       }
 
-      setSuccess('Registro exitoso. Por favor, inicia sesión.');
+      setSuccess('Registro exitoso. Por favor, revise su correo para completar el registro.');
       setFormData({ name: '', email: '', password: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrarse');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -114,16 +122,25 @@ const RegisterForm = () => {
             </div>
             <div>
               <Label htmlFor="password" className="text-white">Contraseña</Label>
-              <Input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                autoComplete="new-password"
-                className="bg-white/50 text-gray-900 placeholder-gray-500"
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  autoComplete="new-password"
+                  className="bg-white/50 text-gray-900 placeholder-gray-500 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-sm leading-5"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5 text-gray-500" /> : <Eye className="h-5 w-5 text-gray-500" />}
+                </button>
+              </div>
             </div>
             <Button 
               type="submit" 
