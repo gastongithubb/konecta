@@ -43,8 +43,8 @@ const ComponenteCreacionEquipo: React.FC = () => {
         console.log('Datos de líderes:', JSON.stringify(datosLideres, null, 2));
         console.log('Datos de agentes:', JSON.stringify(datosAgentes, null, 2));
 
-        setDebug(prev => prev + `Datos de líderes: ${JSON.stringify(datosLideres)}\n`);
-        setDebug(prev => prev + `Datos de agentes: ${JSON.stringify(datosAgentes)}\n`);
+        // setDebug(prev => prev + `Datos de líderes: ${JSON.stringify(datosLideres)}\n`);
+        // setDebug(prev => prev + `Datos de agentes: ${JSON.stringify(datosAgentes)}\n`);
 
         const procesarUsuarios = (datos: RespuestaAPI): Usuario[] => {
           if (Array.isArray(datos)) {
