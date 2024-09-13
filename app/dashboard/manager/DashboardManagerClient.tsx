@@ -12,10 +12,15 @@ interface DashboardManagerClientProps {
 }
 
 export default function DashboardManagerClient({ user }: DashboardManagerClientProps) {
+  const userRole = user.role === 'user' ? 'user' : 
+                   user.role === 'manager' ? 'manager' : 
+                   user.role === 'team_leader' ? 'team_leader' : 
+                   'user';
+
   return (
-    <DashboardBase>
+    <DashboardBase userRole={userRole}>
       <h1 className="text-3xl font-bold mb-6">Bienvenid@, {user.name}</h1>
-      {user.role === 'manager' && <TeamLeaderManagement />}
+      {userRole === 'manager' && <TeamLeaderManagement />}
       {/* Otro contenido del dashboard específico para cada rol */}
     </DashboardBase>
   );
