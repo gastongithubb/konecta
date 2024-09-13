@@ -25,8 +25,7 @@ const ComponenteCreacionEquipo: React.FC = () => {
   const [liderSeleccionado, setLiderSeleccionado] = useState<string>('');
   const [agentesSeleccionados, setAgentesSeleccionados] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  // @typescript-eslint/no-unused-vars
-  const [debug, setDebug] = useState<string>('');
+  const [debug] = useState<string>('');
 
   useEffect(() => {
     const cargarUsuarios = async () => {
