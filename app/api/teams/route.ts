@@ -49,41 +49,56 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { name, teamLeaderId, memberIds } = await request.json();
+    const { teamLeaderId, memberIds } = await request.json();
 
-    if (typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json({ error: 'El nombre del equipo es inválido' }, { status: 400 });
-    }
-
-    if (!Number.isInteger(teamLeaderId)) {
+    if (!teamLeaderId || typeof teamLeaderId !== 'string') {
       return NextResponse.json({ error: 'ID del líder de equipo inválido' }, { status: 400 });
     }
 
-    if (memberIds && (!Array.isArray(memberIds) || !memberIds.every(Number.isInteger))) {
-      return NextResponse.json({ error: 'IDs de miembros inválidos' }, { status: 400 });
+    if (!memberIds || !Array.isArray(memberIds) || memberIds.length === 0) {
+      return NextResponse.json({ error: 'Se requiere al menos un miembro del equipo' }, { status: 400 });
     }
 
-    if (memberIds && memberIds.length > 19) {
+    if (memberIds.length > 19) {
       return NextResponse.json({ error: 'Un equipo no puede tener más de 20 miembros incluyendo al líder' }, { status: 400 });
+    }
+
+    // Verificar si el líder del equipo existe y tiene el rol correcto
+    const teamLeader = await prisma.user.findUnique({
+      where: { id: parseInt(teamLeaderId), role: 'team_leader' }
+    });
+
+    if (!teamLeader) {
+      return NextResponse.json({ error: 'Líder de equipo no encontrado o no tiene el rol correcto' }, { status: 400 });
+    }
+
+    // Verificar si todos los miembros existen y tienen el rol correcto
+    const members = await prisma.user.findMany({
+      where: { 
+        id: { in: memberIds.map(id => parseInt(id)) },
+        role: 'user'
+      }
+    });
+
+    if (members.length !== memberIds.length) {
+      return NextResponse.json({ error: 'Uno o más miembros no encontrados o no tienen el rol correcto' }, { status: 400 });
     }
 
     const newTeam = await prisma.$transaction(async (prisma) => {
       const team = await prisma.team.create({
         data: {
-          name,
+          name: `Equipo de ${teamLeader.name}`, // Generar un nombre basado en el líder del equipo
           manager: { connect: { id: user.id } },
-          teamLeader: { connect: { id: teamLeaderId } },
+          teamLeader: { connect: { id: teamLeader.id } },
         },
       });
 
-      if (memberIds && memberIds.length > 0) {
-        await prisma.team.update({
-          where: { id: team.id },
-          data: {
-            members: { connect: memberIds.map((id: number) => ({ id })) }
-          }
-        });
-      }
+      await prisma.team.update({
+        where: { id: team.id },
+        data: {
+          members: { connect: members.map(member => ({ id: member.id })) }
+        }
+      });
 
       return prisma.team.findUnique({
         where: { id: team.id },
