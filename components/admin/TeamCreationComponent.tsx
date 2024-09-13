@@ -11,61 +11,63 @@ import {
 } from "@/components/ui/select";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 
-type User = {
+type Usuario = {
   id: number;
   name: string;
   role: string;
 };
 
-type ApiResponse = User | User[] | Record<string, User>;
+type RespuestaAPI = Usuario[] | Record<string, Usuario>;
 
-const TeamCreationComponent: React.FC = () => {
-  const [teamLeaders, setTeamLeaders] = useState<User[]>([]);
-  const [agents, setAgents] = useState<User[]>([]);
-  const [selectedLeader, setSelectedLeader] = useState<string>('');
-  const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
+const ComponenteCreacionEquipo: React.FC = () => {
+  const [lideresEquipo, setLideresEquipo] = useState<Usuario[]>([]);
+  const [agentes, setAgentes] = useState<Usuario[]>([]);
+  const [liderSeleccionado, setLiderSeleccionado] = useState<string>('');
+  const [agentesSeleccionados, setAgentesSeleccionados] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [debug, setDebug] = useState<string>('');
 
   useEffect(() => {
-    const loadUsers = async () => {
+    const cargarUsuarios = async () => {
       try {
-        const leadersResponse = await fetch('/api/users?role=team_leader');
-        const agentsResponse = await fetch('/api/users?role=agent');
+        const respuestaLideres = await fetch('/api/team-leaders');
+        const respuestaAgentes = await fetch('/api/agents');
         
-        if (!leadersResponse.ok || !agentsResponse.ok) {
-          throw new Error('Failed to fetch users');
+        if (!respuestaLideres.ok || !respuestaAgentes.ok) {
+          throw new Error('Error al obtener usuarios');
         }
 
-        const leadersData: ApiResponse = await leadersResponse.json();
-        const agentsData: ApiResponse = await agentsResponse.json();
+        const datosLideres: RespuestaAPI = await respuestaLideres.json();
+        const datosAgentes: RespuestaAPI = await respuestaAgentes.json();
 
-        console.log('Leaders data:', JSON.stringify(leadersData, null, 2));
-        console.log('Agents data:', JSON.stringify(agentsData, null, 2));
+        console.log('Datos de líderes:', JSON.stringify(datosLideres, null, 2));
+        console.log('Datos de agentes:', JSON.stringify(datosAgentes, null, 2));
 
-        setDebug(prev => prev + `Leaders data: ${JSON.stringify(leadersData)}\n`);
-        setDebug(prev => prev + `Agents data: ${JSON.stringify(agentsData)}\n`);
+        setDebug(prev => prev + `Datos de líderes: ${JSON.stringify(datosLideres)}\n`);
+        setDebug(prev => prev + `Datos de agentes: ${JSON.stringify(datosAgentes)}\n`);
 
-        const processUsers = (data: ApiResponse, role: string): User[] => {
-          if (Array.isArray(data)) {
-            return data.filter(user => user.role === role);
-          } else if (typeof data === 'object' && data !== null) {
-            return Object.values(data)
-              .filter((user): user is User => user.role === role);
+        const procesarUsuarios = (datos: RespuestaAPI): Usuario[] => {
+          if (Array.isArray(datos)) {
+            return datos;
+          } else if (typeof datos === 'object' && datos !== null) {
+            return Object.values(datos).filter((usuario): usuario is Usuario => 
+              typeof usuario === 'object' && usuario !== null && 
+              'id' in usuario && 'name' in usuario && 'role' in usuario
+            );
           }
           return [];
         };
 
-        const processedLeaders = processUsers(leadersData, 'team_leader');
-        const processedAgents = processUsers(agentsData, 'agent');
+        const lideresProcesados = procesarUsuarios(datosLideres);
+        const agentesProcesados = procesarUsuarios(datosAgentes);
 
-        setTeamLeaders(processedLeaders);
-        setAgents(processedAgents);
+        setLideresEquipo(lideresProcesados);
+        setAgentes(agentesProcesados);
 
-        if (processedLeaders.length === 0) {
+        if (lideresProcesados.length === 0) {
           setError('No se encontraron líderes de equipo. Por favor, contacte al administrador.');
         }
-        if (processedAgents.length === 0) {
+        if (agentesProcesados.length === 0) {
           setError(prev => prev ? `${prev} No se encontraron agentes.` : 'No se encontraron agentes. Por favor, contacte al administrador.');
         }
 
@@ -74,34 +76,34 @@ const TeamCreationComponent: React.FC = () => {
         setError('Error al cargar usuarios. Por favor, intenta de nuevo más tarde.');
       }
     };
-    loadUsers();
+    cargarUsuarios();
   }, []);
 
-  const handleLeaderChange = (value: string) => {
-    setSelectedLeader(value);
+  const manejarCambioLider = (valor: string) => {
+    setLiderSeleccionado(valor);
   };
   
-  const handleAgentChange = (value: string) => {
-    setSelectedAgents(prev =>
-      prev.includes(value) ? prev.filter(id => id !== value) : [...prev, value]
+  const manejarCambioAgente = (valor: string) => {
+    setAgentesSeleccionados(prev =>
+      prev.includes(valor) ? prev.filter(id => id !== valor) : [...prev, valor]
     );
   };  
 
-  const handleSaveTeam = async () => {
-    if (selectedLeader && selectedAgents.length > 0) {
+  const manejarGuardarEquipo = async () => {
+    if (liderSeleccionado && agentesSeleccionados.length > 0) {
       try {
-        const response = await fetch('/api/teams', {
+        const respuesta = await fetch('/api/teams', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            leaderId: selectedLeader,
-            agentIds: selectedAgents
+            teamLeaderId: liderSeleccionado,
+            memberIds: agentesSeleccionados
           }),
         });
         
-        if (!response.ok) {
+        if (!respuesta.ok) {
           throw new Error('Error al guardar el equipo');
         }
         
@@ -123,19 +125,19 @@ const TeamCreationComponent: React.FC = () => {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && <div className="text-red-500">{error}</div>}
-        {teamLeaders.length > 0 ? (
+        {lideresEquipo.length > 0 ? (
           <div className="space-y-2">
             <label htmlFor="team-leader" className="text-sm font-medium text-gray-700">
               Líder del Equipo
             </label>
-            <Select onValueChange={handleLeaderChange} value={selectedLeader}>
+            <Select onValueChange={manejarCambioLider} value={liderSeleccionado}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Selecciona un líder" />
               </SelectTrigger>
               <SelectContent>
-                {teamLeaders.map((leader) => (
-                  <SelectItem key={leader.id} value={String(leader.id)}>
-                    {leader.name}
+                {lideresEquipo.map((lider) => (
+                  <SelectItem key={lider.id} value={String(lider.id)}>
+                    {lider.name}
                   </SelectItem>                            
                 ))}
               </SelectContent>
@@ -144,20 +146,20 @@ const TeamCreationComponent: React.FC = () => {
         ) : (
           <div className="text-yellow-500">No hay líderes de equipo disponibles.</div>
         )}
-        {agents.length > 0 ? (
+        {agentes.length > 0 ? (
           <div className="space-y-2">
             <label htmlFor="team-agents" className="text-sm font-medium text-gray-700">
               Agentes
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {agents.map((agent) => (
+              {agentes.map((agente) => (
                 <Button
-                  key={agent.id}
-                  variant={selectedAgents.includes(String(agent.id)) ? "default" : "outline"}
-                  onClick={() => handleAgentChange(String(agent.id))}
+                  key={agente.id}
+                  variant={agentesSeleccionados.includes(String(agente.id)) ? "default" : "outline"}
+                  onClick={() => manejarCambioAgente(String(agente.id))}
                   className="justify-start"
                 >
-                  {agent.name}
+                  {agente.name}
                 </Button>
               ))}
             </div>
@@ -167,7 +169,7 @@ const TeamCreationComponent: React.FC = () => {
         )}
       </CardContent>
       <CardFooter>
-        <Button onClick={handleSaveTeam} className="w-full" disabled={!selectedLeader || selectedAgents.length === 0}>
+        <Button onClick={manejarGuardarEquipo} className="w-full" disabled={!liderSeleccionado || agentesSeleccionados.length === 0}>
           Guardar Equipo
         </Button>
       </CardFooter>
@@ -176,4 +178,4 @@ const TeamCreationComponent: React.FC = () => {
   );
 };
 
-export default TeamCreationComponent;
+export default ComponenteCreacionEquipo;
