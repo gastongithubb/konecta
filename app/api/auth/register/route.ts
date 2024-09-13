@@ -31,8 +31,11 @@ export async function POST(request: Request) {
     // Enviar email de bienvenida
     await sendWelcomeEmail(email, name, password)
 
-    // Usamos la sintaxis de rest para omitir la contraseña
-    const { password: _, ...userWithoutPassword } = user
+    // Omitimos la contraseña del objeto de usuario sin usar una variable temporal
+    const userWithoutPassword = Object.fromEntries(
+      Object.entries(user).filter(([key]) => key !== 'password')
+    )
+
     return NextResponse.json(userWithoutPassword, { status: 201 })
   } catch (error) {
     console.error('Error al registrar usuario:', error)
