@@ -12,7 +12,7 @@ export interface User {
 }
 
 // types/user.ts
-export type UserRole = 'user' | 'agent' | 'leader' | 'manager';
+export type UserRole = 'manager' | 'team_leader' | 'leader' | 'agent' | 'user';
 
 export interface UserData {
   name: string;

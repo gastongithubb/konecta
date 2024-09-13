@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { logoutClient } from '@/app/lib/auth';
 import { useRouter } from 'next/navigation';
+import { UserRole } from '@/types/user'; // Adjust the import path as needed
+
 
 interface NavbarProps {
   user: {
@@ -11,6 +13,7 @@ interface NavbarProps {
     name: string;
     email: string;
     role: string;
+    userRole: UserRole;
     isPasswordChanged: boolean;
     teamId: number | null;
   } | null;

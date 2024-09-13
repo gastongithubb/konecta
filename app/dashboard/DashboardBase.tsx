@@ -10,42 +10,49 @@ export type UserRole = 'manager' | 'team_leader' | 'user';
 
 interface DashboardBaseProps {
   children: ReactNode;
-  userRole?: UserRole;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    userRole: UserRole;
+    isPasswordChanged: boolean;
+    teamId: number | null;
+  } | null;
 }
 
-const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propUserRole }) => {
-  const [userRole, setUserRole] = useState<UserRole | null>(propUserRole || null);
-  const [loading, setLoading] = useState(!propUserRole);
+const DashboardBase: React.FC<DashboardBaseProps> = ({ children, user: propUser }) => {
+  const [user, setUser] = useState(propUser || null);
+  const [loading, setLoading] = useState(!propUser);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    if (propUserRole) {
-      setUserRole(propUserRole);
+    if (propUser) {
+      setUser(propUser);
     } else {
-      const fetchUserRole = async () => {
+      const fetchUser = async () => {
         try {
-          const response = await fetch('/api/user-role', {
+          const response = await fetch('/api/user', {
             credentials: 'include',
           });
           if (!response.ok) {
-            throw new Error('Failed to fetch user role');
+            throw new Error('Failed to fetch user data');
           }
-          const data = await response.json();
-          const mappedRole = mapApiRoleToNavbarRole(data.role);
-          setUserRole(mappedRole);
+          const userData = await response.json();
+          setUser(userData);
         } catch (error) {
-          console.error('Error fetching user role:', error);
-          setError('Failed to fetch user role. Please try logging in again.');
+          console.error('Error fetching user data:', error);
+          setError('Failed to fetch user data. Please try logging in again.');
           router.push('/login');
         } finally {
           setLoading(false);
         }
       };
 
-      fetchUserRole();
+      fetchUser();
     }
-  }, [router, propUserRole]);
+  }, [router, propUser]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -55,13 +62,13 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
     return <div className="text-red-500 text-center">{error}</div>;
   }
 
-  if (!userRole) {
+  if (!user) {
     return <div className="text-center">Unauthorized access. Please log in.</div>;
   }
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar userRole={userRole} />
+      <Navbar user={user} />
       <main className="flex-grow bg-gray-100">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           {children}
