@@ -56,7 +56,7 @@ const Login: React.FC = () => {
           router.push('/dashboard/manager');
           break;
         case 'team_leader':
-          router.push('/dashboard/leader');
+          router.push('/dashboard/team_leader');
           break;
         case 'user':
           router.push('/dashboard/agent');

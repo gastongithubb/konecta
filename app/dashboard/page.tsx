@@ -21,9 +21,9 @@ export default async function DashboardPage() {
 
     switch (userData.role) {
       case 'agent':
-        redirect('/dashboard/agent');
+        redirect('/dashboard/user');
       case 'leader':
-        redirect('/dashboard/leader');
+        redirect('/dashboard/team_leader');
       case 'manager':
         redirect('/dashboard/manager');
       default:

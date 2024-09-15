@@ -21,6 +21,10 @@ model User {
   leadTeams     Team[]   @relation("TeamLeaderToTeam")
   team          Team?    @relation(fields: [teamId], references: [id])
   teamId        Int?
+  dailyMetrics  DailyMetrics[]
+  trimestralMetrics TrimestralMetrics[] @relation("TeamLeaderTrimestralMetrics")
+  semanalMetrics    SemanalMetrics[]    @relation("TeamLeaderSemanalMetrics")
+  tmoMetrics        TMOMetrics[]        @relation("TeamLeaderTMOMetrics")
 }
 
 model Team {
@@ -33,4 +37,70 @@ model Team {
   teamLeader    User     @relation("TeamLeaderToTeam", fields: [teamLeaderId], references: [id])
   teamLeaderId  Int
   members       User[]
+  dailyMetrics  DailyMetrics[]
+  trimestralMetrics TrimestralMetrics[]
+  semanalMetrics    SemanalMetrics[]
+  tmoMetrics        TMOMetrics[]
+}
+
+model DailyMetrics {
+  id            Int      @id @default(autoincrement())
+  date          DateTime
+  nsp           Int
+  q             Int
+  nps           Int
+  csat          Float
+  ces           Float
+  rd            Float
+  user          User     @relation(fields: [userId], references: [id])
+  userId        Int
+  team          Team     @relation(fields: [teamId], references: [id])
+  teamId        Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TrimestralMetrics {
+  id            Int      @id @default(autoincrement())
+  name          String
+  month         String
+  qResp         Int
+  nps           Int
+  sat           Float
+  rd            Float
+  teamLeader    User     @relation("TeamLeaderTrimestralMetrics", fields: [teamLeaderId], references: [id])
+  teamLeaderId  Int
+  team          Team     @relation(fields: [teamId], references: [id])
+  teamId        Int
+  createdAt     DateTime @default(now())
+}
+
+model SemanalMetrics {
+  id            Int      @id @default(autoincrement())
+  name          String
+  week          String
+  q             Int
+  nps           Int
+  csat          Float
+  teamLeader    User     @relation("TeamLeaderSemanalMetrics", fields: [teamLeaderId], references: [id])
+  teamLeaderId  Int
+  team          Team     @relation(fields: [teamId], references: [id])
+  teamId        Int
+  createdAt     DateTime @default(now())
+}
+
+model TMOMetrics {
+  id            Int      @id @default(autoincrement())
+  name          String
+  qLlAtendidas  Int
+  tiempoACD     String
+  acw           String
+  hold          String
+  ring          String
+  tmo           String
+  teamLeader    User     @relation("TeamLeaderTMOMetrics", fields: [teamLeaderId], references: [id])
+  teamLeaderId  Int
+  team          Team     @relation(fields: [teamId], references: [id])
+  teamId        Int
+  createdAt     DateTime @default(now())
 }

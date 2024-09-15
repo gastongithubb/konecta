@@ -51,7 +51,7 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
   const dashboardLink = `/dashboard/${user.role.toLowerCase()}`;
 
   return (
-    <nav className="bg-blue-900 text-white shadow-lg">
+    <nav className="bg-[#003153] text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -70,7 +70,7 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
                 </>
               )}
               {user.role.toLowerCase() === 'leader' && (
-                <Link href="/dashboard/leader/team" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                <Link href="/dashboard/team_leader/team" className="hover:bg-blue-500 px-3 py-2 rounded-md">
                   Mi Equipo
                 </Link>
               )}
@@ -79,9 +79,6 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
                   Mis Tareas
                 </Link>
               )}
-              <Link href={`${dashboardLink}/profile`} className="hover:bg-blue-700 px-3 py-2 rounded-md">
-                Perfil
-              </Link>
             </div>
           </div>
           <div className="relative">
@@ -94,11 +91,20 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
             {isDropdownOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
                 <button
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                >
+                <Link href={`${dashboardLink}/profile`} className="hover:bg-gray-100 px-3 py-2 rounded-md">
+                Perfil
+                </Link>
+                </button>
+
+                <button
                   onClick={handleLogout}
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                 >
                   Cerrar Sesión
                 </button>
+                
               </div>
             )}
           </div>

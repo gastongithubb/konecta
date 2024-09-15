@@ -30,7 +30,6 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
 
   useEffect(() => {
     if (propUserRole) {
-      // Set a minimal user object with default values
       setUser({
         id: 0,
         name: '',
@@ -79,10 +78,8 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-grow bg-gray-100">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          {children}
-        </div>
+      <main className="flex-grow">
+        {children}
       </main>
       <Footer />
     </div>
