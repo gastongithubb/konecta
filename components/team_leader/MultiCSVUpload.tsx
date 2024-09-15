@@ -6,19 +6,29 @@ interface MultiCSVUploadProps {
   fileType: 'trimestral' | 'semanal' | 'tmo' | 'nps-diario';
 }
 
+interface NPSDiarioData {
+  date: Date;
+  nsp: number;
+  q: number;
+  nps: number;
+  csat: number;
+  ces: number;
+  rd: number;
+}
+
 const MultiCSVUpload: React.FC<MultiCSVUploadProps> = ({ fileType }) => {
   const [uploadStatus, setUploadStatus] = useState<string>('');
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     acceptedFiles.forEach((file) => {
       Papa.parse(file, {
-        complete: async (results) => {
+        complete: async (results: Papa.ParseResult<Record<string, string>>) => {
           const data = results.data;
           data.shift(); // Remove header row
 
-          let formattedData;
+          let formattedData: Record<string, string>[] | NPSDiarioData[];
           if (fileType === 'nps-diario') {
-            formattedData = data.map((row: any) => ({
+            formattedData = data.map((row) => ({
               date: new Date(row['NSP'] || row['Jueves 29'] || ''),
               nsp: parseInt(row['NSP'] || '0'),
               q: parseInt(row['Q'] || '0'),

@@ -3,6 +3,51 @@ import { authenticateRequest } from '@/app/lib/auth.server';
 import prisma from '@/app/lib/prisma';
 import { Prisma } from '@prisma/client';
 
+interface BaseMetric {
+  teamLeaderId: number;
+  teamId: number;
+}
+
+interface TrimestralMetric extends BaseMetric {
+  name: string;
+  month: string;
+  qResp: number;
+  nps: number;
+  sat: number;
+  rd: number;
+}
+
+interface SemanalMetric extends BaseMetric {
+  name: string;
+  week: string;
+  q: number;
+  nps: number;
+  csat: number;
+}
+
+interface TMOMetric extends BaseMetric {
+  name: string;
+  qLlAtendidas: number;
+  tiempoACD: string;
+  acw: string;
+  hold: string;
+  ring: string;
+  tmo: string;
+}
+
+interface NPSDiarioMetric extends BaseMetric {
+  date: Date;
+  nsp: number;
+  q: number;
+  nps: number;
+  csat: number;
+  ces: number;
+  rd: number;
+}
+
+type MetricType = TrimestralMetric | SemanalMetric | TMOMetric | NPSDiarioMetric;
+
+
 export async function POST(request: NextRequest) {
   const user = await authenticateRequest();
   if (!user) {
@@ -28,21 +73,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Equipo no encontrado para este líder' }, { status: 404 });
     }
 
-    let processedData;
+    let processedData: MetricType[] = [];
     switch (fileType) {
-      case 'trimestral':
-        processedData = processTrimestralData(data, user.id, team.id);
-        break;
-      case 'semanal':
-        processedData = processSemanalData(data, user.id, team.id);
-        break;
-      case 'tmo':
-        processedData = processTMOData(data, user.id, team.id);
-        break;
-      case 'nps-diario':
-        processedData = processNPSDiarioData(data, user.id, team.id);
-        break;
-    }
+    case 'trimestral':
+      processedData = processTrimestralData(data, user.id, team.id);
+      break;
+    case 'semanal':
+      processedData = processSemanalData(data, user.id, team.id);
+      break;
+    case 'tmo':
+      processedData = processTMOData(data, user.id, team.id);
+      break;
+    case 'nps-diario':
+      processedData = processNPSDiarioData(data, user.id, team.id);
+      break;
+  }
 
     if (!processedData || processedData.length === 0) {
       return NextResponse.json({ error: 'No se pudo procesar los datos o todos los datos fueron inválidos' }, { status: 400 });
@@ -65,9 +110,9 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function processTrimestralData(data: any[], userId: number, teamId: number) {
+function processTrimestralData(data: Record<string, string>[], userId: number, teamId: number): TrimestralMetric[] {
   return data.map(row => ({
-    name: row['Nombre'],
+    name: row['Nombre'] || '',
     month: 'septiembre', // Ajusta según el mes actual
     qResp: parseInt(row['Q de resp'] || '0'),
     nps: parseInt(row['NPS'] || '0'),
@@ -78,11 +123,11 @@ function processTrimestralData(data: any[], userId: number, teamId: number) {
   })).filter(item => item.name);
 }
 
-function processSemanalData(data: any[], userId: number, teamId: number) {
+function processSemanalData(data: Record<string, string>[], userId: number, teamId: number): SemanalMetric[] {
   const weeks = ['Semana Vernes 09', 'Data Viernes 16', 'Data Viernes 20', 'Data Viernes 30'];
   return data.flatMap(row => 
     weeks.map(week => ({
-      name: row['EQUIPO'],
+      name: row['EQUIPO'] || '',
       week,
       q: parseInt(row[`${week}.Q`] || '0'),
       nps: parseInt(row[`${week}.NPS`] || '0'),
@@ -93,7 +138,7 @@ function processSemanalData(data: any[], userId: number, teamId: number) {
   ).filter(item => item.name);
 }
 
-function processTMOData(data: any[], userId: number, teamId: number) {
+function processTMOData(data: Record<string, string>[], userId: number, teamId: number): TMOMetric[] {
   return data.map(row => ({
     name: row['TMO AL 30']?.replace('KN - ', '') || '',
     qLlAtendidas: parseInt(row['Q Ll atendidas'] || '0'),
@@ -107,7 +152,7 @@ function processTMOData(data: any[], userId: number, teamId: number) {
   })).filter(item => item.name);
 }
 
-function processNPSDiarioData(data: any[], userId: number, teamId: number) {
+function processNPSDiarioData(data: Record<string, string>[], userId: number, teamId: number): NPSDiarioMetric[] {
   return data.map(row => ({
     date: new Date(row.date),
     nsp: parseInt(row.nsp || '0'),
@@ -116,7 +161,7 @@ function processNPSDiarioData(data: any[], userId: number, teamId: number) {
     csat: parseFloat(row.csat || '0'),
     ces: parseFloat(row.ces || '0'),
     rd: parseFloat(row.rd || '0'),
-    userId,
+    teamLeaderId: userId,  // Add this line
     teamId
   })).filter(item => !isNaN(item.date.getTime()));
 }
