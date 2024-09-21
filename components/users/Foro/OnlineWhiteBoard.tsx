@@ -29,6 +29,21 @@ type StickerType = {
   gifUrl?: string;
 };
 
+interface GiphyImage {
+  fixed_height_small: {
+    url: string;
+  };
+  fixed_height: {
+    url: string;
+  };
+}
+
+interface GiphyResult {
+  id: string;
+  title: string;
+  images: GiphyImage;
+}
+
 const NOTE_COLORS: NoteColor[] = [
   { name: 'Amarillo', bgColor: 'bg-yellow-200', textColor: 'text-black' },
   { name: 'Rosa Pastel', bgColor: 'bg-pink-200', textColor: 'text-black' },
@@ -66,7 +81,7 @@ const OnlineWhiteboard = () => {
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
   const [gifSearchTerm, setGifSearchTerm] = useState('');
-  const [gifResults, setGifResults] = useState<any[]>([]);
+  const [gifResults, setGifResults] = useState<GiphyResult[]>([]);
   const whiteboardRef = useRef<HTMLDivElement>(null);
 
   const saveData = useCallback(() => {
@@ -312,97 +327,97 @@ const OnlineWhiteboard = () => {
                 <div className="absolute top-6 left-0 bg-white p-2 rounded shadow-lg z-10">
                   {NOTE_COLORS.map((color) => (
                     <button
-                    key={color.name}
-                    className={`w-6 h-6 m-1 rounded-full ${color.bgColor}`}
-                    onClick={() => changeNoteColor(note.id, color)}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+                      key={color.name}
+                      className={`w-6 h-6 m-1 rounded-full ${color.bgColor}`}
+                      onClick={() => changeNoteColor(note.id, color)}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
 
-        {/* Stickers y GIFs */}
-        {stickers.map((sticker) => (
-          <div
-            key={sticker.id}
-            className="absolute cursor-move group"
-            style={{ left: `${sticker.x}%`, top: `${sticker.y}%` }}
-            draggable
-            onDragStart={(e) => handleDragStart(e, sticker.id)}
-            onDrag={handleDrag}
-            onDragEnd={handleDragEnd}
-          >
-            {sticker.isGif ? (
-              <Image 
-                src={sticker.gifUrl || ''}
-                alt={sticker.content}
-                width={96}
-                height={96}
-                className="object-cover"
-              />
-            ) : (
-              <span className="text-4xl" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>{sticker.content}</span>
-            )}
-            <button
-              onClick={() => deleteSticker(sticker.id)}
-              className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+          {/* Stickers y GIFs */}
+          {stickers.map((sticker) => (
+            <div
+              key={sticker.id}
+              className="absolute cursor-move group"
+              style={{ left: `${sticker.x}%`, top: `${sticker.y}%` }}
+              draggable
+              onDragStart={(e) => handleDragStart(e, sticker.id)}
+              onDrag={handleDrag}
+              onDragEnd={handleDragEnd}
             >
-              <X size={16} />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    {/* Selector de Stickers y GIFs */}
-    {showStickerPicker && (
-      <div className="absolute top-16 left-4 bg-white p-4 rounded shadow-lg max-w-md z-10">
-        <div className="grid grid-cols-6 gap-2 mb-4">
-          {STICKER_OPTIONS.map((sticker, index) => (
-            <button
-              key={index}
-              onClick={() => addSticker(sticker)}
-              className="text-2xl hover:bg-gray-200 rounded p-1"
-              style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
-            >
-              {sticker}
-            </button>
+              {sticker.isGif ? (
+                <Image 
+                  src={sticker.gifUrl || ''}
+                  alt={sticker.content}
+                  width={96}
+                  height={96}
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-4xl" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>{sticker.content}</span>
+              )}
+              <button
+                onClick={() => deleteSticker(sticker.id)}
+                className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X size={16} />
+              </button>
+            </div>
           ))}
         </div>
-        <div className="flex items-center mb-2">
-          <input
-            type="text"
-            value={gifSearchTerm}
-            onChange={(e) => setGifSearchTerm(e.target.value)}
-            placeholder="Buscar GIF..."
-            className="border rounded p-1 mr-2 flex-grow"
-          />
-          <button
-            onClick={searchGif}
-            className="bg-blue-500 text-white p-2 rounded flex items-center"
-          >
-            <Search className="mr-1" /> Buscar
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          {gifResults.map((gif) => (
-            <Image
-              key={gif.id}
-              src={gif.images.fixed_height_small.url}
-              alt={gif.title}
-              width={120}
-              height={90}
-              className="object-cover cursor-pointer"
-              onClick={() => addSticker(gif.title, true, gif.images.fixed_height.url)}
+      </div>
+
+      {/* Selector de Stickers y GIFs */}
+      {showStickerPicker && (
+        <div className="absolute top-16 left-4 bg-white p-4 rounded shadow-lg max-w-md z-10">
+          <div className="grid grid-cols-6 gap-2 mb-4">
+            {STICKER_OPTIONS.map((sticker, index) => (
+              <button
+                key={index}
+                onClick={() => addSticker(sticker)}
+                className="text-2xl hover:bg-gray-200 rounded p-1"
+                style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+              >
+                {sticker}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center mb-2">
+            <input
+              type="text"
+              value={gifSearchTerm}
+              onChange={(e) => setGifSearchTerm(e.target.value)}
+              placeholder="Buscar GIF..."
+              className="border rounded p-1 mr-2 flex-grow"
             />
-          ))}
+            <button
+              onClick={searchGif}
+              className="bg-blue-500 text-white p-2 rounded flex items-center"
+            >
+              <Search className="mr-1" /> Buscar
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {gifResults.map((gif) => (
+              <Image
+                key={gif.id}
+                src={gif.images.fixed_height_small.url}
+                alt={gif.title}
+                width={120}
+                height={90}
+                className="object-cover cursor-pointer"
+                onClick={() => addSticker(gif.title, true, gif.images.fixed_height.url)}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 };
 
 export default OnlineWhiteboard;
