@@ -1,6 +1,7 @@
 'use client'
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Sticker, StickyNote, X, PinIcon, Save, Image, Search, CornerRightDown, Palette } from 'lucide-react';
+import Image from 'next/image';
+import { Sticker, StickyNote, X, PinIcon, Save, Search, CornerRightDown, Palette } from 'lucide-react';
 
 type NoteColor = {
   name: string;
@@ -334,7 +335,13 @@ const OnlineWhiteboard = () => {
             onDragEnd={handleDragEnd}
           >
             {sticker.isGif ? (
-              <img src={sticker.gifUrl} alt={sticker.content} className="w-24 h-24 object-cover" />
+              <Image 
+                src={sticker.gifUrl || ''}
+                alt={sticker.content}
+                width={96}
+                height={96}
+                className="object-cover"
+              />
             ) : (
               <span className="text-4xl" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>{sticker.content}</span>
             )}
@@ -381,11 +388,13 @@ const OnlineWhiteboard = () => {
         </div>
         <div className="grid grid-cols-3 gap-2">
           {gifResults.map((gif) => (
-            <img
+            <Image
               key={gif.id}
               src={gif.images.fixed_height_small.url}
               alt={gif.title}
-              className="w-full h-24 object-cover cursor-pointer"
+              width={120}
+              height={90}
+              className="object-cover cursor-pointer"
               onClick={() => addSticker(gif.title, true, gif.images.fixed_height.url)}
             />
           ))}
