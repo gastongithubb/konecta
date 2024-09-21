@@ -99,8 +99,8 @@ const Banner: React.FC = () => {
           <div className="relative">
             <Image
               src="/Hero.svg"
-              width={500}
-              height={400}
+              width={800}
+              height={450}
               alt="Hero"
               className="transition-all duration-300 rounded-lg shadow-2xl filter brightness-110 hover:brightness-125"
             />

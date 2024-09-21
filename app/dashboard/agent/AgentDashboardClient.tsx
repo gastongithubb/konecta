@@ -22,8 +22,8 @@ const AgentDashboardClient: React.FC<{ userData: UserData }> = ({ userData }) =>
       <div className="flex flex-col h-screen">
         <div className="flex-1 flex">
           <Sidebar />
+          <Hero />
         </div>
-        <Hero />
           <Frases />
           <Cases />
           <Footer />
