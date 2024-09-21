@@ -2,7 +2,6 @@
 
 import React, { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Footer from '@/components/Footer';
 import LoadingSpinner from '@/components/Loading'
 
 export type UserRole = 'manager' | 'team_leader' | 'agent' | 'user';
