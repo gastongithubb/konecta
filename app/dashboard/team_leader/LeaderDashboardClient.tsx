@@ -3,6 +3,7 @@
 import React from 'react';
 import DashboardBase, { UserRole } from '@/app/dashboard/DashboardBase';
 import Sidebar from '@/components/team_leader/sidebar';
+import Footer from '@/components/Footer';
 
 type UserData = {
   name: string;
@@ -19,6 +20,7 @@ const LeaderDashboardClient: React.FC<{ userData: UserData }> = ({ userData }) =
         <div className="flex-1 flex">
           <Sidebar />
         </div>
+        <Footer />
       </div>
     </DashboardBase>
   );

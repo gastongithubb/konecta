@@ -81,7 +81,6 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
       <main className="flex-grow">
         {children}
       </main>
-      <Footer />
     </div>
   );
 };
