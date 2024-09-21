@@ -43,10 +43,11 @@ interface NPSDiarioMetric extends BaseMetric {
   csat: number;
   ces: number;
   rd: number;
+  userId: number; // Añadimos userId aquí
 }
 
 type MetricType = TrimestralMetric | SemanalMetric | TMOMetric | NPSDiarioMetric;
-
+type FileType = 'trimestral' | 'semanal' | 'tmo' | 'nps-diario';
 
 export async function POST(request: NextRequest) {
   const user = await authenticateRequest();
@@ -74,26 +75,26 @@ export async function POST(request: NextRequest) {
     }
 
     let processedData: MetricType[] = [];
-    switch (fileType) {
-    case 'trimestral':
-      processedData = processTrimestralData(data, user.id, team.id);
-      break;
-    case 'semanal':
-      processedData = processSemanalData(data, user.id, team.id);
-      break;
-    case 'tmo':
-      processedData = processTMOData(data, user.id, team.id);
-      break;
-    case 'nps-diario':
-      processedData = processNPSDiarioData(data, user.id, team.id);
-      break;
-  }
+    switch (fileType as FileType) {
+      case 'trimestral':
+        processedData = processTrimestralData(data, user.id, team.id);
+        break;
+      case 'semanal':
+        processedData = processSemanalData(data, user.id, team.id);
+        break;
+      case 'tmo':
+        processedData = processTMOData(data, user.id, team.id);
+        break;
+      case 'nps-diario':
+        processedData = processNPSDiarioData(data, user.id, team.id);
+        break;
+    }
 
-    if (!processedData || processedData.length === 0) {
+    if (processedData.length === 0) {
       return NextResponse.json({ error: 'No se pudo procesar los datos o todos los datos fueron inválidos' }, { status: 400 });
     }
 
-    const count = await saveDataToDatabase(fileType, processedData);
+    const count = await saveDataToDatabase(fileType as FileType, processedData);
 
     return NextResponse.json({ 
       message: 'Datos subidos exitosamente', 
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function processTrimestralData(data: Record<string, string>[], userId: number, teamId: number): TrimestralMetric[] {
+function processTrimestralData(data: Record<string, string>[], teamLeaderId: number, teamId: number): TrimestralMetric[] {
   return data.map(row => ({
     name: row['Nombre'] || '',
     month: 'septiembre', // Ajusta según el mes actual
@@ -118,12 +119,12 @@ function processTrimestralData(data: Record<string, string>[], userId: number, t
     nps: parseInt(row['NPS'] || '0'),
     sat: parseFloat(row['SAT']?.replace('%', '') || '0') / 100,
     rd: parseFloat(row['RD']?.replace('%', '') || '0') / 100,
-    teamLeaderId: userId,
+    teamLeaderId,
     teamId
   })).filter(item => item.name);
 }
 
-function processSemanalData(data: Record<string, string>[], userId: number, teamId: number): SemanalMetric[] {
+function processSemanalData(data: Record<string, string>[], teamLeaderId: number, teamId: number): SemanalMetric[] {
   const weeks = ['Semana Vernes 09', 'Data Viernes 16', 'Data Viernes 20', 'Data Viernes 30'];
   return data.flatMap(row => 
     weeks.map(week => ({
@@ -132,13 +133,13 @@ function processSemanalData(data: Record<string, string>[], userId: number, team
       q: parseInt(row[`${week}.Q`] || '0'),
       nps: parseInt(row[`${week}.NPS`] || '0'),
       csat: parseFloat(row[`${week}.CSAT`]?.replace('%', '') || '0') / 100,
-      teamLeaderId: userId,
+      teamLeaderId,
       teamId
     }))
   ).filter(item => item.name);
 }
 
-function processTMOData(data: Record<string, string>[], userId: number, teamId: number): TMOMetric[] {
+function processTMOData(data: Record<string, string>[], teamLeaderId: number, teamId: number): TMOMetric[] {
   return data.map(row => ({
     name: row['TMO AL 30']?.replace('KN - ', '') || '',
     qLlAtendidas: parseInt(row['Q Ll atendidas'] || '0'),
@@ -147,12 +148,12 @@ function processTMOData(data: Record<string, string>[], userId: number, teamId: 
     hold: row['HOLD'] || '',
     ring: row['RING'] || '',
     tmo: row['TMO'] || '',
-    teamLeaderId: userId,
+    teamLeaderId,
     teamId
   })).filter(item => item.name);
 }
 
-function processNPSDiarioData(data: Record<string, string>[], userId: number, teamId: number): NPSDiarioMetric[] {
+function processNPSDiarioData(data: Record<string, string>[], teamLeaderId: number, teamId: number): NPSDiarioMetric[] {
   return data.map(row => ({
     date: new Date(row.date),
     nsp: parseInt(row.nsp || '0'),
@@ -161,25 +162,26 @@ function processNPSDiarioData(data: Record<string, string>[], userId: number, te
     csat: parseFloat(row.csat || '0'),
     ces: parseFloat(row.ces || '0'),
     rd: parseFloat(row.rd || '0'),
-    teamLeaderId: userId,  // Add this line
-    teamId
+    teamLeaderId,
+    teamId,
+    userId: teamLeaderId // Asignamos teamLeaderId a userId
   })).filter(item => !isNaN(item.date.getTime()));
 }
 
-async function saveDataToDatabase(fileType: string, data: any[]): Promise<number> {
+async function saveDataToDatabase(fileType: FileType, data: MetricType[]): Promise<number> {
   let result: Prisma.BatchPayload;
   switch (fileType) {
     case 'trimestral':
-      result = await prisma.trimestralMetrics.createMany({ data });
+      result = await prisma.trimestralMetrics.createMany({ data: data as Prisma.TrimestralMetricsCreateManyInput[] });
       break;
     case 'semanal':
-      result = await prisma.semanalMetrics.createMany({ data });
+      result = await prisma.semanalMetrics.createMany({ data: data as Prisma.SemanalMetricsCreateManyInput[] });
       break;
     case 'tmo':
-      result = await prisma.tMOMetrics.createMany({ data });
+      result = await prisma.tMOMetrics.createMany({ data: data as Prisma.TMOMetricsCreateManyInput[] });
       break;
     case 'nps-diario':
-      result = await prisma.dailyMetrics.createMany({ data });
+      result = await prisma.dailyMetrics.createMany({ data: data as Prisma.DailyMetricsCreateManyInput[] });
       break;
     default:
       throw new Error('Tipo de archivo no válido');

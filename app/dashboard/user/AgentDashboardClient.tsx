@@ -15,7 +15,6 @@ const AgentDashboardClient: React.FC<{ userData: UserData }> = ({ userData }) =>
   return (
     <DashboardBase userRole={userRole}>
       <div className="p-6">
-        <h1 className="text-3xl font-bold mb-6">Bienvenid@, {userData.name}</h1>
         {userRole === 'user' && (
           <div>
             <h2 className="text-2xl font-semibold mb-4">Panel de Agente</h2>
