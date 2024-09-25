@@ -1,8 +1,11 @@
+// app/layout.tsx
+
 import './globals.css'
 import { Inter } from 'next/font/google'
 import { authenticateRequest } from "@/app/lib/auth.server"
 import Navbar from "../components/NavBarAdmin"
-import { UserRole } from '@/types/user' // Asegúrate de que esta importación sea correcta
+import { UserRole } from '@/types/user'
+import ClientSessionProvider from './ClientSessionProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -20,7 +23,6 @@ export default async function RootLayout({
 
   let user = null
   if (authenticatedUser) {
-    // Mapear el role a userRole
     const userRole: UserRole = (() => {
       switch (authenticatedUser.role) {
         case 'manager': return 'manager'
@@ -39,10 +41,12 @@ export default async function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${inter.className} flex flex-col min-h-screen`}>
-        {user && <Navbar user={user} />}
-        <main className="flex-grow">
-          {children}
-        </main>
+        <ClientSessionProvider>
+          {user && <Navbar user={user} />}
+          <main className="flex-grow">
+            {children}
+          </main>
+        </ClientSessionProvider>
       </body>
     </html>
   )

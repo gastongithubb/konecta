@@ -59,7 +59,7 @@ const Login: React.FC = () => {
           router.push('/dashboard/team_leader');
           break;
         case 'user':
-          router.push('/dashboard/agent');
+          router.push('/dashboard/user');
           break;
         default:
           setError('Rol de usuario no reconocido');

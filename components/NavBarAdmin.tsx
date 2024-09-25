@@ -74,9 +74,9 @@ const Navbar: React.FC<NavbarProps> = ({ user }) => {
                   Mi Equipo
                 </Link>
               )}
-              {user.role.toLowerCase() === 'agent' && (
-                <Link href="/dashboard/agent/tasks" className="hover:bg-blue-500 px-3 py-2 rounded-md">
-                  Mis Tareas
+              {user.role.toLowerCase() === 'user' && (
+                <Link href="/dashboard/user/cases" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                  Cargar Reclamos
                 </Link>
               )}
             </div>

@@ -69,7 +69,6 @@ const Banner: React.FC = () => {
         <>
           <h1 className="text-4xl font-bold leading-tight text-[#1e1e1e] md:text-5xl lg:text-6xl">
             Bienvenido {userInfo.name} <br />
-            <span className="text-blue-600">Futuro Miembro</span>
           </h1>
           <p className="text-xl font-medium leading-relaxed text-[#1e1e1e]">
             Pronto se te agregará a un equipo
@@ -86,9 +85,6 @@ const Banner: React.FC = () => {
           <div className="space-y-8 text-left">
             {renderTeamInfo()}
             <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-              <Link href="/programacion" className="px-8 py-4 text-lg font-semibold text-center text-white transition duration-300 transform bg-blue-600 rounded-lg shadow-lg hover:bg-blue-700 hover:shadow-xl hover:-translate-y-1">
-                Programación
-              </Link>
               <Link href="/news" className="px-8 py-4 text-lg font-semibold text-center text-blue-400 transition duration-300 transform bg-transparent border-2 border-blue-400 rounded-lg shadow-lg hover:bg-blue-400 hover:text-white hover:shadow-xl hover:-translate-y-1">
                 Novedades
               </Link>
