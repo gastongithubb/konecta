@@ -20,6 +20,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
     console.log('Socket is already running');
   } else {
     console.log('Socket is initializing');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const io = new SocketIOServer(res.socket.server as any);
     res.socket.server.io = io;
 
