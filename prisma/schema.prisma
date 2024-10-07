@@ -27,6 +27,7 @@ model User {
   tmoMetrics        TMOMetrics[]        @relation("TeamLeaderTMOMetrics")
   cases Case[]
   notifications Notification[]
+  events Event[]
 }
 
 model Team {
@@ -132,4 +133,15 @@ model Notification {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
   userId    Int
+}
+
+model Event {
+  id        Int      @id @default(autoincrement())
+  title     String
+  start     DateTime
+  end       DateTime
+  creator   User     @relation(fields: [creatorId], references: [id])
+  creatorId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

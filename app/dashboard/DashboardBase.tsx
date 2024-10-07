@@ -1,8 +1,11 @@
+// DashboardBase.tsx
 'use client'
 
 import React, { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingSpinner from '@/components/Loading'
+import SugerenciasUX from '@/components/Sugerenciasux'
+import Footer from '@/components/Footer';
 
 export type UserRole = 'manager' | 'team_leader' | 'agent' | 'user';
 
@@ -77,9 +80,11 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
 
   return (
     <div className="flex flex-col min-h-screen">
-      <main className="flex-grow">
+      <div className="flex-grow">
         {children}
-      </main>
+      </div>
+      <SugerenciasUX />
+      <Footer />
     </div>
   );
 };

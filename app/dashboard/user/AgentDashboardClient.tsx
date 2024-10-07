@@ -1,12 +1,11 @@
+// AgentDashboardClient.tsx
 'use client';
 
 import React from 'react';
 import DashboardBase, { UserRole } from '@/app/dashboard/DashboardBase';
-import Sidebar from '@/components/team_leader/sidebar'
 import Hero from '@/components/users/Hero/hero'
 import Frases from '@/components/users/Frases/frases'
 import Cases from '@/components/users/casos/cases'
-import Footer from '@/components/Footer';
 
 type UserData = {
   name: string;
@@ -19,14 +18,10 @@ const AgentDashboardClient: React.FC<{ userData: UserData }> = ({ userData }) =>
 
   return (
     <DashboardBase userRole={userRole}>
-      <div className="flex flex-col h-screen">
-        <div className="flex-1 flex">
-          <Sidebar />
-          <Hero />
-        </div>
-          <Frases />
-          <Cases />
-          <Footer />
+      <div className="flex flex-col min-h-full">
+        <Hero />
+        <Frases />
+        <Cases />
       </div>
       {/* Add agent-specific dashboard content here */}
     </DashboardBase>

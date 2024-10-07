@@ -1,3 +1,5 @@
+// app/lib/auth.server.ts
+
 import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -40,47 +42,68 @@ export async function verifyAccessToken(token: string): Promise<{ sub: string; r
   }
 }
 
-export async function getUserData(userId: string) {
-  if (!userId) {
-    throw new Error('User ID is required')
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: parseInt(userId, 10) },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isPasswordChanged: true,
-        teamId: true,
-      },
-    })
-    if (!user) {
-      throw new Error('User not found')
+export async function getUserData(userId?: string) {
+  if (userId) {
+    // Si se proporciona un userId, buscar directamente por ese ID
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: parseInt(userId, 10) },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isPasswordChanged: true,
+          teamId: true,
+        },
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return user;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
     }
-    return user
-  } catch (error) {
-    console.error('Error fetching user data:', error)
-    throw error
+  } else {
+    // Si no se proporciona un userId, obtener el usuario del token actual
+    const cookieStore = cookies();
+    const token = cookieStore.get('auth_token')?.value;
+
+    if (!token) {
+      return null;
+    }
+
+    const decodedToken = await verifyAccessToken(token);
+    if (!decodedToken) {
+      return null;
+    }
+
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: parseInt(decodedToken.sub, 10) },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isPasswordChanged: true,
+          teamId: true,
+        },
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+      return user;
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
+    }
   }
 }
 
 export async function authenticateRequest() {
-  const cookieStore = cookies();
-  const token = cookieStore.get('auth_token')?.value;
-
-  if (!token) {
-    return null;
-  }
-
-  const decodedToken = await verifyAccessToken(token);
-  if (!decodedToken) {
-    return null;
-  }
-
-  return await getUserData(decodedToken.sub);
+  return await getUserData();
 }
 
 export async function logout() {

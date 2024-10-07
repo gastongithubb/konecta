@@ -1,10 +1,10 @@
+// app/dashboard/manager/page.tsx
+
 import React from 'react';
 import { redirect } from 'next/navigation';
-import DashboardBase from '@/app/dashboard/DashboardBase';
-import { verifyAccessToken } from '@/app/lib/auth.server';
-import { getUserData } from '@/app/lib/auth.server'
+import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
 import { cookies } from 'next/headers';
-import TeamLeaderManagement from '@/components/admin/TeamLeaderManagement';
+import DashboardManagerClient from './DashboardManagerClient';
 
 export default async function DashboardManager() {
   try {
@@ -13,27 +13,20 @@ export default async function DashboardManager() {
     if (!token) {
       redirect('/login');
     }
-
+    
     const decoded = await verifyAccessToken(token);
     
     if (!decoded || !decoded.sub) {
       redirect('/login');
     }
+    
+    const user = await getUserData();
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
 
-    const user = await getUserData(decoded.sub);
-
-    const userRole = user.role === 'user' ? 'user' : 
-                     user.role === 'manager' ? 'manager' : 
-                     user.role === 'team_leader' ? 'team_leader' : 
-                     'user';
-
-    return (
-      <DashboardBase userRole={userRole}>
-        <h1 className="text-3xl font-bold mb-6">Bienvenid@, {user.name}</h1>
-        {userRole === 'manager' && <TeamLeaderManagement />}
-        {/* Otro contenido del dashboard específico para cada rol */}
-      </DashboardBase>
-    );
+    return <DashboardManagerClient user={user} />;
   } catch (error) {
     console.error('Error fetching user data:', error);
     redirect('/login');
