@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 import { cookies } from 'next/headers';
 import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
 import { redirect } from 'next/navigation';
@@ -18,6 +17,10 @@ export default async function DashboardPage() {
     }
 
     const userData = await getUserData(decoded.sub);
+
+    if (!userData) {
+      throw new Error('User data not found');
+    }
 
     switch (userData.role) {
       case 'agent':

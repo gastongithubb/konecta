@@ -18,6 +18,10 @@ export async function GET() {
 
     const userData = await getUserData(decoded.sub)
     
+    if (!userData) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
     // Ensure user role is one of the expected values
     const userRole = ['user', 'manager', 'team_leader'].includes(userData.role) 
       ? userData.role 
