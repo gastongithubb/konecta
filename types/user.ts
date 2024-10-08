@@ -1,5 +1,3 @@
-// types/user.ts
-
 export interface User {
   id: number;
   name: string;
@@ -11,7 +9,6 @@ export interface User {
   updatedAt: Date;
 }
 
-// types/user.ts
 export type UserRole = 'manager' | 'team_leader' | 'leader' | 'agent' | 'user';
 
 export interface UserData {

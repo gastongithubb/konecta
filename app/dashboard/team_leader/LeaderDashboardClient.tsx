@@ -3,7 +3,7 @@
 import React from 'react';
 import DashboardBase, { UserRole } from '@/app/dashboard/DashboardBase';
 import Sidebar from '@/components/team_leader/sidebar';
-import Footer from '@/components/Footer';
+import Hero from '@/components/team_leader/Hero';
 
 type UserData = {
   name: string;
@@ -19,8 +19,8 @@ const LeaderDashboardClient: React.FC<{ userData: UserData }> = ({ userData }) =
       <div className="flex flex-col h-screen">
         <div className="flex-1 flex">
           <Sidebar />
+          <Hero />
         </div>
-        <Footer />
       </div>
     </DashboardBase>
   );

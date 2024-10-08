@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// app/api/cases/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/prisma';
 import { authenticateRequest } from '@/app/lib/auth.server';
+import { User } from '@/types/user';
+import { Case } from '@/types/case';
 
 export async function POST(request: NextRequest) {
-  const user = await authenticateRequest();
+  const user = await authenticateRequest() as User | null;
   if (!user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
         details,
         userId: user.id,
         teamId: user.teamId,
+        status: 'pending', // Usar el valor por defecto definido en el esquema
       },
     });
 
@@ -48,7 +49,6 @@ export async function POST(request: NextRequest) {
           userId: teamLeader.id,
         },
       });
-      console.log(`Notificación para el líder ${teamLeader.name}: Nuevo caso creado ${newCase.caseNumber}`);
     }
 
     return NextResponse.json({ data: newCase });
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const user = await authenticateRequest();
+  const user = await authenticateRequest() as User | null;
   if (!user) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
   }
