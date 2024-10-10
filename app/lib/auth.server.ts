@@ -1,5 +1,4 @@
 // app/lib/auth.server.ts
-
 import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
@@ -31,20 +30,38 @@ export async function createAccessToken(data: { sub: string; role: string; isPas
     .sign(secret)
 }
 
+export async function createRefreshToken(data: { sub: string; role: string; isPasswordChanged: boolean }, expiresIn: string = '7d') {
+  const secret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET!)
+  return await new SignJWT(data)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime(expiresIn)
+    .sign(secret)
+}
+
 export async function verifyAccessToken(token: string): Promise<{ sub: string; role: string; isPasswordChanged: boolean } | null> {
   try {
     const secret = new TextEncoder().encode(process.env.SECRET_KEY!)
     const { payload } = await jwtVerify(token, secret)
     return payload as { sub: string; role: string; isPasswordChanged: boolean }
   } catch (error) {
-    console.error('Error verifying token:', error)
+    console.error('Error verifying access token:', error)
+    return null
+  }
+}
+
+export async function verifyRefreshToken(token: string): Promise<{ sub: string; role: string; isPasswordChanged: boolean } | null> {
+  try {
+    const secret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET!)
+    const { payload } = await jwtVerify(token, secret)
+    return payload as { sub: string; role: string; isPasswordChanged: boolean }
+  } catch (error) {
+    console.error('Error verifying refresh token:', error)
     return null
   }
 }
 
 export async function getUserData(userId?: string) {
   if (userId) {
-    // Si se proporciona un userId, buscar directamente por ese ID
     try {
       const user = await prisma.user.findUnique({
         where: { id: parseInt(userId, 10) },
@@ -66,7 +83,6 @@ export async function getUserData(userId?: string) {
       return null;
     }
   } else {
-    // Si no se proporciona un userId, obtener el usuario del token actual
     const cookieStore = cookies();
     const token = cookieStore.get('auth_token')?.value;
 

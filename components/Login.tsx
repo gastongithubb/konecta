@@ -1,9 +1,8 @@
+// app/components/Login.tsx
 'use client';
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { signIn } from 'next-auth/react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import Link from 'next/link';
 
@@ -48,7 +47,8 @@ const Login: React.FC = () => {
         throw new Error(data.error || 'Error en el inicio de sesión');
       }
   
-      // No necesitas guardar el token manualmente, se guarda como una cookie HttpOnly
+      // Guardamos el refresh token en localStorage
+      localStorage.setItem('refreshToken', data.refreshToken);
   
       // Redirige basado en el rol
       switch (data.user.role) {
@@ -66,6 +66,7 @@ const Login: React.FC = () => {
       }
     } catch (error) {
       setError('Ocurrió un error durante el inicio de sesión. Por favor, inténtelo de nuevo.');
+      console.error('Error de inicio de sesión:', error);
     } finally {
       setIsLoading(false);
     }

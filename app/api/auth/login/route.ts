@@ -1,5 +1,6 @@
+// app/api/auth/login/route.ts
 import { NextResponse } from 'next/server'
-import { authenticateUser, createAccessToken } from '@/app/lib/auth.server'
+import { authenticateUser, createAccessToken, createRefreshToken } from '@/app/lib/auth.server'
 
 export async function POST(request: Request) {
   const { email, password } = await request.json()
@@ -9,10 +10,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
   }
 
-  const token = await createAccessToken({ 
+  const accessToken = await createAccessToken({ 
     sub: user.id.toString(), 
     role: user.role, 
     isPasswordChanged: user.isPasswordChanged 
+  })
+
+  const refreshToken = await createRefreshToken({
+    sub: user.id.toString(),
+    role: user.role,
+    isPasswordChanged: user.isPasswordChanged
   })
 
   const response = NextResponse.json({ 
@@ -21,9 +28,11 @@ export async function POST(request: Request) {
       email: user.email, 
       role: user.role, 
       isPasswordChanged: user.isPasswordChanged 
-    } 
+    },
+    refreshToken // Enviamos el refresh token al cliente
   })
-  response.cookies.set('auth_token', token, {
+
+  response.cookies.set('auth_token', accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',

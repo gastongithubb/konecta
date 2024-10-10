@@ -28,6 +28,7 @@ model User {
   cases Case[]
   notifications Notification[]
   events Event[]
+  news      News[]
 }
 
 model Team {
@@ -144,4 +145,16 @@ model Event {
   creatorId Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model News {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  date      DateTime
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  creator   User     @relation(fields: [creatorId], references: [id])
+  creatorId Int
 }
