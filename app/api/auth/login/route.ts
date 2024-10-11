@@ -28,8 +28,7 @@ export async function POST(request: Request) {
       email: user.email, 
       role: user.role, 
       isPasswordChanged: user.isPasswordChanged 
-    },
-    refreshToken // Enviamos el refresh token al cliente
+    }
   })
 
   response.cookies.set('auth_token', accessToken, {
@@ -37,6 +36,14 @@ export async function POST(request: Request) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: 60 * 15, // 15 minutes
+    path: '/',
+  })
+
+  response.cookies.set('refresh_token', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60, // 7 days
     path: '/',
   })
 

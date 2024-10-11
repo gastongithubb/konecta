@@ -1,5 +1,3 @@
-// components/ClientNavbar.tsx
-
 'use client';
 
 import React, { useState } from 'react';
@@ -69,11 +67,14 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                 </>
               )}
               {user.role.toLowerCase() === 'team_leader' && (
-                <><Link href="/dashboard/team_leader/team" className="hover:bg-blue-500 px-3 py-2 rounded-md">
-                  Mi Equipo
-                </Link><Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                <>
+                  <Link href="/dashboard/team_leader/team" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                    Mi Equipo
+                  </Link>
+                  <Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 px-3 py-2 rounded-md">
                     Ver casos reclamados
-                  </Link></>
+                  </Link>
+                </>
               )}
               {user.role.toLowerCase() === 'user' && (
                 <Link href="/dashboard/user/cases" className="hover:bg-blue-500 px-3 py-2 rounded-md">

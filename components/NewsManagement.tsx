@@ -1,7 +1,6 @@
 // components/NewsManagement.tsx
 'use client'
 import React, { useState, useEffect, useCallback } from 'react';
-import { refreshAccessToken } from '@/app/utils/auth';
 import { useRouter } from 'next/navigation';
 
 interface News {
@@ -19,75 +18,88 @@ const NewsManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [newNews, setNewNews] = useState({ name: '', url: '', date: '' });
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const router = useRouter();
 
+  const refreshAccessToken = async () => {
+    try {
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to refresh token');
+      }
+
+      const data = await response.json();
+      setAccessToken(data.accessToken);
+      return data.accessToken;
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      return null;
+    }
+  };
+
   const fetchWithTokenRefresh = useCallback(async (url: string, options: RequestInit = {}) => {
+    const headers = new Headers(options.headers || {});
+    if (accessToken) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    }
+
     const response = await fetch(url, {
       ...options,
-      credentials: 'include', // Incluye las cookies en la solicitud
+      headers,
+      credentials: 'include',
     });
 
     if (response.status === 401) {
-      // Token expirado, intentar refrescar
       const newToken = await refreshAccessToken();
       if (!newToken) {
         router.push('/login');
         return null;
       }
 
-      // Reintentar la solicitud con el nuevo token
+      headers.set('Authorization', `Bearer ${newToken}`);
       return fetch(url, {
         ...options,
+        headers,
         credentials: 'include',
       });
     }
 
     return response;
-  }, [router]);
+  }, [accessToken, router]);
 
   const fetchNews = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetchWithTokenRefresh('/api/news');
-      if (!response) {
-        throw new Error('Failed to refresh token');
-      }
-      if (!response.ok) {
+      if (!response || !response.ok) {
         throw new Error('Failed to fetch news');
       }
       const data = await response.json();
       setNews(data);
     } catch (err) {
-      if (err instanceof Error && err.message === 'Failed to refresh token') {
-        router.push('/login');
-      } else {
-        setError('Error fetching news');
-        console.error('Error fetching news:', err);
-      }
+      setError('Error fetching news');
+      console.error('Error fetching news:', err);
     } finally {
       setLoading(false);
     }
-  }, [fetchWithTokenRefresh, router]);
+  }, [fetchWithTokenRefresh]);
 
   const fetchUserRole = useCallback(async () => {
     try {
       const response = await fetchWithTokenRefresh('/api/user-role');
-      if (!response) {
-        throw new Error('Failed to refresh token');
-      }
-      if (!response.ok) {
+      if (!response || !response.ok) {
         throw new Error('Failed to fetch user role');
       }
       const data = await response.json();
       setUserRole(data.role);
     } catch (err) {
-      if (err instanceof Error && err.message === 'Failed to refresh token') {
-        router.push('/login');
-      } else {
-        console.error('Error fetching user role:', err);
-      }
+      console.error('Error fetching user role:', err);
     }
-  }, [fetchWithTokenRefresh, router]);
+  }, [fetchWithTokenRefresh]);
 
   useEffect(() => {
     fetchNews();
@@ -103,7 +115,7 @@ const NewsManagement: React.FC = () => {
           body: JSON.stringify(newNews),
         });
         if (!response) {
-          throw new Error('Failed to refresh token');
+          throw new Error('Failed to add news: No response received');
         }
         if (!response.ok) {
           const errorData = await response.json();
@@ -113,12 +125,8 @@ const NewsManagement: React.FC = () => {
         setNews(prevNews => [...prevNews, addedNews]);
         setNewNews({ name: '', url: '', date: '' });
       } catch (err) {
-        if (err instanceof Error && err.message === 'Failed to refresh token') {
-          router.push('/login');
-        } else {
-          setError(err instanceof Error ? err.message : 'Error adding news');
-          console.error('Error adding news:', err);
-        }
+        setError(err instanceof Error ? err.message : 'Error adding news');
+        console.error('Error adding news:', err);
       }
     } else {
       setError('Por favor, complete todos los campos requeridos');
@@ -132,21 +140,14 @@ const NewsManagement: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-      if (!response) {
-        throw new Error('Failed to refresh token');
-      }
-      if (!response.ok) {
+      if (!response || !response.ok) {
         throw new Error('Failed to update news status');
       }
       const updatedNews = await response.json();
       setNews(prevNews => prevNews.map(item => item.id === id ? updatedNews : item));
     } catch (err) {
-      if (err instanceof Error && err.message === 'Failed to refresh token') {
-        router.push('/login');
-      } else {
-        setError('Error updating news status');
-        console.error('Error updating news status:', err);
-      }
+      setError('Error updating news status');
+      console.error('Error updating news status:', err);
     }
   };
 
@@ -216,7 +217,7 @@ const NewsManagement: React.FC = () => {
             <div key={item.id} className="bg-gray-100 p-4 rounded mb-2">
               <h3 className="font-semibold">{item.name}</h3>
               <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                Ver más
+                Ir a la Novedad
               </a>
               <p className="text-sm text-gray-500">
                 {new Date(item.date).toLocaleDateString()}

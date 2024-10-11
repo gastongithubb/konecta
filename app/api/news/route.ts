@@ -3,8 +3,18 @@ import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/prisma';
 import { verifyAccessToken } from '@/app/lib/auth.server';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const token = req.headers.get('Authorization')?.split(' ')[1];
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
+    }
+
+    const decodedToken = await verifyAccessToken(token);
+    if (!decodedToken) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    }
+
     const news = await prisma.news.findMany({
       select: {
         id: true,
@@ -26,7 +36,7 @@ export async function POST(req: Request) {
   try {
     const token = req.headers.get('Authorization')?.split(' ')[1];
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized - No token provided' }, { status: 401 });
     }
 
     const decodedToken = await verifyAccessToken(token);
@@ -39,17 +49,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    console.log('Received news data:', { name, url, date }); // Log para debugging
-
     const news = await prisma.news.create({
       data: {
         name,
         url,
         date: new Date(date),
         creatorId: parseInt(decodedToken.sub, 10),
-        status: 'active', // default status
+        status: 'active',
       },
     });
+
     return NextResponse.json(news, { status: 201 });
   } catch (error) {
     console.error('Error creating news:', error);

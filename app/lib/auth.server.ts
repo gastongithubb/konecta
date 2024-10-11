@@ -1,5 +1,4 @@
-// app/lib/auth.server.ts
-import { cookies } from 'next/headers';
+import { cookies } from 'next/headers'
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { SignJWT, jwtVerify } from 'jose'
@@ -60,68 +59,46 @@ export async function verifyRefreshToken(token: string): Promise<{ sub: string; 
   }
 }
 
-export async function getUserData(userId?: string) {
-  if (userId) {
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: parseInt(userId, 10) },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isPasswordChanged: true,
-          teamId: true,
-        },
-      });
-      if (!user) {
-        throw new Error('User not found');
-      }
-      return user;
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      return null;
+export async function getUserData(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: parseInt(userId, 10) },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isPasswordChanged: true,
+        teamId: true,
+      },
+    });
+    if (!user) {
+      throw new Error('User not found');
     }
-  } else {
-    const cookieStore = cookies();
-    const token = cookieStore.get('auth_token')?.value;
-
-    if (!token) {
-      return null;
-    }
-
-    const decodedToken = await verifyAccessToken(token);
-    if (!decodedToken) {
-      return null;
-    }
-
-    try {
-      const user = await prisma.user.findUnique({
-        where: { id: parseInt(decodedToken.sub, 10) },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          isPasswordChanged: true,
-          teamId: true,
-        },
-      });
-      if (!user) {
-        throw new Error('User not found');
-      }
-      return user;
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      return null;
-    }
+    return user;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    return null;
   }
 }
 
 export async function authenticateRequest() {
-  return await getUserData();
+  const cookieStore = cookies()
+  const token = cookieStore.get('auth_token')?.value
+
+  if (!token) {
+    return null
+  }
+
+  const decodedToken = await verifyAccessToken(token)
+  if (!decodedToken) {
+    return null
+  }
+
+  return await getUserData(decodedToken.sub)
 }
 
 export async function logout() {
-  cookies().delete('auth_token');
+  cookies().delete('auth_token')
+  cookies().delete('refresh_token')
 }
