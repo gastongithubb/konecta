@@ -1,5 +1,3 @@
-// app/dashboard/manager/page.tsx
-
 import React from 'react';
 import { redirect } from 'next/navigation';
 import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
@@ -20,7 +18,8 @@ export default async function DashboardManager() {
       redirect('/login');
     }
     
-    const user = await getUserData();
+    // Pasamos decoded.sub como argumento a getUserData
+    const user = await getUserData(decoded.sub);
     
     if (!user) {
       throw new Error('User not found');
