@@ -78,7 +78,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                 </>
               )}
               {user.role.toLowerCase() === 'user' && (
-                <Link href="/dashboard/user/cases" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                <Link href="/dashboard/user/cases" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                   Cargar Reclamos
                 </Link>
               )}
@@ -98,12 +98,12 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   Perfil
                 </Link>
                 <button
-                  onClick={handleLogout}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                >
-                  <LogOut />
-                  Cerrar Sesión
-                </button>
+            onClick={handleLogout}
+            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition-colors duration-200"
+          >
+            <LogOut size={16} className="mr-2" />
+            <span>Cerrar Sesión</span>
+          </button>
               </div>
             )}
           </div>
