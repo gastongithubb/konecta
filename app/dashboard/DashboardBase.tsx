@@ -80,7 +80,7 @@ const DashboardBase: React.FC<DashboardBaseProps> = ({ children, userRole: propU
 
   return (
     <div className="flex flex-col min-h-screen">
-      <div className="flex-grow">
+      <div className="flex-grow pt-10">
         {children}
       </div>
       <SugerenciasUX />

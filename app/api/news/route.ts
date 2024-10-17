@@ -1,4 +1,3 @@
-// app/api/news/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/prisma';
 import { verifyAccessToken } from '@/app/lib/auth.server';
@@ -40,8 +39,8 @@ export async function POST(req: Request) {
     }
 
     const decodedToken = await verifyAccessToken(token);
-    if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+    if (!decodedToken || decodedToken.role !== 'team_leader') {
+      return NextResponse.json({ error: 'Unauthorized - Team leader access required' }, { status: 401 });
     }
 
     const { name, url, date } = await req.json();

@@ -1,5 +1,3 @@
-// app/layout.tsx
-
 import './globals.css'
 import { Inter } from 'next/font/google'
 import Navbar from "../components/NavBarAdmin"
@@ -22,7 +20,7 @@ export default function RootLayout({
       <body className={`${inter.className} flex flex-col min-h-screen`}>
         <ClientSessionProvider>
           <Navbar />
-          <main className="flex-grow">
+          <main className="flex-grow pt-16">
             {children}
           </main>
         </ClientSessionProvider>

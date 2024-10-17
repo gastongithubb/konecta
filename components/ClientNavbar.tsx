@@ -1,7 +1,7 @@
-'use client';
-
+'use client'
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { logoutClient } from '@/app/lib/auth';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
@@ -46,12 +46,12 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
   const dashboardLink = `/dashboard/${user.role.toLowerCase()}`;
 
   return (
-    <nav className="bg-gray-50 text-gray-800 shadow-lg">
+    <nav className="bg-gray-50 text-gray-800 shadow-lg z-50 h-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <Link href={dashboardLink} className="font-bold text-xl">
-              Dashboard
+            <Link href={dashboardLink} className="flex items-center">
+              <Image src="/logo.webp" alt="Logo" width={130} height={60} className="mr-2" />
             </Link>
             <div className="ml-10 flex items-baseline space-x-4">
               {user.role.toLowerCase() === 'manager' && (
@@ -74,6 +74,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   </Link>
                   <Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 px-3 py-2 rounded-md">
                     Ver casos reclamados
+                  </Link>
+                  <Link href="/dashboard/team_leader/metricas" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                    Metricas
                   </Link>
                 </>
               )}
@@ -98,12 +101,12 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   Perfil
                 </Link>
                 <button
-            onClick={handleLogout}
-            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition-colors duration-200"
-          >
-            <LogOut size={16} className="mr-2" />
-            <span>Cerrar Sesión</span>
-          </button>
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-100 transition-colors duration-200"
+                >
+                  <LogOut size={16} className="mr-2" />
+                  <span>Cerrar Sesión</span>
+                </button>
               </div>
             )}
           </div>

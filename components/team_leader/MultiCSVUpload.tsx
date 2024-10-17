@@ -1,19 +1,14 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
+import { UploadCloud } from 'lucide-react';
 
 interface MultiCSVUploadProps {
   fileType: 'trimestral' | 'semanal' | 'tmo' | 'nps-diario';
 }
 
-interface NPSDiarioData {
-  date: Date;
-  nsp: number;
-  q: number;
-  nps: number;
-  csat: number;
-  ces: number;
-  rd: number;
+interface MetricData {
+  [key: string]: number | string;
 }
 
 const MultiCSVUpload: React.FC<MultiCSVUploadProps> = ({ fileType }) => {
@@ -23,45 +18,45 @@ const MultiCSVUpload: React.FC<MultiCSVUploadProps> = ({ fileType }) => {
     acceptedFiles.forEach((file) => {
       Papa.parse(file, {
         complete: async (results: Papa.ParseResult<Record<string, string>>) => {
-          const data = results.data;
-          data.shift(); // Remove header row
-
-          let formattedData: Record<string, string>[] | NPSDiarioData[];
-          if (fileType === 'nps-diario') {
-            formattedData = data.map((row) => ({
-              date: new Date(row['NSP'] || row['Jueves 29'] || ''),
-              nsp: parseInt(row['NSP'] || '0'),
-              q: parseInt(row['Q'] || '0'),
-              nps: parseInt(row['NPS'] || '0'),
-              csat: parseFloat(row['CSAT']?.replace('%', '') || '0') / 100,
-              ces: parseFloat(row['CES']?.replace('%', '') || '0') / 100,
-              rd: parseFloat(row['RD']?.replace('%', '') || '0') / 100,
-            }));
-          } else {
-            formattedData = data;
-          }
-
-          try {
-            const response = await fetch('/api/metrics-upload', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ fileType, data: formattedData }),
+          if (results.data && Array.isArray(results.data) && results.data.length > 0) {
+            const headers = Object.keys(results.data[0]);
+            const dateColumn = headers.find(h => h.toLowerCase().includes('date') || h.toLowerCase().includes('fecha')) || 'date';
+            
+            const formattedData: MetricData[] = results.data.map((row) => {
+              const formattedRow: MetricData = {};
+              headers.forEach(header => {
+                if (header === dateColumn) {
+                  formattedRow[header] = new Date(row[header]).toISOString();
+                } else if (!isNaN(Number(row[header]))) {
+                  formattedRow[header] = Number(row[header]);
+                } else {
+                  formattedRow[header] = row[header];
+                }
+              });
+              return formattedRow;
             });
 
-            const result = await response.json();
+            try {
+              const response = await fetch(`/api/upload/${fileType}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ metrics: formattedData }),
+              });
 
-            if (response.ok) {
-              setUploadStatus(`Archivo ${file.name} subido exitosamente.`);
-            } else {
-              let errorMessage = result.error || 'Error desconocido';
-              if (result.details) {
-                errorMessage += `: ${JSON.stringify(result.details)}`;
+              if (response.ok) {
+                setUploadStatus(`Archivo ${file.name} cargado exitosamente`);
+              } else {
+                const errorData = await response.json();
+                setUploadStatus(`Error al cargar ${file.name}: ${errorData.message || 'Error desconocido'}`);
               }
-              setUploadStatus(`Error al subir ${file.name}: ${errorMessage}`);
+            } catch (error) {
+              console.error('Error:', error);
+              setUploadStatus(`Error al cargar ${file.name}: Error de red`);
             }
-          } catch (error) {
-            console.error('Error:', error);
-            setUploadStatus(`Error al subir ${file.name}: Error de red o servidor`);
+          } else {
+            setUploadStatus(`Error: No se pudieron procesar los datos del archivo ${file.name}`);
           }
         },
         header: true,
@@ -75,23 +70,25 @@ const MultiCSVUpload: React.FC<MultiCSVUploadProps> = ({ fileType }) => {
     accept: {
       'text/csv': ['.csv'],
       'application/vnd.ms-excel': ['.csv']
-    }
+    },
+    multiple: true
   });
 
   return (
-    <div className="p-4">
-      <div {...getRootProps()} className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer">
+    <div>
+      <div {...getRootProps()} className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer bg-white hover:bg-gray-50 transition duration-300">
         <input {...getInputProps()} />
+        <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
         {isDragActive ? (
-          <p>Suelta los archivos CSV aquí ...</p>
+          <p className="mt-2 text-sm text-gray-600">Suelta los archivos CSV aquí ...</p>
         ) : (
-          <p>Arrastra y suelta archivos CSV de {fileType} aquí, o haz clic para seleccionar archivos</p>
+          <p className="mt-2 text-sm text-gray-600">Arrastra y suelta archivos CSV de {fileType} aquí, o haz clic para seleccionar archivos</p>
         )}
       </div>
       {uploadStatus && (
-        <p className={`mt-4 text-center ${uploadStatus.includes('Error') ? 'text-red-500' : 'text-green-500'}`}>
+        <div className={`mt-4 p-4 rounded-md ${uploadStatus.includes('exitosamente') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
           {uploadStatus}
-        </p>
+        </div>
       )}
     </div>
   );

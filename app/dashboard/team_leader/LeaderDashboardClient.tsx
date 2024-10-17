@@ -2,7 +2,6 @@
 
 import React from 'react';
 import DashboardBase, { UserRole } from '@/app/dashboard/DashboardBase';
-import Sidebar from '@/components/team_leader/sidebar';
 import Hero from '@/components/team_leader/Hero';
 
 type UserData = {
@@ -17,10 +16,7 @@ const LeaderDashboardClient: React.FC<{ userData: UserData }> = ({ userData }) =
   return (
     <DashboardBase userRole={userRole}>
       <div className="flex flex-col h-screen">
-        <div className="flex-1 flex">
-          <Sidebar />
           <Hero />
-        </div>
       </div>
     </DashboardBase>
   );

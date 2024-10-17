@@ -1,8 +1,10 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import Loading from '@/components/Loading'; 
+import { ChevronDown, ChevronUp, Trash } from 'lucide-react';
+import Loading from '@/components/Loading';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 interface News {
   id: string;
@@ -115,7 +117,7 @@ const NewsManagement: React.FC = () => {
         const response = await fetchWithTokenRefresh('/api/news', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newNews),
+          body: JSON.stringify({ ...newNews, status: 'active' }),
         });
         if (!response) {
           throw new Error('Failed to add news: No response received');
@@ -159,6 +161,24 @@ const NewsManagement: React.FC = () => {
     }
   };
 
+  const handleDeleteNews = async (id: string) => {
+    try {
+      setLoading(true);
+      const response = await fetchWithTokenRefresh(`/api/news/${id}`, {
+        method: 'DELETE',
+      });
+      if (!response || !response.ok) {
+        throw new Error('Failed to delete news');
+      }
+      setNews(prevNews => prevNews.filter(item => item.id !== id));
+    } catch (err) {
+      setError('Error deleting news');
+      console.error('Error deleting news:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredNews = news.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -190,35 +210,37 @@ const NewsManagement: React.FC = () => {
         />
       </div>
 
-      <div className="mb-4 space-y-2">
-        <input
-          type="text"
-          placeholder="Nombre de la novedad"
-          value={newNews.name}
-          onChange={(e) => setNewNews({...newNews, name: e.target.value})}
-          className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-        />
-        <input
-          type="url"
-          placeholder="URL de la novedad"
-          value={newNews.url}
-          onChange={(e) => setNewNews({...newNews, url: e.target.value})}
-          className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-        />
-        <input
-          type="date"
-          value={newNews.date}
-          onChange={(e) => setNewNews({...newNews, date: e.target.value})}
-          className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-        />
-        <button
-          onClick={handleAddNews}
-          disabled={loading}
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
-        >
-          {loading ? <Loading /> : 'Agregar Novedad'}
-        </button>
-      </div>
+      {userRole === 'team_leader' && (
+        <div className="mb-4 space-y-2">
+          <input
+            type="text"
+            placeholder="Nombre de la novedad"
+            value={newNews.name}
+            onChange={(e) => setNewNews({...newNews, name: e.target.value})}
+            className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          />
+          <input
+            type="url"
+            placeholder="URL de la novedad"
+            value={newNews.url}
+            onChange={(e) => setNewNews({...newNews, url: e.target.value})}
+            className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          />
+          <input
+            type="date"
+            value={newNews.date}
+            onChange={(e) => setNewNews({...newNews, date: e.target.value})}
+            className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          />
+          <button
+            onClick={handleAddNews}
+            disabled={loading}
+            className="w-full bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
+          >
+            {loading ? <Loading /> : 'Agregar Novedad'}
+          </button>
+        </div>
+      )}
 
       {loading && <div className="flex justify-center"><Loading /></div>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
@@ -242,28 +264,45 @@ const NewsManagement: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   {new Date(item.date).toLocaleDateString()}
                 </p>
-                {userRole === 'team_leader' && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => handleUpdateStatus(item.id, 'active')}
-                      className="mr-2 bg-green-500 text-white px-2 py-1 rounded text-sm transition duration-300 ease-in-out hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
-                    >
-                      Activa
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(item.id, 'updated')}
-                      className="mr-2 bg-yellow-500 text-white px-2 py-1 rounded text-sm transition duration-300 ease-in-out hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-opacity-50"
-                    >
-                      Actualizada
-                    </button>
-                    <button
-                      onClick={() => handleUpdateStatus(item.id, 'obsolete')}
-                      className="bg-red-500 text-white px-2 py-1 rounded text-sm transition duration-300 ease-in-out hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
-                    >
-                      Sin Utilidad
-                    </button>
-                  </div>
-                )}
+                <div className="mt-2 flex items-center">
+                  <Select
+                    defaultValue={item.status}
+                    onValueChange={(value: 'active' | 'updated' | 'obsolete') => handleUpdateStatus(item.id, value)}
+                    disabled={userRole !== 'team_leader'}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Estado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Activa</SelectItem>
+                      <SelectItem value="updated">Actualizada</SelectItem>
+                      <SelectItem value="obsolete">Sin Utilidad</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {userRole === 'team_leader' && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button className="ml-2 text-red-500 hover:text-red-700 transition duration-300 ease-in-out">
+                          <Trash size={20} />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción no se puede deshacer. Esto eliminará permanentemente la novedad.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteNews(item.id)}>
+                            Eliminar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
             ))}
           </div>

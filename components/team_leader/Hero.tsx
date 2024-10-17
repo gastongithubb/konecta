@@ -1,3 +1,4 @@
+'use client'
 import React, { useState, useEffect } from 'react';
 import { Users, Target, Lightbulb, TrendingUp } from 'lucide-react';
 import Image from 'next/image';
