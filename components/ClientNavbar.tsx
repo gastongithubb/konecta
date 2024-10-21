@@ -113,7 +113,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href={dashboardLink} className="flex items-center">
-              <Image src="/logo.webp" alt="Logo" width={130} height={60} className="mr-2" />
+              <Image src="/logo.webp" alt="Logo" width={130} height={60} className="mr-2" unoptimized />
             </Link>
             <div className="ml-10 flex items-baseline space-x-4">
               {user.role.toLowerCase() === 'manager' && (
