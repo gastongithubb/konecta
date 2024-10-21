@@ -44,8 +44,26 @@ const DashboardGerencia: React.FC = () => {
   }, []);
 
   const getUserLocation = useCallback(() => {
-    if ("geolocation" in navigator) {
-      if (confirm("¿Nos permites usar tu ubicación para mostrarte el clima local? Esto mejorará tu experiencia en el dashboard.")) {
+    const locationPermission = localStorage.getItem('locationPermission');
+    
+    if (locationPermission === 'granted') {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const { latitude, longitude } = position.coords;
+          fetchClima(`${latitude},${longitude}`);
+        },
+        error => {
+          console.error("Error obteniendo la ubicación:", error);
+          fetchClima('auto:ip');
+        }
+      );
+    } else if (locationPermission === 'denied') {
+      fetchClima('auto:ip');
+    } else if ("geolocation" in navigator) {
+      const permission = confirm("¿Nos permites usar tu ubicación para mostrarte el clima local? Esto mejorará tu experiencia en el dashboard.");
+      
+      if (permission) {
+        localStorage.setItem('locationPermission', 'granted');
         navigator.geolocation.getCurrentPosition(
           position => {
             const { latitude, longitude } = position.coords;
@@ -53,17 +71,16 @@ const DashboardGerencia: React.FC = () => {
           },
           error => {
             console.error("Error obteniendo la ubicación:", error);
-            alert("No pudimos obtener tu ubicación. Usaremos una ubicación aproximada basada en tu IP.");
+            localStorage.setItem('locationPermission', 'denied');
             fetchClima('auto:ip');
           }
         );
       } else {
-        alert("Entendido. Usaremos una ubicación aproximada basada en tu IP para mostrarte el clima.");
+        localStorage.setItem('locationPermission', 'denied');
         fetchClima('auto:ip');
       }
     } else {
       console.log("Geolocalización no disponible");
-      alert("Tu navegador no soporta geolocalización. Usaremos una ubicación aproximada basada en tu IP.");
       fetchClima('auto:ip');
     }
   }, [fetchClima]);

@@ -1,10 +1,14 @@
 'use client'
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ChevronUp, Trash } from 'lucide-react';
+import { ChevronDown, ChevronUp, Trash, Plus, X, ExternalLink } from 'lucide-react';
 import Loading from '@/components/Loading';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface News {
   id: string;
@@ -23,6 +27,7 @@ const NewsManagement: React.FC = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [expandedMonths, setExpandedMonths] = useState<Record<string, boolean>>({});
+  const [isAddingNews, setIsAddingNews] = useState(false);
   const router = useRouter();
 
   const refreshAccessToken = async () => {
@@ -129,6 +134,7 @@ const NewsManagement: React.FC = () => {
         const addedNews = await response.json();
         setNews(prevNews => [...prevNews, addedNews]);
         setNewNews({ name: '', url: '', date: '' });
+        setIsAddingNews(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error adding news');
         console.error('Error adding news:', err);
@@ -179,6 +185,14 @@ const NewsManagement: React.FC = () => {
     }
   };
 
+  const handleExternalLink = (url: string) => {
+    const secureUrl = url.startsWith('http://') || url.startsWith('https://')
+      ? url
+      : `https://${url}`;
+    
+    window.open(secureUrl, '_blank', 'noopener,noreferrer');
+  };
+
   const filteredNews = news.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -197,74 +211,100 @@ const NewsManagement: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Gestión de Novedades</h1>
+    <div className="container mx-auto p-4 space-y-6">
+      <h1 className="text-3xl font-bold mb-6">Gestión de Novedades</h1>
       
-      <div className="mb-4">
-        <input
+      <div className="flex items-center space-x-4">
+        <Input
           type="text"
           placeholder="Buscar novedades..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+          className="flex-grow"
         />
+        {userRole === 'team_leader' && (
+          <Button onClick={() => setIsAddingNews(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Agregar Novedad
+          </Button>
+        )}
       </div>
 
-      {userRole === 'team_leader' && (
-        <div className="mb-4 space-y-2">
-          <input
-            type="text"
-            placeholder="Nombre de la novedad"
-            value={newNews.name}
-            onChange={(e) => setNewNews({...newNews, name: e.target.value})}
-            className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          />
-          <input
-            type="url"
-            placeholder="URL de la novedad"
-            value={newNews.url}
-            onChange={(e) => setNewNews({...newNews, url: e.target.value})}
-            className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          />
-          <input
-            type="date"
-            value={newNews.date}
-            onChange={(e) => setNewNews({...newNews, date: e.target.value})}
-            className="w-full p-2 border rounded transition duration-300 ease-in-out focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-          />
-          <button
-            onClick={handleAddNews}
-            disabled={loading}
-            className="w-full bg-blue-500 text-white px-4 py-2 rounded transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled:opacity-50"
-          >
-            {loading ? <Loading /> : 'Agregar Novedad'}
-          </button>
-        </div>
+      {isAddingNews && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              Nueva Novedad
+              <Button variant="ghost" onClick={() => setIsAddingNews(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Input
+                type="text"
+                placeholder="Nombre de la novedad"
+                value={newNews.name}
+                onChange={(e) => setNewNews({...newNews, name: e.target.value})}
+              />
+              <Input
+                type="url"
+                placeholder="URL de la novedad"
+                value={newNews.url}
+                onChange={(e) => setNewNews({...newNews, url: e.target.value})}
+              />
+              <Input
+                type="date"
+                value={newNews.date}
+                onChange={(e) => setNewNews({...newNews, date: e.target.value})}
+              />
+              <Button onClick={handleAddNews} disabled={loading} className="w-full">
+                {loading ? <Loading /> : 'Agregar Novedad'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {loading && <div className="flex justify-center"><Loading /></div>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {Object.entries(groupedNews).map(([month, monthNews]) => (
-        <div key={month} className="mb-4">
-          <button
-            onClick={() => toggleMonth(month)}
-            className="flex justify-between items-center w-full bg-gray-200 p-2 rounded transition duration-300 ease-in-out hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-          >
-            <h2 className="text-xl font-semibold">{month}</h2>
-            {expandedMonths[month] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </button>
-          <div className={`mt-2 space-y-2 overflow-hidden transition-all duration-300 ease-in-out ${expandedMonths[month] ? 'max-h-full opacity-100' : 'max-h-0 opacity-0'}`}>
+        <Card key={month} className="mb-4">
+          <CardHeader>
+            <Button
+              variant="ghost"
+              onClick={() => toggleMonth(month)}
+              className="w-full flex justify-between items-center"
+            >
+              <CardTitle>{month}</CardTitle>
+              {expandedMonths[month] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+            </Button>
+          </CardHeader>
+          <CardContent className={`space-y-4 transition-all duration-300 ease-in-out ${expandedMonths[month] ? 'max-h-full opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
             {monthNews.map((item) => (
-              <div key={item.id} className="bg-gray-100 p-4 rounded transition duration-300 ease-in-out hover:bg-gray-200">
-                <h3 className="font-semibold">{item.name}</h3>
-                <a href={item.url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline transition duration-300 ease-in-out">
-                  Ir a la Novedad
-                </a>
-                <p className="text-sm text-gray-500">
+              <div key={item.id} className="p-4 bg-gray-100 rounded-lg">
+                <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="link"
+                        className="p-0 h-auto font-normal text-blue-500 hover:text-blue-700"
+                        onClick={() => handleExternalLink(item.url)}
+                      >
+                        Ir a la Novedad <ExternalLink size={16} className="ml-1 inline" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Abrir en una nueva pestaña</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <p className="text-sm text-gray-500 mt-2 mb-4">
                   {new Date(item.date).toLocaleDateString()}
                 </p>
-                <div className="mt-2 flex items-center">
+                <div className="flex items-center justify-between">
                   <Select
                     defaultValue={item.status}
                     onValueChange={(value: 'active' | 'updated' | 'obsolete') => handleUpdateStatus(item.id, value)}
@@ -282,9 +322,9 @@ const NewsManagement: React.FC = () => {
                   {userRole === 'team_leader' && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <button className="ml-2 text-red-500 hover:text-red-700 transition duration-300 ease-in-out">
-                          <Trash size={20} />
-                        </button>
+                        <Button variant="destructive" size="sm">
+                          <Trash size={16} className="mr-2" /> Eliminar
+                        </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
@@ -305,8 +345,8 @@ const NewsManagement: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

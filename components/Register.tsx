@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -160,6 +161,11 @@ const RegisterForm = () => {
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
+          <div className="mt-6 text-center">
+            <Link href="/login" className="text-sm text-white hover:text-indigo-200">
+              Ya tienes una cuenta? Ingresa desde aquí
+            </Link>
+            </div>
         </div>
       </div>
     </div>

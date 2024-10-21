@@ -118,26 +118,26 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
             <div className="ml-10 flex items-baseline space-x-4">
               {user.role.toLowerCase() === 'manager' && (
                 <>
-                  <Link href="/dashboard/manager/users" className="hover:bg-blue-800 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/manager/users" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Gestionar Usuarios
                   </Link>
-                  <Link href="/dashboard/manager/teams" className="hover:bg-blue-800 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/manager/teams" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Gestionar Equipos
                   </Link>
-                  <Link href="/dashboard/manager/calendario" className="hover:bg-blue-800 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/manager/calendario" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Calendario
                   </Link>
                 </>
               )}
               {user.role.toLowerCase() === 'team_leader' && (
                 <>
-                  <Link href="/dashboard/team_leader/team" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/team_leader/team" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Mi Equipo
                   </Link>
-                  <Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Ver casos reclamados
                   </Link>
-                  <Link href="/dashboard/team_leader/metricas" className="hover:bg-blue-500 px-3 py-2 rounded-md">
+                  <Link href="/dashboard/team_leader/metricas" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Metricas
                   </Link>
                 </>
