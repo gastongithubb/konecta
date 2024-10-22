@@ -3,111 +3,111 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model User {
-  id            Int      @id @default(autoincrement())
-  name          String
-  email         String   @unique
-  password      String
-  role          String
-  isPasswordChanged Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  managedTeams  Team[]   @relation("ManagerToTeam")
-  leadTeams     Team[]   @relation("TeamLeaderToTeam")
-  team          Team?    @relation(fields: [teamId], references: [id])
-  teamId        Int?
-  dailyMetrics  DailyMetrics[]
-  trimestralMetrics TrimestralMetrics[] @relation("TeamLeaderTrimestralMetrics")
+  id                Int                 @id @default(autoincrement())
+  name              String
+  email             String              @unique
+  password          String
+  role              String
+  isPasswordChanged Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  teamId            Int?
+  cases             Case[]
+  dailyMetrics      DailyMetrics[]
+  events            Event[]
+  news              News[]
+  notifications     Notification[]
   semanalMetrics    SemanalMetrics[]    @relation("TeamLeaderSemanalMetrics")
   tmoMetrics        TMOMetrics[]        @relation("TeamLeaderTMOMetrics")
-  cases Case[]
-  notifications Notification[]
-  events Event[]
-  news      News[]
+  managedTeams      Team[]              @relation("ManagerToTeam")
+  leadTeams         Team[]              @relation("TeamLeaderToTeam")
+  trimestralMetrics TrimestralMetrics[] @relation("TeamLeaderTrimestralMetrics")
+  team              Team?               @relation(fields: [teamId], references: [id])
 }
 
 model Team {
-  id            Int      @id @default(autoincrement())
-  name          String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  manager       User     @relation("ManagerToTeam", fields: [managerId], references: [id])
-  managerId     Int
-  teamLeader    User     @relation("TeamLeaderToTeam", fields: [teamLeaderId], references: [id])
-  teamLeaderId  Int
-  members       User[]
-  dailyMetrics  DailyMetrics[]
-  trimestralMetrics TrimestralMetrics[]
+  id                Int                 @id @default(autoincrement())
+  name              String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  managerId         Int
+  teamLeaderId      Int
+  cases             Case[]
+  dailyMetrics      DailyMetrics[]
   semanalMetrics    SemanalMetrics[]
   tmoMetrics        TMOMetrics[]
-  cases Case[]
+  manager           User                @relation("ManagerToTeam", fields: [managerId], references: [id])
+  teamLeader        User                @relation("TeamLeaderToTeam", fields: [teamLeaderId], references: [id])
+  trimestralMetrics TrimestralMetrics[]
+  members           User[]
 }
 
 model DailyMetrics {
-  id            Int      @id @default(autoincrement())
-  date          DateTime
-  nsp           Int
-  q             Int
-  nps           Int
-  csat          Float
-  ces           Float
-  rd            Float
-  user          User     @relation(fields: [userId], references: [id])
-  userId        Int
-  team          Team     @relation(fields: [teamId], references: [id])
-  teamId        Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  nsp       Int
+  q         Int
+  nps       Int
+  csat      Float
+  ces       Float
+  rd        Float
+  userId    Int
+  teamId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  team      Team     @relation(fields: [teamId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model TrimestralMetrics {
-  id            Int      @id @default(autoincrement())
-  name          String
-  month         String
-  qResp         Int
-  nps           Int
-  sat           Float
-  rd            Float
-  teamLeader    User     @relation("TeamLeaderTrimestralMetrics", fields: [teamLeaderId], references: [id])
-  teamLeaderId  Int
-  team          Team     @relation(fields: [teamId], references: [id])
-  teamId        Int
-  createdAt     DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  name         String
+  month        String
+  qResp        Int
+  nps          Int
+  sat          Float
+  rd           Float
+  teamLeaderId Int
+  teamId       Int
+  createdAt    DateTime @default(now())
+  team         Team     @relation(fields: [teamId], references: [id])
+  teamLeader   User     @relation("TeamLeaderTrimestralMetrics", fields: [teamLeaderId], references: [id])
 }
 
 model SemanalMetrics {
-  id            Int      @id @default(autoincrement())
-  name          String
-  week          String
-  q             Int
-  nps           Int
-  csat          Float
-  teamLeader    User     @relation("TeamLeaderSemanalMetrics", fields: [teamLeaderId], references: [id])
-  teamLeaderId  Int
-  team          Team     @relation(fields: [teamId], references: [id])
-  teamId        Int
-  createdAt     DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  name         String
+  week         String
+  q            Int
+  nps          Int
+  csat         Float
+  teamLeaderId Int
+  teamId       Int
+  createdAt    DateTime @default(now())
+  team         Team     @relation(fields: [teamId], references: [id])
+  teamLeader   User     @relation("TeamLeaderSemanalMetrics", fields: [teamLeaderId], references: [id])
 }
 
 model TMOMetrics {
-  id            Int      @id @default(autoincrement())
-  name          String
-  qLlAtendidas  Int
-  tiempoACD     String
-  acw           String
-  hold          String
-  ring          String
-  tmo           String
-  teamLeader    User     @relation("TeamLeaderTMOMetrics", fields: [teamLeaderId], references: [id])
-  teamLeaderId  Int
-  team          Team     @relation(fields: [teamId], references: [id])
-  teamId        Int
-  createdAt     DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  name         String
+  qLlAtendidas Int
+  tiempoACD    String
+  acw          String
+  hold         String
+  ring         String
+  tmo          String
+  teamLeaderId Int
+  teamId       Int
+  createdAt    DateTime @default(now())
+  team         Team     @relation(fields: [teamId], references: [id])
+  teamLeader   User     @relation("TeamLeaderTMOMetrics", fields: [teamLeaderId], references: [id])
 }
 
 model Case {
@@ -121,10 +121,10 @@ model Case {
   status            String   @default("pending")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id])
   userId            Int
-  team              Team     @relation(fields: [teamId], references: [id])
   teamId            Int
+  team              Team     @relation(fields: [teamId], references: [id])
+  user              User     @relation(fields: [userId], references: [id])
 }
 
 model Notification {
@@ -132,8 +132,8 @@ model Notification {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
   userId    Int
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Event {
@@ -141,32 +141,30 @@ model Event {
   title     String
   start     DateTime
   end       DateTime
-  creator   User     @relation(fields: [creatorId], references: [id])
   creatorId Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  creator   User     @relation(fields: [creatorId], references: [id])
 }
 
 model News {
   id        String   @id @default(cuid())
-  name      String
-  url       String
   date      DateTime
   status    String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  creator   User     @relation(fields: [creatorId], references: [id])
   creatorId Int
+  name      String
+  url       String
+  creator   User     @relation(fields: [creatorId], references: [id])
 }
 
 model Survey {
-  id                Int      @id @default(autoincrement())
-  moodRating       Int
-  workEnvironment  Int
-  personalWellbeing Int
-  workLifeBalance  Int
-  stressLevel      Int
-  feedback         String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  comment   String
+  score     Int
+  agent     String
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
