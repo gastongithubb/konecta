@@ -61,8 +61,8 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
   const dashboardLink = `/dashboard/${user.role.toLowerCase()}`;
 
   const navLinks: NavLink[] = user.role.toLowerCase() === 'user' ? [
-    { 
-      label: 'NPS', 
+    {
+      label: 'NPS',
       dropdown: [
         { href: '/nps-individual', label: 'NPS Individual' },
         { href: '/trimestral', label: 'NPS Trimestral' },
@@ -71,8 +71,8 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         { href: '/promotores', label: 'Encuestas NPS' }
       ]
     },
-    { 
-      label: 'Herramientas', 
+    {
+      label: 'Herramientas',
       dropdown: [
         { href: '/dashboard/user/cases', label: 'Reclamos de F4' },
         { href: '/dashboard/user/sla', label: 'SLA' },
@@ -80,7 +80,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         { href: 'https://drive.google.com/drive/u/1/folders/1NqkSefEZx0w88bNOLYoZdDU_JIEX5P-_', label: 'PLANES CON COPAGO ', target: '_blank' },
         { href: 'https://docs.google.com/spreadsheets/d/1zDsHZoAQqTmGqv0LnxDyRuve24V0g7E6BtT40EyG8us/edit?gid=3622276#gid=3622276', label: 'Rangos de edad excluidos', target: '_blank' },
         { href: 'https://docs.google.com/spreadsheets/d/10dZhGPjLzw4XxZQ3uZdNmQtUo64clE9jNnWBkkUKezQ/edit#gid=0', label: 'Protesis en Ambulatorio', target: '_blank' },
-        { href: 'https://drive.google.com/file/d/1WrBLlnFoTYoWQhGw8ez83VCpn3d5h4-o/view?usp=sharing', label: 'Carga de CUD (Proceso)', target: '_blank'},
+        { href: 'https://drive.google.com/file/d/1WrBLlnFoTYoWQhGw8ez83VCpn3d5h4-o/view?usp=sharing', label: 'Carga de CUD (Proceso)', target: '_blank' },
         { href: '/dashboard/user/nomencladorNU', label: 'Practicas por codigo NU y NB' },
         { href: '/dashbaord/user/nomencladorNM', label: 'Practicas por codigo NM' }
       ]
@@ -97,7 +97,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
       ]
     },
     { href: '/dashboard/user/foro', label: 'Pizarra' },
-    { 
+    {
       label: 'Mas',
       dropdown: [
         { href: 'https://docs.google.com/spreadsheets/d/1fyjXUOIYC1JqVFNvNyfTKs5uncUgqYFWPXpBc-sbg54/edit?gid=0#gid=0', label: 'Requisitos de Reintegros', target: '_blank' },
@@ -128,6 +128,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   <Link href="/dashboard/manager/calendario" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Calendario
                   </Link>
+                  <Link href="/dashboard/manager/bienestar" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                    Dashboard de Bienestar
+                  </Link>
                 </>
               )}
               {user.role.toLowerCase() === 'team_leader' && (
@@ -140,6 +143,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   </Link>
                   <Link href="/dashboard/team_leader/metricas" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Metricas
+                  </Link>
+                  <Link href="/dashboard/team_leader/bienestar" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                    Dashboard de Bienestar
                   </Link>
                 </>
               )}

@@ -1,13 +1,18 @@
+// components/Footer.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Image from "next/legacy/image";
+import React, { useState, useEffect } from 'react';
+import Image from 'next/legacy/image';
 import Link from 'next/link';
+import { SurveyButton } from './SurveyButton';
+import SurveyModal from './SurveyModal';
+import type { SurveyData } from '@/types/survey';
 
 const Footer: React.FC = () => {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [showWhatsAppPopup, setShowWhatsAppPopup] = useState(false);
   const [hasShownPopup, setHasShownPopup] = useState(false);
+  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear());
@@ -23,6 +28,26 @@ const Footer: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [showWhatsAppPopup, hasShownPopup]);
+
+  const handleSurveySubmit = async (surveyData: SurveyData) => {
+    try {
+      const response = await fetch('/api/survey', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(surveyData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al enviar la encuesta');
+      }
+
+      console.log('Encuesta enviada con éxito');
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
 
   return (
     <>
@@ -48,6 +73,13 @@ const Footer: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      <SurveyButton onClick={() => setIsSurveyOpen(true)} />
+      <SurveyModal
+        isOpen={isSurveyOpen}
+        onClose={() => setIsSurveyOpen(false)}
+        onSubmit={handleSurveySubmit}
+      />
     </>
   );
 };

@@ -158,3 +158,15 @@ model News {
   creator   User     @relation(fields: [creatorId], references: [id])
   creatorId Int
 }
+
+model Survey {
+  id                Int      @id @default(autoincrement())
+  moodRating       Int
+  workEnvironment  Int
+  personalWellbeing Int
+  workLifeBalance  Int
+  stressLevel      Int
+  feedback         String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
