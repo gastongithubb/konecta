@@ -1,8 +1,11 @@
-// /api/survey/utils.ts
+// app/api/survey/utils.ts
 import { POSITIVE_WORDS, NEGATIVE_WORDS } from './constants';
 import type { SurveyData, ProcessedSentiment } from './types';
 
-export function analyzeSentiment(text: string, scores: Omit<SurveyData, 'feedback'>): ProcessedSentiment {
+export function analyzeSentiment(
+  text: string, 
+  scores: Omit<SurveyData, 'feedback'>
+): ProcessedSentiment {
   const words = text.toLowerCase()
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
     .split(/\s+/);
