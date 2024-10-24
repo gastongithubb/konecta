@@ -129,7 +129,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                     Calendario
                   </Link>
                   <Link href="/dashboard/manager/bienestar" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
-                    Dashboard de Bienestar
+                    Encuesta Bienestar
                   </Link>
                 </>
               )}
@@ -145,7 +145,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                     Metricas
                   </Link>
                   <Link href="/dashboard/team_leader/bienestar" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
-                    Dashboard de Bienestar
+                    Encuesta Bienestar
                   </Link>
                 </>
               )}

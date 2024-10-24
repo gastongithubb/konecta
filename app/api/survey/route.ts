@@ -56,6 +56,17 @@ interface SentimentAnalysis {
   };
 }
 
+interface StatsRaw {
+  average_mood: string | number;
+  average_work_environment: string | number;
+  average_wellbeing: string | number;
+  average_balance: string | number;
+  average_stress: string | number;
+  total_surveys: string | number;
+  wellbeing_rate: string | number;
+}
+
+
 export async function POST(request: Request) {
   noStore();
   try {
@@ -69,7 +80,6 @@ export async function POST(request: Request) {
       feedback
     } = body as SurveyData;
 
-    // Validación de datos
     const ratings = [moodRating, workEnvironment, personalWellbeing, workLifeBalance, stressLevel];
     const isValidRating = (rating: number) => typeof rating === 'number' && rating >= 1 && rating <= 5;
     
@@ -83,7 +93,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Guardar la encuesta
     const survey = await prisma.survey.create({
       data: {
         moodRating,
@@ -95,13 +104,20 @@ export async function POST(request: Request) {
       },
     });
 
-    // Revalidar rutas
     revalidatePath('/dashboard/manager/bienestar');
     revalidatePath('/dashboard/team_leader/bienestar');
 
     return NextResponse.json({
       success: true,
-      data: survey
+      data: {
+        ...survey,
+        id: Number(survey.id),
+        moodRating: Number(survey.moodRating),
+        workEnvironment: Number(survey.workEnvironment),
+        personalWellbeing: Number(survey.personalWellbeing),
+        workLifeBalance: Number(survey.workLifeBalance),
+        stressLevel: Number(survey.stressLevel)
+      }
     });
 
   } catch (error) {
@@ -124,7 +140,6 @@ export async function GET(request: Request) {
     const period = searchParams.get('period') || 'month';
     const role = headersList.get('x-user-role');
 
-    // Validar acceso
     if (!role || !['manager', 'team_leader'].includes(role)) {
       return NextResponse.json(
         { success: false, error: 'Acceso no autorizado' },
@@ -132,7 +147,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // Calcular fecha inicial
     const startDate = new Date();
     switch (period) {
       case 'week':
@@ -148,30 +162,51 @@ export async function GET(request: Request) {
         startDate.setMonth(startDate.getMonth() - 1);
     }
 
-    // Obtener datos en paralelo
-    const [surveys, stats, alertConditions] = await Promise.all([
+    const [surveys, statsRaw, alertConditions] = await Promise.all([
       prisma.survey.findMany({
-        where: { createdAt: { gte: startDate } },
-        orderBy: { createdAt: 'desc' },
+        where: { 
+          createdAt: { gte: startDate } 
+        },
+        orderBy: { 
+          createdAt: 'desc' 
+        },
+        select: {
+          id: true,
+          createdAt: true,
+          moodRating: true,
+          workEnvironment: true,
+          personalWellbeing: true,
+          workLifeBalance: true,
+          stressLevel: true,
+          feedback: true
+        }
       }),
-      prisma.$queryRaw<SurveyStats[]>`
+      prisma.$queryRaw<StatsRaw[]>`
         SELECT 
-          ROUND(AVG(CAST("moodRating" AS FLOAT)), 2) as average_mood,
-          ROUND(AVG(CAST("workEnvironment" AS FLOAT)), 2) as average_work_environment,
-          ROUND(AVG(CAST("personalWellbeing" AS FLOAT)), 2) as average_wellbeing,
-          ROUND(AVG(CAST("workLifeBalance" AS FLOAT)), 2) as average_balance,
-          ROUND(AVG(CAST("stressLevel" AS FLOAT)), 2) as average_stress,
-          COUNT(*) as total_surveys,
-          ROUND(
-            COUNT(CASE 
-              WHEN "moodRating" >= 4 AND 
-                   "workEnvironment" >= 4 AND 
-                   "personalWellbeing" >= 4 AND 
-                   "workLifeBalance" >= 4 AND 
-                   "stressLevel" <= 2
-              THEN 1 
-            END)::FLOAT / COUNT(*)::FLOAT * 100,
-            2
+          CAST(CAST(AVG(CAST("moodRating" AS DECIMAL(10,2))) AS DECIMAL(10,2)) AS FLOAT) as average_mood,
+          CAST(CAST(AVG(CAST("workEnvironment" AS DECIMAL(10,2))) AS DECIMAL(10,2)) AS FLOAT) as average_work_environment,
+          CAST(CAST(AVG(CAST("personalWellbeing" AS DECIMAL(10,2))) AS DECIMAL(10,2)) AS FLOAT) as average_wellbeing,
+          CAST(CAST(AVG(CAST("workLifeBalance" AS DECIMAL(10,2))) AS DECIMAL(10,2)) AS FLOAT) as average_balance,
+          CAST(CAST(AVG(CAST("stressLevel" AS DECIMAL(10,2))) AS DECIMAL(10,2)) AS FLOAT) as average_stress,
+          CAST(COUNT(*) AS INTEGER) as total_surveys,
+          CAST(
+            CASE 
+              WHEN COUNT(*) = 0 THEN 0
+              ELSE (
+                CAST(
+                  COUNT(
+                    CASE 
+                      WHEN "moodRating" >= 4 AND 
+                           "workEnvironment" >= 4 AND 
+                           "personalWellbeing" >= 4 AND 
+                           "workLifeBalance" >= 4 AND 
+                           "stressLevel" <= 2
+                      THEN 1 
+                    END
+                  ) * 100.0 / NULLIF(COUNT(*), 0) 
+                AS DECIMAL(10,2))
+              )
+            END AS FLOAT
           ) as wellbeing_rate
         FROM "Survey"
         WHERE "createdAt" >= ${startDate}
@@ -197,35 +232,67 @@ export async function GET(request: Request) {
           workEnvironment: true,
           personalWellbeing: true,
           stressLevel: true,
+          workLifeBalance: true,
           feedback: true
         }
       })
     ]);
 
-    // Procesar sentimientos
-    const sentimentAnalysis: SentimentAnalysis[] = surveys
+    if (!statsRaw?.[0]) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          surveys: [],
+          stats: {
+            total_surveys: 0,
+            average_mood: 0,
+            average_work_environment: 0,
+            average_wellbeing: 0,
+            average_balance: 0,
+            average_stress: 0,
+            wellbeing_rate: 0
+          },
+          alerts: [],
+          sentimentAnalysis: {
+            counts: { Positivo: 0, Neutral: 0, Negativo: 0 },
+            recent: [],
+            trends: { daily: [], weekly: [] }
+          }
+        }
+      });
+    }
+
+    const stats: SurveyStats = {
+      total_surveys: Number(statsRaw[0].total_surveys || 0),
+      average_mood: Number(statsRaw[0].average_mood || 0),
+      average_work_environment: Number(statsRaw[0].average_work_environment || 0),
+      average_wellbeing: Number(statsRaw[0].average_wellbeing || 0),
+      average_balance: Number(statsRaw[0].average_balance || 0),
+      average_stress: Number(statsRaw[0].average_stress || 0),
+      wellbeing_rate: Number(statsRaw[0].wellbeing_rate || 0)
+    };
+
+    const sentimentAnalysis = surveys
       .filter(s => s.feedback)
       .map(survey => ({
-        id: survey.id,
+        id: Number(survey.id),
         feedback: survey.feedback,
         date: survey.createdAt.toISOString(),
         ...analyzeSentiment(survey.feedback || '', {
-          moodRating: survey.moodRating,
-          workEnvironment: survey.workEnvironment,
-          personalWellbeing: survey.personalWellbeing,
-          workLifeBalance: survey.workLifeBalance,
-          stressLevel: survey.stressLevel
+          moodRating: Number(survey.moodRating),
+          workEnvironment: Number(survey.workEnvironment),
+          personalWellbeing: Number(survey.personalWellbeing),
+          workLifeBalance: Number(survey.workLifeBalance),
+          stressLevel: Number(survey.stressLevel)
         })
       }));
 
-    // Agrupar por sentimiento
     const sentimentCounts = {
       Positivo: sentimentAnalysis.filter(s => s.sentiment === 'Positivo').length,
       Neutral: sentimentAnalysis.filter(s => s.sentiment === 'Neutral').length,
       Negativo: sentimentAnalysis.filter(s => s.sentiment === 'Negativo').length,
     };
 
-    // Procesar tendencias
     const trends: SurveyTrends = {
       daily: {},
       weekly: {}
@@ -235,12 +302,8 @@ export async function GET(request: Request) {
       const date = survey.createdAt.toISOString().split('T')[0];
       const week = `${survey.createdAt.getFullYear()}-W${getWeekNumber(survey.createdAt)}`;
       
-      if (!trends.daily[date]) {
-        trends.daily[date] = [];
-      }
-      if (!trends.weekly[week]) {
-        trends.weekly[week] = [];
-      }
+      if (!trends.daily[date]) trends.daily[date] = [];
+      if (!trends.weekly[week]) trends.weekly[week] = [];
       
       trends.daily[date].push(survey);
       trends.weekly[week].push(survey);
@@ -249,12 +312,12 @@ export async function GET(request: Request) {
     const processedTrends = {
       daily: Object.entries(trends.daily).map(([date, surveys]): ProcessedTrend => ({
         date,
-        average: surveys.reduce((sum, s) => sum + s.moodRating, 0) / surveys.length,
+        average: Number((surveys.reduce((sum, s) => sum + Number(s.moodRating), 0) / surveys.length).toFixed(2)),
         count: surveys.length
       })),
       weekly: Object.entries(trends.weekly).map(([week, surveys]): ProcessedTrend => ({
         week,
-        average: surveys.reduce((sum, s) => sum + s.moodRating, 0) / surveys.length,
+        average: Number((surveys.reduce((sum, s) => sum + Number(s.moodRating), 0) / surveys.length).toFixed(2)),
         count: surveys.length
       }))
     };
@@ -264,10 +327,25 @@ export async function GET(request: Request) {
       data: {
         surveys: surveys.map(s => ({
           ...s,
+          id: Number(s.id),
+          moodRating: Number(s.moodRating),
+          workEnvironment: Number(s.workEnvironment),
+          personalWellbeing: Number(s.personalWellbeing),
+          workLifeBalance: Number(s.workLifeBalance),
+          stressLevel: Number(s.stressLevel),
           createdAt: s.createdAt.toISOString()
         })),
-        stats: stats[0],
-        alerts: alertConditions,
+        stats,
+        alerts: alertConditions.map(a => ({
+          ...a,
+          id: Number(a.id),
+          moodRating: Number(a.moodRating),
+          workEnvironment: Number(a.workEnvironment),
+          personalWellbeing: Number(a.personalWellbeing),
+          workLifeBalance: Number(a.workLifeBalance),
+          stressLevel: Number(a.stressLevel),
+          createdAt: a.createdAt.toISOString()
+        })),
         sentimentAnalysis: {
           counts: sentimentCounts,
           recent: sentimentAnalysis.slice(0, 5),

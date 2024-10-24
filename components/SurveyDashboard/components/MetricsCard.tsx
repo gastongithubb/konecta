@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+// components/SurveyDashboard/components/MetricsCard.tsx
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface MetricsCardProps {
   title: string;
@@ -7,13 +8,8 @@ interface MetricsCardProps {
   description?: string;
 }
 
-export const MetricsCard: React.FC<MetricsCardProps> = ({
-  title,
-  value,
-  suffix = '',
-  description
-}) => (
-  <Card>
+export const MetricsCard = ({ title, value, suffix = '', description }: MetricsCardProps) => (
+  <Card className="hover:shadow-lg transition-shadow duration-200">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
     </CardHeader>

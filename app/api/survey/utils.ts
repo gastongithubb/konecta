@@ -1,17 +1,8 @@
-// app/api/survey/utils.ts
+// /api/survey/utils.ts
 import { POSITIVE_WORDS, NEGATIVE_WORDS } from './constants';
-import type { SentimentAnalysis } from './types';
+import type { SurveyData, ProcessedSentiment } from './types';
 
-export function analyzeSentiment(
-  text: string,
-  scores: {
-    moodRating: number;
-    workEnvironment: number;
-    personalWellbeing: number;
-    workLifeBalance: number;
-    stressLevel: number;
-  }
-): SentimentAnalysis {
+export function analyzeSentiment(text: string, scores: Omit<SurveyData, 'feedback'>): ProcessedSentiment {
   const words = text.toLowerCase()
     .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, ' ')
     .split(/\s+/);
@@ -36,8 +27,8 @@ export function analyzeSentiment(
   const finalScore = (textScore + numericalScore) / 2;
 
   return {
-    score: finalScore,
     sentiment: finalScore > 0.2 ? 'Positivo' : finalScore < -0.2 ? 'Negativo' : 'Neutral',
+    score: finalScore,
     details: {
       positiveWords: positiveCount,
       negativeWords: negativeCount,
