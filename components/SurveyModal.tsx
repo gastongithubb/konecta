@@ -1,6 +1,3 @@
-// components/SurveyModal.tsx
-'use client';
-
 import React, { useState } from 'react';
 import { X, Smile, Frown, Meh } from 'lucide-react';
 import type { SurveyData } from '@/types/survey';
@@ -61,11 +58,18 @@ export const SurveyModal: React.FC<SurveyModalProps> = ({
     feedback: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!surveyData.feedback.trim()) {
+      setFeedbackError('Por favor, comparte como te sientes antes de enviar la encuesta');
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       await onSubmit(surveyData);
@@ -79,6 +83,9 @@ export const SurveyModal: React.FC<SurveyModalProps> = ({
 
   const updateSurveyData = (field: keyof SurveyData, value: number | string) => {
     setSurveyData(prev => ({ ...prev, [field]: value }));
+    if (field === 'feedback') {
+      setFeedbackError('');
+    }
   };
 
   const renderQuestionStep = () => {
@@ -199,13 +206,20 @@ export const SurveyModal: React.FC<SurveyModalProps> = ({
       case 3:
         return (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold">¿Hay algo más que quieras compartir?</h3>
-            <textarea
-              value={surveyData.feedback}
-              onChange={(e) => updateSurveyData('feedback', e.target.value)}
-              className="w-full p-3 border rounded-lg resize-none h-32"
-              placeholder="Cuéntanos más sobre cómo te sientes, qué te preocupa o qué podría mejorar tu bienestar..."
-            />
+            <h3 className="text-lg font-semibold">Describi como te sentis en una sola palabra</h3>
+            <div>
+              <textarea
+                value={surveyData.feedback}
+                onChange={(e) => updateSurveyData('feedback', e.target.value)}
+                className={`w-full p-3 border rounded-lg resize-none h-32 ${
+                  feedbackError ? 'border-red-500' : ''
+                }`}
+                placeholder="Cuéntanos más sobre cómo te sientes, qué te preocupa o qué podría mejorar tu bienestar..."
+              />
+              {feedbackError && (
+                <p className="text-red-500 text-sm mt-1">{feedbackError}</p>
+              )}
+            </div>
           </div>
         );
     }
@@ -221,7 +235,7 @@ export const SurveyModal: React.FC<SurveyModalProps> = ({
         surveyData.stressLevel > 0
       );
     }
-    return true;
+    return surveyData.feedback.trim().length > 0;
   };
 
   return (
@@ -264,7 +278,7 @@ export const SurveyModal: React.FC<SurveyModalProps> = ({
             ) : (
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !canProceed()}
                 className="ml-auto px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? 'Enviando...' : 'Enviar'}
