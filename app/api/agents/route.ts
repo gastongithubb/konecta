@@ -1,4 +1,3 @@
-// /api/agents.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { PrismaClient } from '@prisma/client';
@@ -21,8 +20,18 @@ export async function GET() {
     }
 
     const agents = await prisma.user.findMany({
-      where: { role: 'user' },
-      select: { id: true, name: true, email: true, role: true },
+      where: {
+        role: {
+          in: ['user', 'team_leader']
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        teamId: true
+      },
     });
     return NextResponse.json(agents);
   } catch (error) {

@@ -9,7 +9,7 @@ const SugerenciasUX: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto my-8 bg-white shadow-lg rounded-lg overflow-hidden">
+    <div className="w-full max-w-md bg-white mx-auto my-8 shadow-lg rounded-lg overflow-hidden">
       <div className="px-6 py-4">
         <div className="flex items-center text-2xl font-bold text-orange-500 mb-4">
           <LightbulbIcon className="mr-2" />

@@ -104,6 +104,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         { href: 'https://docs.google.com/spreadsheets/d/1gOo19k_g8nB_WFcPkOunkL9J-CtUBNBdKO2AUQz5hIo/edit?gid=0#gid=0', label: 'falta de prestadores en zona por practicas', target: '_blank' },
         { href: 'https://docs.google.com/document/d/11CievaucFwk5HtAXkluA9e9J7pnmHBub/edit', label: 'Medios de Cobro', target: '_blank' },
         { href: '/dashboard/user/speech', label: 'Speech de corte' },
+        { href: 'https://docs.google.com/spreadsheets/d/1yL12CvA2pcDi6O6F0GcVPt7FiJPX_dHBr6gZOpeihSE/edit?gid=644205541#gid=644205541', label: 'CAR Status', target: '_blank' },
       ]
     },
   ] : [];
@@ -120,7 +121,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               {user.role.toLowerCase() === 'manager' && (
                 <>
                   <Link href="/dashboard/manager/users" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
-                    Gestionar Usuarios
+                    Incidencias
                   </Link>
                   <Link href="/dashboard/manager/teams" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Gestionar Equipos
@@ -135,8 +136,11 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               )}
               {user.role.toLowerCase() === 'team_leader' && (
                 <>
-                  <Link href="/dashboard/team_leader/team" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                  <Link href="/dashboard/team_leader/equipo" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Mi Equipo
+                  </Link>
+                  <Link href="/dashboard/team_leader/teams" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                    Gestionar Equipos
                   </Link>
                   <Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Ver casos reclamados

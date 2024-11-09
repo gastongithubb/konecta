@@ -56,16 +56,11 @@ const ComponenteGestionEquipos: React.FC = () => {
         const usuariosData = await usuariosRes.json();
         const equiposData = await equiposRes.json();
 
-        console.log('Usuarios:', usuariosData);
-        console.log('Equipos:', equiposData);
-
-        // Asumiendo que la API devuelve un array de usuarios
         const todosUsuarios = usuariosData || [];
         setLideresEquipo(todosUsuarios.filter((u: Usuario) => u.role === 'team_leader'));
         setAgentes(todosUsuarios.filter((u: Usuario) => u.role === 'user'));
         
-        // Asumiendo que la API devuelve un array de equipos
-        setEquipos(equiposData || []);
+        setEquipos(equiposData.data?.teams || []);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError('Error al cargar datos. Por favor, intente de nuevo.');
@@ -74,12 +69,6 @@ const ComponenteGestionEquipos: React.FC = () => {
 
     fetchData();
   }, []);
-
-  useEffect(() => {
-    console.log('Líderes de equipo:', lideresEquipo);
-    console.log('Agentes:', agentes);
-    console.log('Equipos:', equipos);
-  }, [lideresEquipo, agentes, equipos]);
 
   const manejarCambioLider = (valor: string) => {
     setLiderSeleccionado(valor);
@@ -100,16 +89,17 @@ const ComponenteGestionEquipos: React.FC = () => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            teamLeaderId: parseInt(liderSeleccionado),
-            memberIds: miembrosSeleccionados.map(id => parseInt(id))
+            teamLeaderId: liderSeleccionado,
+            memberIds: miembrosSeleccionados
           }),
         });
         
         if (!respuesta.ok) {
-          throw new Error('Error al guardar el equipo');
+          const errorData = await respuesta.json();
+          throw new Error(errorData.error || 'Error al guardar el equipo');
         }
         
-        const nuevoEquipo = await respuesta.json();
+        const { data: nuevoEquipo } = await respuesta.json();
         setEquipos(prev => [...prev, nuevoEquipo]);
         setExito('Equipo guardado exitosamente');
         setLiderSeleccionado('');
@@ -117,7 +107,7 @@ const ComponenteGestionEquipos: React.FC = () => {
         setError(null);
       } catch (error) {
         console.error('Error al guardar el equipo:', error);
-        setError('Hubo un error al guardar el equipo. Por favor, intenta de nuevo.');
+        setError(error instanceof Error ? error.message : 'Hubo un error al guardar el equipo. Por favor, intenta de nuevo.');
       }
     } else {
       setError('Por favor, selecciona un líder y al menos un miembro');

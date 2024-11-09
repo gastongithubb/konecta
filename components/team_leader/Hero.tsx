@@ -21,7 +21,7 @@ const LeaderHero = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+      <div className="max-w-6xl mx-auto rounded-xl shadow-lg overflow-hidden">
         <div className="p-8 flex flex-col md:flex-row">
           <div className="w-full md:w-1/2 pr-8">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-6">{quote}</h1>

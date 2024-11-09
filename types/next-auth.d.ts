@@ -1,3 +1,4 @@
+// types/next-auth.d.ts
 import NextAuth from "next-auth"
 
 declare module "next-auth" {
@@ -8,6 +9,7 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       teamId?: number | null;
+      role?: string;
     }
   }
 }

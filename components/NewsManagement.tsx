@@ -2,14 +2,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronUp, Trash, Plus, X, ExternalLink } from 'lucide-react';
-import Loading from '@/components/Loading';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
+import Spinner from '@/components/Loading';
 interface News {
   id: string;
   name: string;
@@ -259,14 +258,14 @@ const NewsManagement: React.FC = () => {
                 onChange={(e) => setNewNews({...newNews, date: e.target.value})}
               />
               <Button onClick={handleAddNews} disabled={loading} className="w-full">
-                {loading ? <Loading /> : 'Agregar Novedad'}
+                {loading ? <Spinner className="text-blue-500" />  : 'Agregar Novedad'}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {loading && <div className="flex justify-center"><Loading /></div>}
+      {loading && <div className="flex justify-center"> <Spinner className="text-blue-500" /> </div>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {Object.entries(groupedNews).map(([month, monthNews]) => (

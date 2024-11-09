@@ -27,6 +27,32 @@ const EmotionButton: React.FC<EmotionButtonProps> = ({
     return <Smile className="w-6 h-6" />;
   };
 
+  const getBackgroundColor = () => {
+    if (selected) return 'bg-blue-500'; // Keep blue for selected state
+    
+    switch(value) {
+      case 1: return 'bg-red-100 hover:bg-red-200';
+      case 2: return 'bg-orange-100 hover:bg-orange-200';
+      case 3: return 'bg-yellow-100 hover:bg-yellow-200';
+      case 4: return 'bg-lime-100 hover:bg-lime-200';
+      case 5: return 'bg-green-100 hover:bg-green-200';
+      default: return 'bg-gray-100 hover:bg-gray-200';
+    }
+  };
+
+  const getIconColor = () => {
+    if (selected) return 'text-white';
+    
+    switch(value) {
+      case 1: return 'text-red-500';
+      case 2: return 'text-orange-500';
+      case 3: return 'text-yellow-500';
+      case 4: return 'text-lime-500';
+      case 5: return 'text-green-500';
+      default: return 'text-gray-500';
+    }
+  };
+
   return (
     <button
       type="button"
@@ -34,7 +60,7 @@ const EmotionButton: React.FC<EmotionButtonProps> = ({
       className={`flex flex-col items-center p-3 rounded-lg transition-all ${
         selected
           ? 'bg-blue-500 text-white scale-105'
-          : 'bg-gray-100 hover:bg-gray-200'
+          : `${getBackgroundColor()} ${getIconColor()}`
       }`}
     >
       {getEmotionIcon()}
