@@ -1,5 +1,5 @@
 import React from 'react'
-import CargarCasos from '@/components/CaseUploadComponent'
+import CargarCasos from '@/components/generales/CaseUploadComponent'
 
 export default function Casespage() {
   return (

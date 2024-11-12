@@ -1,5 +1,5 @@
 import React from 'react'
-import Profile from '@/components/Profile'
+import Profile from '@/components/generales/Profile'
 import DashboardBase from '@/app/dashboard/DashboardBase'
 
 export default function LoginPage() {

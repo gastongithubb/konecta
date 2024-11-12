@@ -15,9 +15,9 @@ export async function GET() {
     }
 
     const decoded = await verifyAccessToken(token);
-    if (!decoded || decoded.role !== 'manager') {
-      return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
-    }
+if (!decoded || (decoded.role !== 'manager' && decoded.role !== 'team_leader')) {
+  return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
+}
 
     const agents = await prisma.user.findMany({
       where: {

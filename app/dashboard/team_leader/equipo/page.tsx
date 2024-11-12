@@ -1,375 +1,242 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Users, Link, Trash2, PencilLine, UserRound } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Trash2, Users, UserMinus } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import type { Session } from 'next-auth';
 
-interface TeamMember {
+interface User {
   id: number;
   name: string;
   email: string;
-  role?: string;
+  role: 'manager' | 'team_leader';
 }
 
 interface Team {
   id: number;
   name: string;
-  chatLink?: string;
-  manager: TeamMember;
-  teamLeader: TeamMember;
-  members: TeamMember[];
+  manager: User;
+  teamLeader: User;
+  members: User[];
 }
 
-const TeamComponent = () => {
-  const { data: session } = useSession();
-  const router = useRouter();
-  const [team, setTeam] = useState<Team | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [chatLink, setChatLink] = useState('');
+const TeamManagement = () => {
+  const { data: session, status } = useSession();
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchTeam = useCallback(async () => {
+  const user = session?.user as User | undefined;
+
+  const hasPermission = (user?: User) => {
+    return user?.role === 'manager' || user?.role === 'team_leader';
+  };
+
+  const canManageTeam = (user?: User, team?: Team) => {
+    if (!user || !team) return false;
+    return user.role === 'manager' || 
+           (user.role === 'team_leader' && user.id === team.teamLeader.id);
+  };
+
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    if (!user) {
+      setError('No se encontró información del usuario');
+      setLoading(false);
+      return;
+    }
+
+    if (!hasPermission(user)) {
+      setError('No tienes permisos para acceder a esta sección');
+      setLoading(false);
+      return;
+    }
+
+    fetchTeams();
+  }, [status, user]);
+
+  const fetchTeams = async () => {
     try {
       const response = await fetch('/api/teams');
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al cargar el equipo');
+      const data = await response.json();
+      if (response.ok) {
+        let filteredTeams = data.data;
+        
+        // Si es team_leader, solo mostrar sus equipos
+        if (user?.role === 'team_leader') {
+          filteredTeams = data.data.filter((team: Team) => team.teamLeader.id === user.id);
+        }
+        
+        setTeams(filteredTeams);
+      } else {
+        setError(data.error);
       }
-      const teamData = await response.json();
-
-      setTeam(teamData.data);
-      setChatLink(teamData.data.chatLink || '');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al cargar la información del equipo';
-      setError(message);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: message
-      });
+      setError('Error al cargar los equipos');
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const updateChatLink = async () => {
-    if (!team) return;
+  const handleDeleteTeam = async (teamId: number) => {
+    if (!user) return;
 
     try {
-      const response = await fetch(`/api/teams/${team.id}`, {
+      const team = teams.find(t => t.id === teamId);
+      if (!team || !canManageTeam(user, team)) {
+        setError('No tienes permisos para eliminar este equipo');
+        return;
+      }
+
+      const response = await fetch(`/api/teams/${teamId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setTeams(teams.filter(team => team.id !== teamId));
+      } else {
+        const data = await response.json();
+        setError(data.error);
+      }
+    } catch (err) {
+      setError('Error al eliminar el equipo');
+    }
+  };
+
+  const handleRemoveMember = async (teamId: number, memberId: number) => {
+    if (!user) return;
+
+    try {
+      const team = teams.find(t => t.id === teamId);
+      if (!team || !canManageTeam(user, team)) {
+        setError('No tienes permisos para modificar este equipo');
+        return;
+      }
+
+      const updatedMembers = team.members.filter(m => m.id !== memberId);
+      
+      const response = await fetch(`/api/teams/${teamId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           name: team.name,
-          chatLink,
           teamLeaderId: team.teamLeader.id,
-          memberIds: team.members.map(m => m.id)
+          memberIds: updatedMembers.map(m => m.id)
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al actualizar el enlace');
+      if (response.ok) {
+        const updatedTeam = await response.json();
+        setTeams(prevTeams => 
+          prevTeams.map(t => t.id === teamId ? updatedTeam.data : t)
+        );
+      } else {
+        const data = await response.json();
+        setError(data.error);
       }
-
-      setIsEditing(false);
-      toast({
-        title: "Actualizado",
-        description: "Enlace de chat actualizado correctamente"
-      });
-
-      fetchTeam();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'No se pudo actualizar el enlace de chat';
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: message
-      });
+      setError('Error al remover el miembro');
     }
   };
 
-  const handleDeleteTeam = async () => {
-    if (!team) return;
+  if (status === 'loading' || loading) {
+    return <div className="flex justify-center p-8">Cargando...</div>;
+  }
 
-    try {
-      const response = await fetch(`/api/teams/${team.id}`, {
-        method: 'DELETE',
-      });
+  if (!user || !hasPermission(user)) {
+    return <div className="text-red-500 p-4">No tienes permisos para acceder a esta sección</div>;
+  }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al eliminar el equipo');
-      }
-
-      toast({
-        title: "Equipo eliminado",
-        description: "El equipo ha sido eliminado correctamente"
-      });
-
-      router.push('/dashboard');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'No se pudo eliminar el equipo';
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: message
-      });
-    } finally {
-      setIsDialogOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTeam();
-  }, [fetchTeam]);
-
-  if (!session?.user) return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="flex items-center justify-center p-6">
-        <div className="text-gray-500">Debes iniciar sesión para ver esta página</div>
-      </CardContent>
-    </Card>
-  );
-
-  if (loading) return (
-    <div className="flex items-center justify-center p-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-    </div>
-  );
-
-  if (error) return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="flex items-center justify-center p-6">
-        <div className="text-red-500 flex items-center gap-2">
-          <span className="rounded-full bg-red-100 p-2">
-            <Trash2 className="h-4 w-4" />
-          </span>
-          {error}
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  if (!team) return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardContent className="flex items-center justify-center p-6">
-        <div className="text-gray-500">No se encontró el equipo</div>
-      </CardContent>
-    </Card>
-  );
-
-  const canEdit = session.user?.role === 'manager' ||
-    (session.user?.role === 'team_leader' && session.user.id === team.teamLeader.id);
-  const canDelete = session.user?.role === 'manager' ||
-    (session.user?.role === 'team_leader' && session.user.id === team.teamLeader.id);
+  if (error) {
+    return <div className="text-red-500 p-4">{error}</div>;
+  }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            {team.name}
-          </CardTitle>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge variant="secondary" className="ml-2">
-                  {team.members.length} miembros
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Total de miembros en el equipo</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-        <CardDescription className="flex items-center gap-2">
-          <UserRound className="h-4 w-4" />
-          Líder: {team.teamLeader.name}
-          <span className="text-gray-400">•</span>
-          <span className="text-gray-500">{team.teamLeader.email}</span>
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
-        <div className="space-y-6">
-          {/* Chat Link Section */}
-          <div className="border rounded-lg p-4">
-            <h3 className="text-lg font-medium mb-2 flex items-center gap-2">
-              <Link className="h-5 w-5" />
-              Enlace de Google Chat
-            </h3>
-
-            {isEditing && canEdit ? (
-              <div className="flex gap-2">
-                <Input
-                  value={chatLink}
-                  onChange={(e) => setChatLink(e.target.value)}
-                  placeholder="https://chat.google.com/..."
-                  className="flex-1"
-                />
-                <Button onClick={updateChatLink}>Guardar</Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setChatLink(team.chatLink || '');
-                  }}
-                >
-                  Cancelar
-                </Button>
+    <div className="space-y-4 p-4">
+      {teams.map((team: Team) => (
+        <Card key={team.id} className="w-full">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-xl font-bold">{team.name}</CardTitle>
+              <div className="text-sm text-gray-500">
+                <p>Manager: {team.manager.name}</p>
+                <p>Team Leader: {team.teamLeader.name}</p>
               </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                {team.chatLink ? (
-                  <>
-                    <a
-                      href={team.chatLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline flex-1 truncate"
-                    >
-                      {team.chatLink}
-                    </a>
-                    {canEdit && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <PencilLine className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </>
-                ) : canEdit ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    Agregar enlace de chat
+            </div>
+            {canManageTeam(user, team) && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="icon">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                ) : (
-                  <span className="text-gray-500">No hay enlace de chat configurado</span>
-                )}
-              </div>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta acción eliminará permanentemente el equipo y no se puede deshacer.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeleteTeam(team.id)}>
+                      Eliminar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
-          </div>
-
-          {/* Team Members Section */}
-          <div className="border rounded-lg p-4">
-            <h3 className="text-lg font-medium mb-4">Miembros del Equipo</h3>
-            <div className="space-y-3">
-              {/* Team Leader Card */}
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="bg-blue-500 rounded-full p-2">
-                    <UserRound className="h-4 w-4 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{team.teamLeader.name}</div>
-                    <div className="text-sm text-gray-500">{team.teamLeader.email}</div>
-                  </div>
-                  <Badge>Líder</Badge>
-                </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span className="font-semibold">Miembros ({team.members.length})</span>
               </div>
-
-              {/* Team Members */}
-              <div className="grid gap-2">
-                {team.members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="bg-gray-200 rounded-full p-2">
-                        <UserRound className="h-4 w-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium">{member.name}</div>
-                        <div className="text-sm text-gray-500">{member.email}</div>
-                      </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {team.members.map((member: User) => (
+                  <div key={member.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                    <div className="flex-1">
+                      <p className="font-medium">{member.name}</p>
+                      <p className="text-sm text-gray-500">{member.email}</p>
                     </div>
+                    {canManageTeam(user, team) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-red-500">
+                            <UserMinus className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Remover miembro?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              ¿Estás seguro que deseas remover a {member.name} del equipo?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleRemoveMember(team.id, member.id)}>
+                              Remover
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="flex justify-between">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span>Manager:</span>
-          <span className="font-medium">{team.manager.name}</span>
-        </div>
-
-        {canDelete && (
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Eliminar Equipo
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>¿Estás seguro?</DialogTitle>
-                <DialogDescription>
-                  Esta acción no se puede deshacer. Se eliminará permanentemente el equipo y todas sus asociaciones.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteTeam}
-                >
-                  Eliminar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-      </CardFooter>
-    </Card>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 };
 
-export default TeamComponent;
+export default TeamManagement;

@@ -1,5 +1,5 @@
 import React from 'react'
-import Novedades from '@/components/NewsManagement'
+import Novedades from '@/components/generales/NewsManagement'
 
 export default function NovedadesPage() {
   return (

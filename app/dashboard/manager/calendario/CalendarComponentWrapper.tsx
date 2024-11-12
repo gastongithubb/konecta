@@ -3,7 +3,7 @@
 'use client'
 
 import { useSession } from "next-auth/react"
-import CalendarComponent from '@/components/calendar'
+import CalendarComponent from '@/components/generales/calendar'
 
 const CalendarComponentWrapper = () => {
   const { data: session, status } = useSession()

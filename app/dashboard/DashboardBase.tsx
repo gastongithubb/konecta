@@ -3,9 +3,9 @@
 
 import React, { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import LoadingSpinner from '@/components/Loading'
-import SugerenciasUX from '@/components/Sugerenciasux'
-import Footer from '@/components/Footer';
+import LoadingSpinner from '@/components/generales/Loading'
+import SugerenciasUX from '@/components/generales/Sugerenciasux'
+import Footer from '@/components/generales/Footer';
 
 export type UserRole = 'manager' | 'team_leader' | 'agent' | 'user';
 
