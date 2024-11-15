@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/app/lib/auth.server';
 import prisma from '@/app/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,7 +15,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
-    const where = user.role === 'manager' 
+    // Define el where basado en el rol del usuario
+    const where: Prisma.TeamWhereInput = user.role === 'manager' 
       ? { managerId: user.id }
       : { teamLeaderId: user.id };
 
@@ -54,10 +56,13 @@ export async function GET(request: NextRequest) {
             trimestralMetrics: true
           }
         }
+      },
+      orderBy: {
+        createdAt: 'desc' // Ordenar por fecha de creación, más recientes primero
       }
     });
 
-    const transformedTeams = await Promise.all(teams.map(async team => {
+    const transformedTeams = teams.map(team => {
       const stats = {
         totalCases: team._count.cases,
         metrics: {
@@ -76,24 +81,27 @@ export async function GET(request: NextRequest) {
         manager: team.manager,
         teamLeader: team.teamLeader,
         members: team.members,
-        stats,
-        _count: undefined
+        stats
       };
-    }));
-
-    return NextResponse.json({ 
-      data: transformedTeams,
-      total: transformedTeams.length
     });
 
-  } catch (error: any) { // Tipamos error como any para acceder a message
+    return NextResponse.json({ 
+      data: {
+        teams: transformedTeams,
+        total: transformedTeams.length,
+        metadata: {
+          userRole: user.role,
+          userId: user.id
+        }
+      }
+    });
+
+  } catch (error) {
     console.error('Error obteniendo equipos:', error);
     
-    const errorMessage = error?.message || 'Error interno del servidor';
-    
     return NextResponse.json({ 
-      error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? errorMessage : undefined 
+      error: error instanceof Error ? error.message : 'Error interno del servidor',
+      details: process.env.NODE_ENV === 'development' ? error : undefined 
     }, { status: 500 });
   }
 }
@@ -106,96 +114,54 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    if (user.role !== 'manager') {
-      return NextResponse.json({ error: 'Solo los managers pueden crear equipos' }, { status: 403 });
+    if (user.role !== 'manager' && user.role !== 'team_leader') {
+      return NextResponse.json({ 
+        error: 'Solo los managers y líderes de equipo pueden crear equipos' 
+      }, { status: 403 });
     }
 
     const body = await request.json();
     
-    const newTeam = await prisma.team.create({
-      data: {
-        name: body.name,
-        managerId: user.id,
-        teamLeaderId: body.teamLeaderId,
-        // Removemos description ya que no existe en el modelo
-      },
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        },
-        teamLeader: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        }
+    // Validar que el nombre del equipo esté presente
+    if (!body.name || typeof body.name !== 'string' || !body.name.trim()) {
+      return NextResponse.json({ 
+        error: 'El nombre del equipo es requerido' 
+      }, { status: 400 });
+    }
+
+    // Si es team_leader, solo puede crear equipos donde él sea el líder
+    if (user.role === 'team_leader' && body.teamLeaderId !== user.id) {
+      return NextResponse.json({ 
+        error: 'Como líder de equipo, solo puedes crear equipos donde tú seas el líder' 
+      }, { status: 403 });
+    }
+
+    // Buscar un manager por defecto si el usuario es team_leader
+    let managerId = user.id;
+    if (user.role === 'team_leader') {
+      const defaultManager = await prisma.user.findFirst({
+        where: { role: 'manager' }
+      });
+      if (!defaultManager) {
+        return NextResponse.json({ 
+          error: 'No se encontró un manager disponible para asignar al equipo' 
+        }, { status: 400 });
       }
-    });
-
-    return NextResponse.json({ data: newTeam }, { status: 201 });
-  } catch (error) {
-    console.error('Error creando equipo:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
-  }
-}
-
-// PUT - Actualizar un equipo existente
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const user = await authenticateRequest();
-    if (!user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+      managerId = defaultManager.id;
     }
 
-    if (user.role !== 'manager' && user.role !== 'team_leader') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
-
-    const body = await request.json();
-
-    // Verificar que el equipo exista y pertenezca al usuario
-    const existingTeam = await prisma.team.findFirst({
-      where: {
-        id: parseInt(params.id),
-        OR: [
-          { managerId: user.id },
-          { teamLeaderId: user.id }
-        ]
-      }
-    });
-
-    if (!existingTeam) {
-      return NextResponse.json(
-        { error: 'Equipo no encontrado o no tienes permisos para modificarlo' }, 
-        { status: 404 }
-      );
-    }
-
-    // Solo el manager puede cambiar el team leader
-    const updateData: any = {
+    const createData: Prisma.TeamCreateInput = {
       name: body.name,
-      description: body.description
+      teamLeader: {
+        connect: { id: parseInt(body.teamLeaderId) }
+      },
+      manager: {
+        connect: { id: managerId }
+      }
     };
 
-    if (user.role === 'manager' && body.teamLeaderId) {
-      updateData.teamLeaderId = body.teamLeaderId;
-    }
-
-    const updatedTeam = await prisma.team.update({
-      where: {
-        id: parseInt(params.id)
-      },
-      data: updateData,
+    const newTeam = await prisma.team.create({
+      data: createData,
       include: {
         manager: {
           select: {
@@ -216,53 +182,56 @@ export async function PUT(
       }
     });
 
-    return NextResponse.json({ data: updatedTeam });
-  } catch (error) {
-    console.error('Error actualizando equipo:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
-  }
-}
-
-// DELETE - Eliminar un equipo
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const user = await authenticateRequest();
-    if (!user) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    // Si se proporcionaron miembros, actualizar las relaciones
+    if (body.memberIds && Array.isArray(body.memberIds)) {
+      await prisma.team.update({
+        where: { id: newTeam.id },
+        data: {
+          members: {
+            connect: body.memberIds.map((id: string | number) => ({ 
+              id: typeof id === 'string' ? parseInt(id) : id 
+            }))
+          }
+        }
+      });
     }
 
-    if (user.role !== 'manager') {
-      return NextResponse.json({ error: 'Solo los managers pueden eliminar equipos' }, { status: 403 });
-    }
-
-    // Verificar que el equipo exista y pertenezca al manager
-    const team = await prisma.team.findFirst({
-      where: {
-        id: parseInt(params.id),
-        managerId: user.id
+    // Obtener el equipo actualizado con los miembros
+    const updatedTeam = await prisma.team.findUnique({
+      where: { id: newTeam.id },
+      include: {
+        manager: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        },
+        teamLeader: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        },
+        members: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true
+          }
+        }
       }
     });
 
-    if (!team) {
-      return NextResponse.json(
-        { error: 'Equipo no encontrado o no tienes permisos para eliminarlo' }, 
-        { status: 404 }
-      );
-    }
-
-    // Eliminar el equipo
-    await prisma.team.delete({
-      where: {
-        id: parseInt(params.id)
-      }
-    });
-
-    return NextResponse.json({ message: 'Equipo eliminado exitosamente' });
+    return NextResponse.json({ data: updatedTeam }, { status: 201 });
   } catch (error) {
-    console.error('Error eliminando equipo:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    console.error('Error creando equipo:', error);
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Error interno del servidor' 
+    }, { status: 500 });
   }
 }

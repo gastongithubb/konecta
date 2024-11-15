@@ -15,9 +15,9 @@ export async function GET() {
     }
 
     const decoded = await verifyAccessToken(token);
-if (!decoded || (decoded.role !== 'manager' && decoded.role !== 'team_leader')) {
-  return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
-}
+    if (!decoded || (decoded.role !== 'manager' && decoded.role !== 'team_leader')) {
+      return NextResponse.json({ error: 'Prohibido' }, { status: 403 });
+    }
 
     const agents = await prisma.user.findMany({
       where: {
@@ -33,7 +33,11 @@ if (!decoded || (decoded.role !== 'manager' && decoded.role !== 'team_leader')) 
         teamId: true
       },
     });
-    return NextResponse.json(agents);
+    
+    return NextResponse.json({ 
+      data: agents,
+      total: agents.length 
+    });
   } catch (error) {
     console.error('Error al obtener agentes:', error);
     return NextResponse.json({ error: 'Error Interno del Servidor' }, { status: 500 });

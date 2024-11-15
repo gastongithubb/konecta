@@ -29,6 +29,7 @@ model User {
   leadTeams         Team[]              @relation("TeamLeaderToTeam")
   trimestralMetrics TrimestralMetrics[] @relation("TeamLeaderTrimestralMetrics")
   team              Team?               @relation(fields: [teamId], references: [id])
+  nomencladorChanges NomencladorChange[] // Nueva relación
 }
 
 model Team {
@@ -169,4 +170,68 @@ model Survey {
   feedback         String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+// Nuevos modelos para nomencladores
+model NomencladorNM {
+  id            Int       @id @default(autoincrement())
+  descripcion   String    @db.Text
+  comoPedirse   String    @db.Text
+  codigo        String    @unique
+  observaciones String?   @db.Text
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  changes       NomencladorChange[] @relation("NomencladorChangeToNM")
+  equivalentesNU NomencladorEquivalencia[] @relation("NMtoNU")
+}
+
+model NomencladorNU {
+  id            Int       @id @default(autoincrement())
+  descripcion   String    @db.Text
+  comoPedirse   String    @db.Text
+  codigo        String
+  nucodigo      String
+  observaciones String?   @db.Text
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  changes       NomencladorChange[] @relation("NomencladorChangeToNU")
+  equivalentesNM NomencladorEquivalencia[] @relation("NMtoNU")
+
+  @@unique([codigo, nucodigo])
+}
+
+// Modelo para mantener equivalencias entre nomencladores
+model NomencladorEquivalencia {
+  id          Int           @id @default(autoincrement())
+  nmId        Int
+  nuId        Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  nm          NomencladorNM @relation("NMtoNU", fields: [nmId], references: [id])
+  nu          NomencladorNU @relation("NMtoNU", fields: [nuId], references: [id])
+
+  @@unique([nmId, nuId])
+}
+
+// Modelo para tracking de cambios en nomencladores
+// Actualización del modelo NomencladorChange con nombres únicos para las relaciones
+model NomencladorChange {
+  id            Int       @id @default(autoincrement())
+  nomenclador   String    // "NM" o "NU"
+  practiceId    Int       // ID de la práctica modificada
+  field         String    // Campo modificado
+  oldValue      String?   @db.Text
+  newValue      String    @db.Text
+  createdAt     DateTime  @default(now())
+  modifiedBy    Int       // ID del usuario que realizó el cambio
+  
+  // Referencias con nombres únicos para los constraints
+  user          User      @relation(fields: [modifiedBy], references: [id])
+  nomencladorNM NomencladorNM? @relation("NomencladorChangeToNM", fields: [practiceId], references: [id], map: "NomencladorChange_practiceId_nm_fkey")
+  nomencladorNU NomencladorNU? @relation("NomencladorChangeToNU", fields: [practiceId], references: [id], map: "NomencladorChange_practiceId_nu_fkey")
+
+  @@index([practiceId])
+  @@index([createdAt])
 }

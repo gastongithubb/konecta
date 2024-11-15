@@ -82,7 +82,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         { href: 'https://docs.google.com/spreadsheets/d/10dZhGPjLzw4XxZQ3uZdNmQtUo64clE9jNnWBkkUKezQ/edit#gid=0', label: 'Protesis en Ambulatorio', target: '_blank' },
         { href: 'https://drive.google.com/file/d/1WrBLlnFoTYoWQhGw8ez83VCpn3d5h4-o/view?usp=sharing', label: 'Carga de CUD (Proceso)', target: '_blank' },
         { href: '/dashboard/user/nomencladorNU', label: 'Practicas por codigo NU y NB' },
-        { href: '/dashbaord/user/nomencladorNM', label: 'Practicas por codigo NM' }
+        { href: '/dashboard/user/nomencladorNM', label: 'Practicas por codigo NM' }
       ]
     },
     {

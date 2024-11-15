@@ -71,7 +71,7 @@ const RegisterForm = () => {
         throw new Error(errorData.error || 'Error al registrarse');
       }
 
-      setSuccess('Registro exitoso. Por favor, revise su correo para completar el registro.');
+      setSuccess('Registro exitoso. Ya podes Iniciar sesion y recorda cambair la contraseña por seguridad');
       setFormData({ name: '', email: '', password: '' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrarse');
