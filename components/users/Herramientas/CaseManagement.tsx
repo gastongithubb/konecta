@@ -35,7 +35,7 @@ interface CaseData {
 
 type FormatType = 'autorizaciones' | 'empresas' | 'f4';
 
-const CaseManagement: React.FC = () => {
+const CaseManagementF4: React.FC = () => {
     const [format, setFormat] = useState<FormatType>('autorizaciones');
     const [caseData, setCaseData] = useState<CaseData>({
       autorizaciones: {
@@ -310,4 +310,4 @@ const CaseManagement: React.FC = () => {
   );
 };
 
-export default CaseManagement;
+export default CaseManagementF4;

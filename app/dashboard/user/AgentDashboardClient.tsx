@@ -5,7 +5,7 @@ import React from 'react';
 import DashboardBase, { UserRole } from '@/app/dashboard/DashboardBase';
 import Hero from '@/components/users/Hero/hero'
 import Frases from '@/components/users/Frases/frases'
-import Cases from '@/components/users/casos/cases'
+import Cases from '@/components/generales/TrackingForm'
 
 type UserData = {
   name: string;

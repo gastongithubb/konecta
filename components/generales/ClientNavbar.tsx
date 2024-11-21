@@ -226,6 +226,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   <Link href="/dashboard/team_leader/bienestar" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Encuesta Bienestar
                   </Link>
+                  <Link href="/dashboard/team_leader/caseSeguimiento" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                    Casos Dev/Fin
+                  </Link>
                 </>
               )}
               {user.role.toLowerCase() === 'user' && (

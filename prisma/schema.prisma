@@ -235,3 +235,14 @@ model NomencladorChange {
   @@index([practiceId])
   @@index([createdAt])
 }
+
+model CaseTracking {
+  id          Int      @id @default(autoincrement())
+  caseNumber  String   @unique
+  action      String   // "Derivar" or "Cerrar"
+  area        String?  // Null when action is "Cerrar"
+  reason      String
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
