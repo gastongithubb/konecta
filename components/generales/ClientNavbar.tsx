@@ -76,21 +76,26 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     setOpenDropdown(openDropdown === label ? null : label);
   };
 
-  const fetchNotifications = async () => {
+  async function fetchNotifications() {
     try {
-      setIsLoading(true);
-      const response = await fetch('/api/notifications');
-      if (!response.ok) throw new Error('Error al cargar notificaciones');
-      
+      const response = await fetch('/api/notifications', {
+        method: 'GET',
+        credentials: 'include', // Incluye cookies si estás usando NextAuth o similar
+      });
+  
+      if (!response.ok) {
+        console.error('Unexpected response format:', await response.json());
+        return;
+      }
+  
       const data = await response.json();
-      setNotifications(data);
-      setUnreadCount(data.filter((notif: Notification) => !notif.read).length);
+      console.log('Notifications:', data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }
+  
+  
 
   const markAsRead = async (id: string) => {
     try {
@@ -181,6 +186,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         { href: 'https://docs.google.com/spreadsheets/d/1gOo19k_g8nB_WFcPkOunkL9J-CtUBNBdKO2AUQz5hIo/edit?gid=0#gid=0', label: 'falta de prestadores en zona por practicas', target: '_blank' },
         { href: 'https://docs.google.com/document/d/11CievaucFwk5HtAXkluA9e9J7pnmHBub/edit', label: 'Medios de Cobro', target: '_blank' },
         { href: '/dashboard/user/speech', label: 'Speech de corte' },
+        { href: 'https://repo.sancorsalud.com.ar/webinstitucional/assets/pdf/comparti-salud/BasesCondicionesProgramaCompartiSalud2024V6.pdf', label: 'Campaña Comparti Salud', target: '_blank'},
+        { href: 'https://docs.google.com/document/d/1W7UVMff4n0CSNdecZna-oydsttIYsAHL/edit', label: 'Glosario Calidad', target: '_blank'},
+        { href: 'https://docs.google.com/spreadsheets/d/1VHQPVUZFEKlwGbe00q5sVK11WEDOqabY6l9FsfJ0vLs/edit?gid=760225460#gid=760225460', label: 'Tabulador CRM', target: '_blank'},
         { href: 'https://docs.google.com/spreadsheets/d/1yL12CvA2pcDi6O6F0GcVPt7FiJPX_dHBr6gZOpeihSE/edit?gid=644205541#gid=644205541', label: 'CAR Status', target: '_blank' },
       ]
     },

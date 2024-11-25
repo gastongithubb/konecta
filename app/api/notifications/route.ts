@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 // app/api/notifications/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/app/lib/prisma';
@@ -7,7 +6,7 @@ import { authenticateRequest } from '@/app/lib/auth.server';
 export async function GET(request: NextRequest) {
   const user = await authenticateRequest();
   if (!user) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -21,10 +20,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ data: notifications });
+    return NextResponse.json(notifications); // Return array directly
   } catch (error) {
-    console.error('Error obteniendo notificaciones:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    console.error('Error fetching notifications:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

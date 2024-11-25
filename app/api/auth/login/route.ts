@@ -1,4 +1,3 @@
-// app/api/auth/login/route.ts
 export const runtime = 'nodejs'
 import { NextResponse } from 'next/server'
 import { authenticateUser, createAccessToken, createRefreshToken } from '@/app/lib/auth.server'
@@ -32,19 +31,25 @@ export async function POST(request: Request) {
     }
   })
 
+  // Configuración del token de acceso para 9 horas
+  // 9 horas * 60 minutos * 60 segundos
+  const NINE_HOURS_IN_SECONDS = 9 * 60 * 60
+  
   response.cookies.set('auth_token', accessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 60 * 15, // 15 minutes
+    maxAge: NINE_HOURS_IN_SECONDS, // 9 horas en segundos
     path: '/',
   })
 
+  // Mantenemos el refresh token con una duración más larga para permitir
+  // la renovación automática cuando sea necesario
   response.cookies.set('refresh_token', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    maxAge: 7 * 24 * 60 * 60, // 7 días
     path: '/',
   })
 
