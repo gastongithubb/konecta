@@ -123,8 +123,8 @@ model Case {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   userId            Int
-  teamId            Int
-  team              Team     @relation(fields: [teamId], references: [id])
+  teamId            Int?     // Ajuste para permitir null
+  team              Team?    @relation(fields: [teamId], references: [id])
   user              User     @relation(fields: [userId], references: [id])
 }
 

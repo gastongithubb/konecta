@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
-    // Define el where basado en el rol del usuario
     const where: Prisma.TeamWhereInput = user.role === 'manager' 
       ? { managerId: user.id }
       : { teamLeaderId: user.id };
@@ -58,7 +57,7 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: {
-        createdAt: 'desc' // Ordenar por fecha de creación, más recientes primero
+        createdAt: 'desc'
       }
     });
 
@@ -86,19 +85,11 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ 
-      data: {
-        teams: transformedTeams,
-        total: transformedTeams.length,
-        metadata: {
-          userRole: user.role,
-          userId: user.id
-        }
-      }
+      data: transformedTeams
     });
 
   } catch (error) {
     console.error('Error obteniendo equipos:', error);
-    
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Error interno del servidor',
       details: process.env.NODE_ENV === 'development' ? error : undefined 

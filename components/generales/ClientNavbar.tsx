@@ -144,7 +144,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
 
   const navLinks: NavLink[] = user.role.toLowerCase() === 'user' ? [
     {
-      label: 'NPS',
+      label: 'Metricas',
       dropdown: [
         { href: '/nps-individual', label: 'NPS Individual' },
         { href: '/trimestral', label: 'NPS Trimestral' },
@@ -156,7 +156,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     {
       label: 'Herramientas',
       dropdown: [
-        { href: '/dashboard/user/cases', label: 'Reclamos de F4' },
+        { href: '/dashboard/user/cases', label: 'Formulario F4' },
         { href: '/dashboard/user/sla', label: 'SLA' },
         { href: 'https://drive.google.com/drive/folders/18ybMUFRbqUEeTlpEDboTkSssReiDlYl8', label: 'PLANES SIN COPAGO ', target: '_blank' },
         { href: 'https://drive.google.com/drive/u/1/folders/1NqkSefEZx0w88bNOLYoZdDU_JIEX5P-_', label: 'PLANES CON COPAGO ', target: '_blank' },

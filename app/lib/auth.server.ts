@@ -21,13 +21,14 @@ export async function authenticateUser(email: string, password: string) {
   return { id: user.id, email: user.email, role: user.role, isPasswordChanged: user.isPasswordChanged }
 }
 
-export async function createAccessToken(data: { sub: string; role: string; isPasswordChanged: boolean }, expiresIn: string = '15m') {
+export async function createAccessToken(data: { sub: string; role: string; isPasswordChanged: boolean }, expiresIn: string = '9h') {
   const secret = new TextEncoder().encode(process.env.SECRET_KEY!)
   return await new SignJWT(data)
     .setProtectedHeader({ alg: 'HS256' })
     .setExpirationTime(expiresIn)
     .sign(secret)
 }
+
 
 export async function createRefreshToken(data: { sub: string; role: string; isPasswordChanged: boolean }, expiresIn: string = '7d') {
   const secret = new TextEncoder().encode(process.env.REFRESH_TOKEN_SECRET!)

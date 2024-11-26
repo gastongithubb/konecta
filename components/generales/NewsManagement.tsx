@@ -144,6 +144,7 @@ const NewsManagement: React.FC = () => {
       setError('Por favor, complete todos los campos requeridos');
     }
   };
+  
 
   const handleUpdateStatus = async (id: string, status: 'active' | 'updated' | 'obsolete') => {
     try {

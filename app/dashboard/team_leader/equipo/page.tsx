@@ -1,6 +1,5 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-'use client'
-import React, { useState, useEffect } from 'react';
+'use client';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -40,6 +39,28 @@ const TeamManagement = () => {
            (user.role === 'team_leader' && user.id === team.teamLeader.id);
   };
 
+  const fetchTeams = useCallback(async () => {
+    try {
+      const response = await fetch('/api/teams');
+      const data = await response.json();
+      if (response.ok) {
+        let filteredTeams = data.data;
+        
+        if (user?.role === 'team_leader') {
+          filteredTeams = data.data.filter((team: Team) => team.teamLeader.id === user.id);
+        }
+        
+        setTeams(filteredTeams);
+      } else {
+        setError(data.error);
+      }
+    } catch (err) {
+      setError('Error al cargar los equipos');
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.role, user?.id]);
+
   useEffect(() => {
     if (status === 'loading') return;
     
@@ -56,30 +77,7 @@ const TeamManagement = () => {
     }
 
     fetchTeams();
-  }, [status, user]);
-
-  const fetchTeams = async () => {
-    try {
-      const response = await fetch('/api/teams');
-      const data = await response.json();
-      if (response.ok) {
-        let filteredTeams = data.data;
-        
-        // Si es team_leader, solo mostrar sus equipos
-        if (user?.role === 'team_leader') {
-          filteredTeams = data.data.filter((team: Team) => team.teamLeader.id === user.id);
-        }
-        
-        setTeams(filteredTeams);
-      } else {
-        setError(data.error);
-      }
-    } catch (err) {
-      setError('Error al cargar los equipos');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [status, user, fetchTeams]);
 
   const handleDeleteTeam = async (teamId: number) => {
     if (!user) return;

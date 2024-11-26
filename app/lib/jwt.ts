@@ -22,7 +22,7 @@ export async function generateAccessToken(payload: TokenPayload): Promise<string
   }
 
   return jwt.sign(payload, secret, {
-    expiresIn: '1d' // El token expira en 1 día
+    expiresIn: '9h' // El token expira en 9 horas
   });
 }
 

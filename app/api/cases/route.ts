@@ -13,10 +13,14 @@ export async function POST(request: NextRequest) {
   try {
     const { claimDate, startDate, withinSLA, caseNumber, authorizationType, details } = await request.json();
 
-    if (!user.teamId) {
-      return NextResponse.json({ error: 'Usuario no asignado a un equipo' }, { status: 400 });
+    console.log('Datos recibidos:', { claimDate, startDate, withinSLA, caseNumber, authorizationType, details });
+
+    if (!claimDate || !startDate || !caseNumber || !authorizationType || !details) {
+      console.log('Faltan campos requeridos');
+      return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
 
+    // Permitir crear un caso sin `teamId`
     const newCase = await prisma.case.create({
       data: {
         claimDate: new Date(claimDate),
@@ -26,29 +30,33 @@ export async function POST(request: NextRequest) {
         authorizationType,
         details,
         userId: user.id,
-        teamId: user.teamId,
-        status: 'pending', // Usar el valor por defecto definido en el esquema
+        teamId: user.teamId ?? null, // Asignar `null` si no hay `teamId`
+        status: 'pending',
       },
     });
 
-    // Notificar al líder del equipo
-    const teamLeader = await prisma.user.findFirst({
-      where: {
-        leadTeams: {
-          some: {
-            id: user.teamId,
+    console.log('Nuevo caso creado:', newCase);
+
+    // Notificar solo si hay un `teamId`
+    if (user.teamId) {
+      const teamLeader = await prisma.user.findFirst({
+        where: {
+          leadTeams: {
+            some: {
+              id: user.teamId,
+            },
           },
         },
-      },
-    });
-
-    if (teamLeader) {
-      await prisma.notification.create({
-        data: {
-          message: `Nuevo caso creado: ${newCase.caseNumber}`,
-          userId: teamLeader.id,
-        },
       });
+
+      if (teamLeader) {
+        await prisma.notification.create({
+          data: {
+            message: `Nuevo caso creado: ${newCase.caseNumber}`,
+            userId: teamLeader.id,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ data: newCase });
@@ -57,6 +65,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+
 
 export async function GET(request: NextRequest) {
   const user = await authenticateRequest() as User | null;

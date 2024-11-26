@@ -93,6 +93,7 @@ const CaseUploadComponent: React.FC = () => {
   }, [fetchCases, fetchCounts]);
 
   const onSubmit = async (data: FormValues) => {
+    console.log(data);
     try {
       const response = await fetch('/api/cases', {
         method: 'POST',
@@ -160,7 +161,6 @@ const CaseUploadComponent: React.FC = () => {
   };
 
   const handleEdit = (id: number) => {
-    // Implement edit functionality
     console.log('Edit case', id);
   };
 
@@ -193,7 +193,7 @@ const CaseUploadComponent: React.FC = () => {
     }
   };
 
-  const filteredCases = cases.filter(caseItem => 
+  const filteredCases = cases.filter(caseItem =>
     caseItem.caseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
     caseItem.details.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -217,17 +217,17 @@ const CaseUploadComponent: React.FC = () => {
       <div className="mb-8">
         <h2 className="text-xl font-bold mb-4">Cargar nuevo caso</h2>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 gap-4">
             <FormField
               control={form.control}
               name="claimDate"
               render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel>Fecha de reclamo</FormLabel>
+                <FormItem>
+                  <FormLabel>Fecha que llaman reclamando</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
-                        <Button variant="outline">
+                        <Button variant="outline" className="w-full">
                           {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione una fecha</span>}
                         </Button>
                       </FormControl>
@@ -253,12 +253,12 @@ const CaseUploadComponent: React.FC = () => {
               control={form.control}
               name="startDate"
               render={({ field }) => (
-                <FormItem className="col-span-1">
-                  <FormLabel>Fecha de inicio de gestión</FormLabel>
+                <FormItem>
+                  <FormLabel>Fecha que inicio la gestión</FormLabel>
                   <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
-                        <Button variant="outline">
+                        <Button variant="outline" className="w-full">
                           {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione una fecha</span>}
                         </Button>
                       </FormControl>
@@ -284,25 +284,30 @@ const CaseUploadComponent: React.FC = () => {
               control={form.control}
               name="withinSLA"
               render={({ field }) => (
-                <FormItem className="col-span-2 flex flex-row items-center justify-between rounded-lg border p-4">
+                <FormItem className="col-span-1 flex flex-row items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
                     <FormLabel className="text-base">Dentro del SLA</FormLabel>
                   </div>
                   <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
+                    <div className="flex items-center">
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                      <span className="ml-2">{field.value ? "Sí" : "No"}</span>
+                    </div>
                   </FormControl>
                 </FormItem>
               )}
             />
 
+
+
             <FormField
               control={form.control}
               name="caseNumber"
               render={({ field }) => (
-                <FormItem className="col-span-1">
+                <FormItem>
                   <FormLabel>Número de caso</FormLabel>
                   <FormControl>
                     <Input placeholder="Ingrese el número de caso" {...field} />
@@ -316,7 +321,7 @@ const CaseUploadComponent: React.FC = () => {
               control={form.control}
               name="authorizationType"
               render={({ field }) => (
-                <FormItem className="col-span-1">
+                <FormItem>
                   <FormLabel>Tipo de autorización</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
@@ -341,7 +346,7 @@ const CaseUploadComponent: React.FC = () => {
               control={form.control}
               name="details"
               render={({ field }) => (
-                <FormItem className="col-span-2">
+                <FormItem>
                   <FormLabel>Detalles del caso</FormLabel>
                   <FormControl>
                     <Textarea
