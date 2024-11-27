@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# Sancor Salud & Konecta Group
 
-First, run the development server:
+Proyecto creado con Nextjs 14^
+TS - Tailwind - Shadcn
+
+Este proyecto esta diseñado para trabajar el dia a dia con Lideres, Gerencia y Reps, donde pueden estar actualizados en vivo con las novedades y metricas del momento con la compañia, para poder tener un monitoreo y desempeño mas rapido.
+
+## Instalacion
+
+Install sancor-konecta proyecto con npm
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+  npm install sancor-konecta
+  cd sancor-konecta
 ```
+    
+## Demo
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+https://sancor-konectagroup.vercel.app/
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Para que funcione vas a necesitar estas variables
 
-## Learn More
+POSTGRES_URL
 
-To learn more about Next.js, take a look at the following resources:
+POSTGRES_PRISMA_URL
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+POSTGRES_URL_NO_SSL
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+POSTGRES_URL_NON_POOLING
 
-## Deploy on Vercel
+POSTGRES_USER
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+POSTGRES_HOST
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+POSTGRES_PASSWORD
+
+POSTGRES_DATABASE
+
+SECRET_KEY
+
+REFRESH_TOKEN_SECRET
+
+SMTP_USER
+
+SMTP_PASS
+
+GMAIL_CLIENT_ID
+
+GMAIL_CLIENT_SECRET
+
+NEXT_PUBLIC_WEATHER_API_KEY
+
+NEXTAUTH_URL=
+
+NEXTAUTH_SECRET## Color Reference
+
+| Color             | Hex                                                                |
+| ----------------- | ------------------------------------------------------------------ |
+| Blue Color | ![#2563EB](https://via.placeholder.com/10/2563EB?text=+) #2563EB |
+| Logo Color | ![#0C2FA0](https://via.placeholder.com/10/0C2FA0?text=+) #0C2FA0 |
+| SLA Color | ![#23C45F](https://via.placeholder.com/10/23C45F?text=+) #23C45F |
+| Fuera SLA | ![#DC2627](https://via.placeholder.com/10/DC2627?text=+) #DC2627 |
+
+
+## Used By
+
+Este proyecto es personal para la empresa Konecta Group Argentina
+
+
+## Authors
+
+- [@Gaston Alvarez](https://www.instagram.com/gaston.alvare/)
+
+
+![Logo](https://certificaciones.greatplacetowork.com.ar/hubfs/SancorSaludLogo.png)
+
