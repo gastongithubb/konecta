@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 export async function GET(request: NextRequest) {
   try {
     const user = await authenticateRequest();
-    
+
     if (!user || !user.id || !user.role) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
@@ -21,81 +21,20 @@ export async function GET(request: NextRequest) {
 
     const teams = await prisma.team.findMany({
       where,
-      include: {
-        manager: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        },
-        teamLeader: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        },
-        members: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true
-          }
-        },
-        _count: {
-          select: {
-            cases: true,
-            dailyMetrics: true,
-            semanalMetrics: true,
-            tmoMetrics: true,
-            trimestralMetrics: true
-          }
-        }
-      },
       orderBy: {
         createdAt: 'desc'
       }
     });
 
-    const transformedTeams = teams.map(team => {
-      const stats = {
-        totalCases: team._count.cases,
-        metrics: {
-          daily: team._count.dailyMetrics > 0,
-          weekly: team._count.semanalMetrics > 0,
-          tmo: team._count.tmoMetrics > 0,
-          quarterly: team._count.trimestralMetrics > 0
-        }
-      };
-
-      return {
-        id: team.id,
-        name: team.name,
-        createdAt: team.createdAt,
-        updatedAt: team.updatedAt,
-        manager: team.manager,
-        teamLeader: team.teamLeader,
-        members: team.members,
-        stats
-      };
-    });
-
-    return NextResponse.json({ 
-      data: transformedTeams
-    });
-
+    return NextResponse.json(teams, { status: 200 });
   } catch (error) {
     console.error('Error obteniendo equipos:', error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Error interno del servidor',
-      details: process.env.NODE_ENV === 'development' ? error : undefined 
     }, { status: 500 });
   }
 }
+
 
 // POST - Crear un nuevo equipo
 export async function POST(request: NextRequest) {

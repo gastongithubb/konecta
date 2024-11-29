@@ -92,7 +92,7 @@ const Login: React.FC = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Dirección de correo electrónico"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -108,7 +108,7 @@ const Login: React.FC = () => {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -122,7 +122,7 @@ const Login: React.FC = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
-                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                 />
@@ -148,7 +148,7 @@ const Login: React.FC = () => {
             </Alert>
           )}
           <div className="mt-6 text-center">
-            <Link href="/register" className="text-sm text-white hover:text-indigo-200">
+            <Link href="/register" className="text-sm text-white hover:text-blue-200">
               ¿No tienes una cuenta? Regístrate aquí
             </Link>
           </div>

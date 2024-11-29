@@ -94,7 +94,8 @@ const RegisterForm = () => {
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Label htmlFor="name" className="text-white">Nombre</Label>
+              <Label htmlFor="name" className="text-white">Nombre y Apellido <br />
+              <span className="text-red-400 text-xs">Solo un nombre y apellido</span></Label>
               <Input
                 type="text"
                 id="name"
@@ -145,7 +146,7 @@ const RegisterForm = () => {
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="w-full bg-indigo-600 hover:bg-blue-700 text-white"
               disabled={isLoading || !isEmailValid}
             >
               {isLoading ? 'Registrando...' : 'Registrarse'}
@@ -161,9 +162,8 @@ const RegisterForm = () => {
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
-          <div className="mt-6 text-center">
-            <Link href="/login" className="text-sm text-white hover:text-indigo-200">
-              Ya tienes una cuenta? Ingresa desde aquí
+          <div className="mt-6 text-center text-sm text-white">
+              <h2>Ya tienes una cuenta?</h2><Link href="/login" className="text-sm text-red-400 hover:text-indigo-200">Ingresa desde aquí
             </Link>
             </div>
         </div>

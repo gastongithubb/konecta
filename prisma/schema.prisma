@@ -32,6 +32,28 @@ model User {
   nomencladorChanges NomencladorChange[] // Nueva relación
 }
 
+model Nomina {
+  id                Int      @id @default(autoincrement())
+  estadoActual      String
+  cuenta            String
+  servicio          String
+  cargo             String
+  provincia         String
+  site              String
+  lider             String
+  apellidoYNombre   String
+  usuarioOrion      String
+  usuarioSalesforce String
+  modalidad         String
+  ingreso           String
+  egreso            String
+  box               String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  teamId            Int      // Nuevo campo para la relación con Team
+  team              Team     @relation(fields: [teamId], references: [id]) // Relación con Team
+}
+
 model Team {
   id                Int                 @id @default(autoincrement())
   name              String
@@ -47,6 +69,7 @@ model Team {
   teamLeader        User                @relation("TeamLeaderToTeam", fields: [teamLeaderId], references: [id])
   trimestralMetrics TrimestralMetrics[]
   members           User[]
+  Nomina            Nomina[]            // Relación inversa con Nomina
 }
 
 model DailyMetrics {
@@ -169,10 +192,9 @@ model Survey {
   stressLevel      Float
   feedback         String?
   createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  updatedAt        DateTime @default(now())
 }
 
-// Nuevos modelos para nomencladores
 model NomencladorNM {
   id            Int       @id @default(autoincrement())
   descripcion   String    @db.Text
@@ -181,7 +203,7 @@ model NomencladorNM {
   observaciones String?   @db.Text
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  updatedAt     DateTime  @default(now())
   changes       NomencladorChange[] @relation("NomencladorChangeToNM")
   equivalentesNU NomencladorEquivalencia[] @relation("NMtoNU")
 }
@@ -195,28 +217,25 @@ model NomencladorNU {
   observaciones String?   @db.Text
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  updatedAt     DateTime  @default(now())
   changes       NomencladorChange[] @relation("NomencladorChangeToNU")
   equivalentesNM NomencladorEquivalencia[] @relation("NMtoNU")
 
   @@unique([codigo, nucodigo])
 }
 
-// Modelo para mantener equivalencias entre nomencladores
 model NomencladorEquivalencia {
   id          Int           @id @default(autoincrement())
   nmId        Int
   nuId        Int
   createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  updatedAt   DateTime      @default(now())
   nm          NomencladorNM @relation("NMtoNU", fields: [nmId], references: [id])
   nu          NomencladorNU @relation("NMtoNU", fields: [nuId], references: [id])
 
   @@unique([nmId, nuId])
 }
 
-// Modelo para tracking de cambios en nomencladores
-// Actualización del modelo NomencladorChange con nombres únicos para las relaciones
 model NomencladorChange {
   id            Int       @id @default(autoincrement())
   nomenclador   String    // "NM" o "NU"

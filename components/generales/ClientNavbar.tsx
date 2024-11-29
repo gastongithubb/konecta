@@ -224,9 +224,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   <Link href="/dashboard/team_leader/equipo" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Mi Equipo
                   </Link>
-                  <Link href="/dashboard/team_leader/teams" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                  {/* <Link href="/dashboard/team_leader/teams" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Gestionar Equipos
-                  </Link>
+                  </Link> */}
                   <Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
                     Ver casos reclamados
                   </Link>
