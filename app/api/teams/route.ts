@@ -11,18 +11,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    if (user.role !== 'team_leader' && user.role !== 'manager') {
+    // Modificación: Agregar 'user' a los roles permitidos
+    if (user.role !== 'team_leader' && user.role !== 'manager' && user.role !== 'user') {
       return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
     }
 
-    const where: Prisma.TeamWhereInput = user.role === 'manager' 
-      ? { managerId: user.id }
-      : { teamLeaderId: user.id };
+    const where: Prisma.TeamWhereInput = 
+      user.role === 'manager' 
+        ? { managerId: user.id }
+        : user.role === 'team_leader'
+          ? { teamLeaderId: user.id }
+          : user.role === 'user'
+            ? { members: { some: { id: user.id } } } // Para usuarios, mostrar equipos donde son miembros
+            : {};
 
     const teams = await prisma.team.findMany({
       where,
       orderBy: {
         createdAt: 'desc'
+      },
+      include: {
+        // Incluir información adicional que pueda ser útil para los usuarios
+        manager: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        teamLeader: {
+          select: {
+            id: true,
+            name: true
+          }
+        }
       }
     });
 
@@ -86,9 +107,11 @@ export async function POST(request: NextRequest) {
         connect: { id: parseInt(body.teamLeaderId) }
       },
       manager: {
-        connect: { id: managerId }
-      }
-    };
+        connect: { id: parseInt(body.managerId) }
+      },
+      grupoNovedades: body.grupoNovedades || '', // Provide a default empty string if not provided
+      grupoGeneral: body.grupoGeneral || ''     // Provide a default empty string if not provided
+    }
 
     const newTeam = await prisma.team.create({
       data: createData,

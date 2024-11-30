@@ -70,6 +70,8 @@ model Team {
   trimestralMetrics TrimestralMetrics[]
   members           User[]
   Nomina            Nomina[]            // Relación inversa con Nomina
+  grupoNovedades    String?
+  grupoGeneral      String? 
 }
 
 model DailyMetrics {

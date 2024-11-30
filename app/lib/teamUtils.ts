@@ -31,7 +31,9 @@ export async function saveTeam(data: { leaderId: string, agentIds: string[] }) {
         },
         members: {
           connect: data.agentIds.map(id => ({ id: parseInt(id, 10) }))
-        }
+        },
+        grupoNovedades: '', // Add a default empty string
+        grupoGeneral: ''    // Add a default empty string
       },
       include: {
         manager: true,

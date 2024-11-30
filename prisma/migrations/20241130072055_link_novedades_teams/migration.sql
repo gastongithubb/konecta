@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Team" ALTER COLUMN "grupoNovedades" DROP NOT NULL,
+ALTER COLUMN "grupoNovedades" DROP DEFAULT,
+ALTER COLUMN "grupoGeneral" DROP NOT NULL,
+ALTER COLUMN "grupoGeneral" DROP DEFAULT;

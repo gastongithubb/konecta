@@ -369,20 +369,28 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               </button>
               {isDropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
+                <Link 
+                  href={`${dashboardLink}/profile`} 
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
+                >
+                  Perfil
+                </Link>
+                {user.role.toLowerCase() === 'user' && (
                   <Link 
-                    href={`${dashboardLink}/profile`} 
+                    href={`${dashboardLink}/equipoUsers`} 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
                   >
-                    Perfil
+                    Miembros del Equipo
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut size={16} className="mr-2" />
-                    <span>Cerrar Sesión</span>
-                  </button>
-                </div>
+                )}
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={16} className="mr-2" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
               )}
             </div>
           </div>
