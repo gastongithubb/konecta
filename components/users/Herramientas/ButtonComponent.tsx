@@ -14,6 +14,11 @@ const ButtonComponent = () => {
       url: "http://p-oriondb-01:8080/ingresoInterno"
     },
     { 
+      name: "Llamadas caidas", 
+      color: "#F26A8D",
+      url: "https://docs.google.com/forms/d/e/1FAIpQLSdlS9SATMr0g9KW-7eGYJ7UF31_96wJd-1xpqQ8NlrfapzGbw/viewform"
+    },
+    { 
       name: "Plataforma de farmacias", 
       color: "#10B981",
       url: "https://www.plataformacsf.com/login.xhtml"
@@ -27,6 +32,11 @@ const ButtonComponent = () => {
       name: "Convenios UI", 
       color: "#EF4444",
       url: "https://convenios.sancorsalud.com.ar/#/convenio/Buscador"
+    },
+    { 
+      name: "Planes OS", 
+      color: "#0B525B",
+      url: "https://drive.google.com/file/d/1TuNbLZ4vgA5IDkMLrCfNeThVrtWtDX6k/view?usp=sharing"
     },
     { 
       name: "Beneficio de cada plan", 
@@ -47,6 +57,21 @@ const ButtonComponent = () => {
       name: "Condiciones SupraSalud",
       color: "#FFB6C1",
       url: "https://repo.sancorsalud.com.ar/webinstitucional/assets/pdf/supra-salud/SUPRA-SALUD.pdf"
+    },
+    {
+      name: "Ver Deslogueo Orion",
+      color: "#20603d",
+      url: "https://portaldedatos.grupokonecta.com.ar/?page_id=3298"
+    },
+    {
+      name: "Tutorial CRM",
+      color: "#FDC500",
+      url: "https://portaldedatos.grupokonecta.com.ar/?page_id=3298"
+    },
+    {
+      name: "Configuracion Xlite",
+      color: "#00296B",
+      url: "https://portaldedatos.grupokonecta.com.ar/?page_id=3298"
     },
   ];
 

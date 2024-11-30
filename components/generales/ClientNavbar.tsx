@@ -1,9 +1,9 @@
 'use client'
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { logoutClient } from '@/app/lib/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { 
   LogOut, 
   ChevronDown, 
@@ -69,9 +69,45 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  
   const router = useRouter();
+  const pathname = usePathname();
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if the click is outside the dropdown and profile dropdown
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        profileDropdownRef.current && 
+        !profileDropdownRef.current.contains(event.target as Node)
+      ) {
+        setOpenDropdown(null);
+        setIsDropdownOpen(false);
+      }
+    };
+
+    // Add event listener
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    // Clean up the event listener
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Close dropdowns when path changes
+  useEffect(() => {
+    setOpenDropdown(null);
+    setIsDropdownOpen(false);
+  }, [pathname]);
 
   const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  
   const toggleNavDropdown = (label: string) => {
     setOpenDropdown(openDropdown === label ? null : label);
   };
@@ -80,7 +116,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     try {
       const response = await fetch('/api/notifications', {
         method: 'GET',
-        credentials: 'include', // Incluye cookies si estás usando NextAuth o similar
+        credentials: 'include',
       });
   
       if (!response.ok) {
@@ -94,8 +130,6 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
       console.error('Error fetching notifications:', error);
     }
   }
-  
-  
 
   const markAsRead = async (id: string) => {
     try {
@@ -183,6 +217,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
       label: 'Mas',
       dropdown: [
         { href: 'https://docs.google.com/spreadsheets/d/1fyjXUOIYC1JqVFNvNyfTKs5uncUgqYFWPXpBc-sbg54/edit?gid=0#gid=0', label: 'Requisitos de Reintegros', target: '_blank' },
+        { href: 'https://drive.google.com/file/d/1YyisLBTH1-vpHDsNB-u1VOvzc_DpGG_T/view?utm_admin=116921&pli=1', label: 'Reintegro Cobro Plus', target: '_blank' },
         { href: 'https://docs.google.com/spreadsheets/d/1gOo19k_g8nB_WFcPkOunkL9J-CtUBNBdKO2AUQz5hIo/edit?gid=0#gid=0', label: 'falta de prestadores en zona por practicas', target: '_blank' },
         { href: 'https://docs.google.com/document/d/11CievaucFwk5HtAXkluA9e9J7pnmHBub/edit', label: 'Medios de Cobro', target: '_blank' },
         { href: '/dashboard/user/speech', label: 'Speech de corte' },
@@ -190,6 +225,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         { href: 'https://docs.google.com/document/d/1W7UVMff4n0CSNdecZna-oydsttIYsAHL/edit', label: 'Glosario Calidad', target: '_blank'},
         { href: 'https://docs.google.com/spreadsheets/d/1VHQPVUZFEKlwGbe00q5sVK11WEDOqabY6l9FsfJ0vLs/edit?gid=760225460#gid=760225460', label: 'Tabulador CRM', target: '_blank'},
         { href: 'https://docs.google.com/spreadsheets/d/1yL12CvA2pcDi6O6F0GcVPt7FiJPX_dHBr6gZOpeihSE/edit?gid=644205541#gid=644205541', label: 'CAR Status', target: '_blank' },
+        { href: 'https://docs.google.com/spreadsheets/d/10kRYSd2iyN0OFR2sLuaclPgNWbohmgh3RRhd0NhZqNE/edit?gid=0#gid=0', label: 'Motivos de rechazos Online', target: '_blank' },
       ]
     },
   ] : [];
@@ -202,7 +238,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
             <Link href={dashboardLink} className="flex items-center">
               <Image src={LogoSrc} alt="Logo" width={130} height={60} className="mr-2" unoptimized />
             </Link>
-            <div className="ml-10 flex items-baseline space-x-4">
+            <div ref={dropdownRef} className="ml-10 flex items-baseline space-x-4">
               {user.role.toLowerCase() === 'manager' && (
                 <>
                   <Link href="/dashboard/manager/users" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md transition-colors">
@@ -359,7 +395,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
             </DropdownMenu>
 
             {/* Perfil de Usuario */}
-            <div className="relative flex items-center">
+            <div ref={profileDropdownRef} className="relative flex items-center">
               <span className="mr-4 text-sm font-medium">{user.name}</span>
               <button
                 onClick={toggleDropdown}
@@ -369,28 +405,28 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               </button>
               {isDropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
-                <Link 
-                  href={`${dashboardLink}/profile`} 
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                >
-                  Perfil
-                </Link>
-                {user.role.toLowerCase() === 'user' && (
                   <Link 
-                    href={`${dashboardLink}/equipoUsers`} 
+                    href={`${dashboardLink}/profile`} 
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
                   >
-                    Miembros del Equipo
+                    Perfil
                   </Link>
-                )}
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  <LogOut size={16} className="mr-2" />
-                  <span>Cerrar Sesión</span>
-                </button>
-              </div>
+                  {user.role.toLowerCase() === 'user' && (
+                    <Link 
+                      href={`${dashboardLink}/equipoUsers`} 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
+                    >
+                      Miembros del Equipo
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut size={16} className="mr-2" />
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </div>
               )}
             </div>
           </div>
