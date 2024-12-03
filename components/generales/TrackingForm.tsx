@@ -26,10 +26,7 @@ const TrackingForm: React.FC = () => {
     reason: '',
   });
 
-  const handleChange = (
-    name: string,
-    value: string
-  ) => {
+  const handleChange = (name: string, value: string) => {
     setTrackingData(prev => ({
       ...prev,
       [name]: value,
@@ -50,7 +47,6 @@ const TrackingForm: React.FC = () => {
 
       if (!response.ok) throw new Error('Error saving tracking');
 
-      // Resetear el formulario
       setTrackingData({
         caseNumber: '',
         action: 'Derivar',
@@ -69,46 +65,48 @@ const TrackingForm: React.FC = () => {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-center">Nuevo Seguimiento</CardTitle>
+    <Card className="max-w-md mx-auto shadow-lg">
+      <CardHeader className="bg-gray-50">
+        <CardTitle className="text-xl font-semibold text-gray-800">Nuevo Seguimiento</CardTitle>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Número de Caso
-            </label>
-            <Input
-              value={trackingData.caseNumber}
-              onChange={(e) => handleChange('caseNumber', e.target.value)}
-              required
-              placeholder="Ej: CAS-12345"
-              className="w-full"
-            />
-          </div>
+      <CardContent className="pt-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">
+                Número de Caso
+              </label>
+              <Input
+                value={trackingData.caseNumber}
+                onChange={(e) => handleChange('caseNumber', e.target.value)}
+                required
+                placeholder="Ej: CAS-12345"
+                className="h-9"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Acción
-            </label>
-            <Select
-              value={trackingData.action}
-              onValueChange={(value) => handleChange('action', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione acción" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Derivar">Derivar</SelectItem>
-                <SelectItem value="Cerrar">Cerrar</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">
+                Acción
+              </label>
+              <Select
+                value={trackingData.action}
+                onValueChange={(value) => handleChange('action', value)}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Seleccione acción" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Derivar">Derivar</SelectItem>
+                  <SelectItem value="Cerrar">Cerrar</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {trackingData.action === 'Derivar' && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">
                 Área
               </label>
               <Select
@@ -116,7 +114,7 @@ const TrackingForm: React.FC = () => {
                 onValueChange={(value) => handleChange('area', value)}
                 required
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-9">
                   <SelectValue placeholder="Seleccione área" />
                 </SelectTrigger>
                 <SelectContent>
@@ -132,8 +130,8 @@ const TrackingForm: React.FC = () => {
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
+          <div className="space-y-1">
+            <label className="text-sm font-medium text-gray-700">
               Motivo
             </label>
             <Textarea
@@ -141,25 +139,31 @@ const TrackingForm: React.FC = () => {
               onChange={(e) => handleChange('reason', e.target.value)}
               required
               placeholder="Describe brevemente el motivo..."
-              className="min-h-[100px]"
+              className="h-20 resize-none"
             />
           </div>
 
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full"
+            className="w-full bg-blue-600 hover:bg-blue-700 h-9"
           >
-            {isSubmitting ? 'Guardando...' : 'Guardar Seguimiento'}
+            {isSubmitting ? 'Guardando...' : 'Enviar Caso'}
           </Button>
         </form>
 
         {showSuccess && (
-          <Alert className="mt-4 bg-green-50 border-green-200">
-            <AlertDescription className="text-green-800">
-              Seguimiento guardado exitosamente
-            </AlertDescription>
-          </Alert>
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <Alert className="mt-4 bg-green-50 border-green-200">
+              <AlertDescription className="text-green-800">
+                Caso enviado exitosamente
+              </AlertDescription>
+            </Alert>
+          </motion.div>
         )}
       </CardContent>
     </Card>

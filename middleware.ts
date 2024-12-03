@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
         case 'agent':
           return NextResponse.redirect(new URL('/dashboard/agent', request.url))
         default:
-          return NextResponse.redirect(new URL('/unauthorized', request.url))
+          return NextResponse.redirect(new URL('/dashboard/unauthorized', request.url))
       }
     }
   }

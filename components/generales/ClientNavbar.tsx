@@ -9,7 +9,19 @@ import {
   ChevronDown, 
   Bell,
   Circle,
-  Check 
+  Check,
+  Menu,
+  X,
+  User,
+  Users,
+  Calendar,
+  Activity,
+  FileText,
+  Wrench,
+  Book,
+  Grid,
+  ChevronRight,
+  BadgePlus
 } from 'lucide-react';
 import LogoSrc from '@/public/Logo.webp';
 import {
@@ -23,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 
+// Interfaces
 interface User {
   id: number;
   name: string;
@@ -39,6 +52,7 @@ interface ClientNavbarProps {
 interface NavLink {
   label: string;
   href?: string;
+  icon?: React.ComponentType<any>; // Añadimos el tipo genérico
   dropdown?: Array<{
     href: string;
     label: string;
@@ -54,17 +68,54 @@ interface Notification {
   createdAt: string;
 }
 
-const UserInitials: React.FC<{ name: string }> = ({ name }) => {
+// Props interfaces para componentes internos
+interface UserInitialsProps {
+  name: string;
+  className?: string;
+}
+
+interface NavLinkProps {
+  href: string;
+  isActive?: boolean;
+  target?: string;
+  icon?: React.ComponentType<any>;
+  children: React.ReactNode;
+  className?: string;
+}
+
+const UserInitials: React.FC<UserInitialsProps> = ({ name, className }) => {
   const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
   return (
-    <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold hover:bg-blue-800 transition-colors">
+    <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white font-medium text-sm shadow-md hover:from-blue-700 hover:to-blue-800 transition-all ${className || ''}`}>
       {initials}
     </div>
   );
 };
 
+const NavLink: React.FC<NavLinkProps> = ({ 
+  href, 
+  isActive, 
+  target, 
+  icon: Icon, 
+  children,
+  className 
+}) => (
+  <Link
+    href={href}
+    target={target}
+    className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+      isActive 
+        ? 'bg-blue-100 text-blue-700' 
+        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+    } ${className || ''}`}
+  >
+    {Icon && <Icon className={`mr-2 h-4 w-4 ${isActive ? 'text-blue-700' : 'text-gray-500'}`} />}
+    {children}
+  </Link>
+);
+
 const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -76,10 +127,8 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      // Check if the click is outside the dropdown and profile dropdown
       if (
         dropdownRef.current && 
         !dropdownRef.current.contains(event.target as Node) &&
@@ -87,27 +136,18 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         !profileDropdownRef.current.contains(event.target as Node)
       ) {
         setOpenDropdown(null);
-        setIsDropdownOpen(false);
       }
     };
 
-    // Add event listener
     document.addEventListener('mousedown', handleClickOutside);
-    
-    // Clean up the event listener
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close dropdowns when path changes
   useEffect(() => {
     setOpenDropdown(null);
-    setIsDropdownOpen(false);
+    setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
-  
   const toggleNavDropdown = (label: string) => {
     setOpenDropdown(openDropdown === label ? null : label);
   };
@@ -120,14 +160,16 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
       });
   
       if (!response.ok) {
-        console.error('Unexpected response format:', await response.json());
-        return;
+        throw new Error('Failed to fetch notifications');
       }
   
       const data = await response.json();
-      console.log('Notifications:', data);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.notifications?.filter((n: Notification) => !n.read).length || 0);
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      setIsLoading(false);
     }
   }
 
@@ -179,16 +221,16 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
   const navLinks: NavLink[] = user.role.toLowerCase() === 'user' ? [
     {
       label: 'Metricas',
+      icon: Activity,
       dropdown: [
         { href: '/nps-individual', label: 'NPS Individual' },
         { href: '/trimestral', label: 'NPS Trimestral' },
         { href: '/balance-mensual', label: 'Balance Mensual' },
-        { href: '/metricas-equipo', label: 'Métricas Equipo' },
-        { href: '/promotores', label: 'Encuestas NPS' }
       ]
     },
     {
       label: 'Herramientas',
+      icon: Wrench,
       dropdown: [
         { href: '/dashboard/user/cases', label: 'Formulario F4' },
         { href: '/dashboard/user/sla', label: 'SLA' },
@@ -203,6 +245,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     },
     {
       label: 'Vademecum',
+      icon: Book,
       dropdown: [
         { href: 'https://docs.google.com/spreadsheets/d/1720VTYilXZxEHKnWYpq5R7x2hkswnGfd/edit?rtpof=true&sd=true&gid=2119192922#gid=2119192922', label: 'PMI Sustentable, C y OS', target: '_blank' },
         { href: 'https://docs.google.com/spreadsheets/d/1GDfmi_CBvcmeJZKWyKFtx6eGZqppraUOyFSqe0SBExE/edit?gid=1182941618#gid=1182941618', label: 'Salud Reproductiva', target: '_blank' },
@@ -212,9 +255,14 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         { href: 'https://docs.google.com/spreadsheets/d/1UI_ihqmhAKsH9TOJ9E4b7Wjln9a5Vyav/edit?gid=1234629926#gid=1234629926', label: 'Leche Medicamentosa', target: '_blank' },
       ]
     },
-    { href: '/dashboard/user/foro', label: 'Pizarra' },
+    { 
+      label: 'Pizarra',
+      icon: Grid,
+      href: '/dashboard/user/foro'
+    },
     {
       label: 'Mas',
+      icon: BadgePlus,
       dropdown: [
         { href: 'https://docs.google.com/spreadsheets/d/1fyjXUOIYC1JqVFNvNyfTKs5uncUgqYFWPXpBc-sbg54/edit?gid=0#gid=0', label: 'Requisitos de Reintegros', target: '_blank' },
         { href: 'https://drive.google.com/file/d/1YyisLBTH1-vpHDsNB-u1VOvzc_DpGG_T/view?utm_admin=116921&pli=1', label: 'Reintegro Cobro Plus', target: '_blank' },
@@ -230,208 +278,354 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     },
   ] : [];
 
+  const renderNotificationDropdown = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="relative rounded-full hover:bg-gray-100 transition-all"
+        >
+          <Bell className="h-5 w-5 text-gray-600" />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive"
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
+            >
+              {unreadCount}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-80 p-2" align="end">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-semibold text-gray-900">Notificaciones</p>
+          {unreadCount > 0 && (
+            <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+              {unreadCount} nueva{unreadCount !== 1 && 's'}
+            </Badge>
+          )}
+        </div>
+        <ScrollArea className="h-[300px]">
+          {isLoading ? (
+            <div className="p-4 text-center text-sm text-gray-500">
+              Cargando notificaciones...
+            </div>
+          ) : notifications.length > 0 ? (
+            notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className="flex flex-col p-3 hover:bg-gray-50 rounded-lg cursor-pointer"
+                onClick={() => markAsRead(notification.id)}
+              >
+                <div className="flex items-center gap-2">
+                  {!notification.read && (
+                    <Circle className="h-2 w-2 fill-blue-600 text-blue-600 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                    <p className="text-sm text-gray-500 line-clamp-2">{notification.message}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {formatDate(notification.createdAt)}
+                    </p>
+                  </div>
+                  {!notification.read && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8 hover:bg-blue-50"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="p-4 text-center text-sm text-gray-500">
+              No hay notificaciones
+            </div>
+          )}
+        </ScrollArea>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
-    <nav className="bg-gray-50 text-gray-800 shadow-lg z-50 h-16 sticky top-0">
+    <nav className="bg-white border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <div className="flex items-center">
             <Link href={dashboardLink} className="flex items-center">
-              <Image src={LogoSrc} alt="Logo" width={130} height={60} className="mr-2" unoptimized />
+              <Image src={LogoSrc} alt="Logo" width={120} height={40} className="mr-2" unoptimized />
             </Link>
-            <div ref={dropdownRef} className="ml-10 flex items-baseline space-x-4">
+          </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-4">
+            {user.role.toLowerCase() === 'manager' && (
+              <>
+                <NavLink 
+                  href="/dashboard/manager/users" 
+                  isActive={pathname === '/dashboard/manager/users'}
+                  icon={Users}
+                >
+                  Incidencias
+                </NavLink>
+                <NavLink 
+                  href="/dashboard/manager/teams" 
+                  isActive={pathname === '/dashboard/manager/teams'}
+                  icon={Users}
+                >
+                  Gestionar Equipos
+                </NavLink>
+                <NavLink 
+                  href="/dashboard/manager/calendario" 
+                  isActive={pathname === '/dashboard/manager/calendario'}
+                  icon={Calendar}
+                >
+                  Calendario
+                </NavLink>
+                <NavLink 
+                  href="/dashboard/manager/bienestar" 
+                  isActive={pathname === '/dashboard/manager/bienestar'}
+                  icon={Activity}
+                >
+                  Encuesta Bienestar
+                </NavLink>
+              </>
+            )}
+
+            {user.role.toLowerCase() === 'team_leader' && (
+              <>
+                <NavLink 
+                  href="/dashboard/team_leader/equipo" 
+                  isActive={pathname === '/dashboard/team_leader/equipo'}
+                  icon={Users}
+                >
+                  Mi Equipo
+                </NavLink>
+                <NavLink 
+                  href="/dashboard/team_leader/caselist" 
+                  isActive={pathname === '/dashboard/team_leader/caselist'}
+                  icon={FileText}
+                >
+                  Ver casos reclamados
+                </NavLink>
+                <NavLink 
+                  href="/dashboard/team_leader/bienestar" 
+                  isActive={pathname === '/dashboard/team_leader/bienestar'}
+                  icon={Activity}
+                >
+                  Encuesta Bienestar
+                </NavLink>
+                <NavLink 
+                  href="/dashboard/team_leader/caseSeguimiento" 
+                  isActive={pathname === '/dashboard/team_leader/caseSeguimiento'}
+                  icon={FileText}
+                >
+                  Casos Dev/Fin
+                </NavLink>
+              </>
+            )}
+
+            {user.role.toLowerCase() === 'user' && (
+              <>
+                {navLinks.map((link, index) => (
+                  <div key={index} className="relative group">
+                    {link.href ? (
+                      <NavLink 
+                        href={link.href}
+                        isActive={pathname === link.href}
+                        icon={link.icon}
+                      >
+                        {link.label}
+                      </NavLink>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all"
+                          >
+                            {link.icon && <link.icon className="mr-2 h-4 w-4 text-gray-500" />}
+                            {link.label}
+                            <ChevronDown size={16} className="ml-1" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56">
+                          {link.dropdown?.map((item, itemIndex) => (
+                            <DropdownMenuItem key={itemIndex}>
+                              <Link
+                                href={item.href}
+                                target={item.target}
+                                className="flex items-center w-full text-sm text-gray-700 hover:text-gray-900"
+                              >
+                                {item.label}
+                                {item.target === '_blank' && (
+                                  <ChevronRight className="ml-auto h-4 w-4" />
+                                )}
+                              </Link>
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Right side items */}
+          <div className="flex items-center space-x-4">
+            {renderNotificationDropdown()}
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-all">
+                  <span className="text-sm font-medium text-gray-700 hidden sm:block">
+                    {user.name}
+                  </span>
+                  <UserInitials name={user.name} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem>
+                  <Link 
+                    href={`${dashboardLink}/profile`}
+                    className="flex items-center w-full"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Perfil</span>
+                  </Link>
+                </DropdownMenuItem>
+                {user.role.toLowerCase() === 'user' && (
+                  <DropdownMenuItem>
+                    <Link 
+                      href={`${dashboardLink}/equipoUsers`}
+                      className="flex items-center w-full"
+                    >
+                      <Users className="mr-2 h-4 w-4" />
+                      <span>Miembros del Equipo</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50" 
+                  onClick={handleLogout}
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="p-2"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-200">
+          <ScrollArea className="max-h-[calc(100vh-4rem)] py-4">
+            <div className="px-4 space-y-1">
               {user.role.toLowerCase() === 'manager' && (
                 <>
-                  <Link href="/dashboard/manager/users" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md transition-colors">
+                  <NavLink href="/dashboard/manager/users" icon={Users}>
                     Incidencias
-                  </Link>
-                  <Link href="/dashboard/manager/teams" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md transition-colors">
+                  </NavLink>
+                  <NavLink href="/dashboard/manager/teams" icon={Users}>
                     Gestionar Equipos
-                  </Link>
-                  <Link href="/dashboard/manager/calendario" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md transition-colors">
+                  </NavLink>
+                  <NavLink href="/dashboard/manager/calendario" icon={Calendar}>
                     Calendario
-                  </Link>
-                  <Link href="/dashboard/manager/bienestar" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md transition-colors">
+                  </NavLink>
+                  <NavLink href="/dashboard/manager/bienestar" icon={Activity}>
                     Encuesta Bienestar
-                  </Link>
+                  </NavLink>
                 </>
               )}
+
               {user.role.toLowerCase() === 'team_leader' && (
                 <>
-                  <Link href="/dashboard/team_leader/equipo" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                  <NavLink href="/dashboard/team_leader/equipo" icon={Users}>
                     Mi Equipo
-                  </Link>
-                  {/* <Link href="/dashboard/team_leader/teams" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
-                    Gestionar Equipos
-                  </Link> */}
-                  <Link href="/dashboard/team_leader/caselist" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                  </NavLink>
+                  <NavLink href="/dashboard/team_leader/caselist" icon={FileText}>
                     Ver casos reclamados
-                  </Link>
-                  
-                  <Link href="/dashboard/team_leader/bienestar" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                  </NavLink>
+                  <NavLink href="/dashboard/team_leader/bienestar" icon={Activity}>
                     Encuesta Bienestar
-                  </Link>
-                  <Link href="/dashboard/team_leader/caseSeguimiento" className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
+                  </NavLink>
+                  <NavLink href="/dashboard/team_leader/caseSeguimiento" icon={FileText}>
                     Casos Dev/Fin
-                  </Link>
+                  </NavLink>
                 </>
               )}
-              {user.role.toLowerCase() === 'user' && (
-                <>
-                  {navLinks.map((link, index) => (
-                    <div key={index} className="relative group">
-                      {link.href ? (
-                        <Link href={link.href} className="hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md">
-                          {link.label}
-                        </Link>
-                      ) : (
-                        <button
-                          onClick={() => toggleNavDropdown(link.label)}
-                          className="flex items-center hover:bg-blue-500 hover:text-white px-3 py-2 rounded-md"
-                        >
-                          {link.label}
-                          <ChevronDown size={16} className="ml-1" />
-                        </button>
-                      )}
-                      {link.dropdown && openDropdown === link.label && (
-                        <div className="absolute left-0 mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
+
+              {user.role.toLowerCase() === 'user' && navLinks.map((link, index) => (
+                <div key={index} className="py-1">
+                  {link.href ? (
+                    <NavLink href={link.href} icon={link.icon}>
+                      {link.label}
+                    </NavLink>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => toggleNavDropdown(link.label)}
+                        className="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
+                      >
+                        {link.icon && <link.icon className="mr-2 h-4 w-4" />}
+                        {link.label}
+                        <ChevronDown 
+                          size={16} 
+                          className={`ml-auto transition-transform ${
+                            openDropdown === link.label ? 'transform rotate-180' : ''
+                          }`}
+                        />
+                      </button>
+                      {openDropdown === link.label && link.dropdown && (
+                        <div className="mt-1 ml-4 space-y-1">
                           {link.dropdown.map((item, itemIndex) => (
                             <Link
                               key={itemIndex}
                               href={item.href}
                               target={item.target}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 rounded-lg"
                             >
                               {item.label}
+                              {item.target === '_blank' && (
+                                <ChevronRight className="inline-block ml-2 h-4 w-4" />
+                              )}
                             </Link>
                           ))}
                         </div>
                       )}
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {/* Notificaciones */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="relative hover:bg-gray-100 transition-colors"
-                >
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <Badge 
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    >
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="w-80" 
-                align="end"
-                forceMount
-              >
-                <div className="flex items-center justify-between p-2">
-                  <p className="text-sm font-medium">Notificaciones</p>
-                  {unreadCount > 0 && (
-                    <Badge variant="secondary">
-                      {unreadCount} nueva{unreadCount !== 1 && 's'}
-                    </Badge>
+                    </>
                   )}
                 </div>
-                <DropdownMenuSeparator />
-                <ScrollArea className="h-[300px]">
-                  {isLoading ? (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      Cargando notificaciones...
-                    </div>
-                  ) : notifications.length > 0 ? (
-                    notifications.map((notification) => (
-                      <DropdownMenuItem
-                        key={notification.id}
-                        className="flex flex-col items-start p-4 cursor-pointer hover:bg-gray-50"
-                        onClick={() => markAsRead(notification.id)}
-                      >
-                        <div className="flex items-center w-full">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium flex items-center gap-2">
-                              {!notification.read && (
-                                <Circle className="h-2 w-2 fill-blue-600 text-blue-600" />
-                              )}
-                              {notification.title}
-                            </p>
-                            <p className="text-sm text-gray-500 line-clamp-2">
-                              {notification.message}
-                            </p>
-                          </div>
-                          {!notification.read && (
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              className="ml-2 h-8 w-8 hover:bg-blue-50"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {formatDate(notification.createdAt)}
-                        </p>
-                      </DropdownMenuItem>
-                    ))
-                  ) : (
-                    <div className="p-4 text-center text-sm text-gray-500">
-                      No hay notificaciones
-                    </div>
-                  )}
-                </ScrollArea>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Perfil de Usuario */}
-            <div ref={profileDropdownRef} className="relative flex items-center">
-              <span className="mr-4 text-sm font-medium">{user.name}</span>
-              <button
-                onClick={toggleDropdown}
-                className="flex items-center focus:outline-none"
-              >
-                <UserInitials name={user.name} />
-              </button>
-              {isDropdownOpen && (
-                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md overflow-hidden shadow-xl z-10">
-                  <Link 
-                    href={`${dashboardLink}/profile`} 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                  >
-                    Perfil
-                  </Link>
-                  {user.role.toLowerCase() === 'user' && (
-                    <Link 
-                      href={`${dashboardLink}/equipoUsers`} 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left transition-colors"
-                    >
-                      Miembros del Equipo
-                    </Link>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut size={16} className="mr-2" />
-                    <span>Cerrar Sesión</span>
-                  </button>
-                </div>
-              )}
+              ))}
             </div>
-          </div>
+          </ScrollArea>
         </div>
-      </div>
+      )}
     </nav>
   );
 };

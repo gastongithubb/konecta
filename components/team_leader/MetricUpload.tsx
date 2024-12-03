@@ -1,3 +1,4 @@
+// MetricUpload.tsx
 import React from 'react';
 import MultiCSVUpload from './MultiCSVUpload';
 
@@ -7,9 +8,9 @@ interface MetricUploadProps {
 
 const MetricUpload: React.FC<MetricUploadProps> = ({ fileType }) => {
   return (
-    <div className="p-8 bg-white">
-      <h3 className="text-2xl font-bold mb-4">
-        Cargar {fileType.charAt(0).toUpperCase() + fileType.slice(1)}
+    <div className="p-8">
+      <h3 className="text-lg font-medium text-gray-900 mb-6">
+        Cargar métricas {fileType}
       </h3>
       <MultiCSVUpload fileType={fileType} />
     </div>

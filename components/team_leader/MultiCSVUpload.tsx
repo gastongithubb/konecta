@@ -1,72 +1,62 @@
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import Papa from 'papaparse';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UploadCloud } from 'lucide-react';
 
 interface MultiCSVUploadProps {
   fileType: 'trimestral' | 'semanal' | 'tmo' | 'nps-diario';
 }
 
-interface MetricData {
-  [key: string]: number | string;
-}
-
 const MultiCSVUpload: React.FC<MultiCSVUploadProps> = ({ fileType }) => {
-  const [uploadStatus, setUploadStatus] = useState<string>('');
+  const [uploadStatus, setUploadStatus] = useState<{
+    type: 'success' | 'error' | '';
+    message: string;
+  }>({ type: '', message: '' });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    acceptedFiles.forEach((file) => {
-      Papa.parse(file, {
-        complete: async (results: Papa.ParseResult<Record<string, string>>) => {
-          if (results.data && Array.isArray(results.data) && results.data.length > 0) {
-            const headers = Object.keys(results.data[0]);
-            const dateColumn = headers.find(h => h.toLowerCase().includes('date') || h.toLowerCase().includes('fecha')) || 'date';
-            
-            const formattedData: MetricData[] = results.data.map((row) => {
-              const formattedRow: MetricData = {};
-              headers.forEach(header => {
-                if (header === dateColumn) {
-                  formattedRow[header] = new Date(row[header]).toISOString();
-                } else if (!isNaN(Number(row[header]))) {
-                  formattedRow[header] = Number(row[header]);
-                } else {
-                  formattedRow[header] = row[header];
-                }
-              });
-              return formattedRow;
-            });
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    for (const file of acceptedFiles) {
+      try {
+        const parseFile = () => new Promise((resolve, reject) => {
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => resolve(results.data),
+            error: (error) => reject(error),
+          });
+        });
 
-            try {
-              const response = await fetch(`/api/upload/${fileType}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ metrics: formattedData }),
-              });
+        const parsedData = await parseFile();
 
-              if (response.ok) {
-                setUploadStatus(`Archivo ${file.name} cargado exitosamente`);
-              } else {
-                const errorData = await response.json();
-                setUploadStatus(`Error al cargar ${file.name}: ${errorData.message || 'Error desconocido'}`);
-              }
-            } catch (error) {
-              console.error('Error:', error);
-              setUploadStatus(`Error al cargar ${file.name}: Error de red`);
-            }
-          } else {
-            setUploadStatus(`Error: No se pudieron procesar los datos del archivo ${file.name}`);
-          }
-        },
-        header: true,
-        skipEmptyLines: true,
-      });
-    });
+        // Ahora usando endpoints específicos
+        const response = await fetch(`/api/metrics-upload/${fileType}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(parsedData),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Error al cargar el archivo');
+        }
+
+        setUploadStatus({
+          type: 'success',
+          message: `Archivo ${file.name} cargado exitosamente`
+        });
+
+      } catch (error) {
+        setUploadStatus({
+          type: 'error',
+          message: error instanceof Error ? error.message : 'Error desconocido'
+        });
+      }
+    }
   }, [fileType]);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
-    onDrop, 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
     accept: {
       'text/csv': ['.csv'],
       'application/vnd.ms-excel': ['.csv']
@@ -75,20 +65,28 @@ const MultiCSVUpload: React.FC<MultiCSVUploadProps> = ({ fileType }) => {
   });
 
   return (
-    <div>
-      <div {...getRootProps()} className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer bg-white hover:bg-gray-50 transition duration-300">
+    <div className="space-y-6">
+      <div
+        {...getRootProps()}
+        className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer
+          ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}
+      >
         <input {...getInputProps()} />
         <UploadCloud className="mx-auto h-12 w-12 text-gray-400" />
-        {isDragActive ? (
-          <p className="mt-2 text-sm text-gray-600">Suelta los archivos CSV aquí ...</p>
-        ) : (
-          <p className="mt-2 text-sm text-gray-600">Arrastra y suelta archivos CSV de {fileType} aquí, o haz clic para seleccionar archivos</p>
-        )}
+        <p className="mt-2 text-sm text-gray-600">
+          {isDragActive
+            ? 'Suelta los archivos aquí ...'
+            : `Arrastra y suelta archivos CSV de ${fileType} aquí, o haz clic para seleccionar`}
+        </p>
       </div>
-      {uploadStatus && (
-        <div className={`mt-4 p-4 rounded-md ${uploadStatus.includes('exitosamente') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {uploadStatus}
-        </div>
+
+      {uploadStatus.type && (
+        <Alert 
+          variant={uploadStatus.type === 'success' ? 'default' : 'destructive'}
+          className="mt-4"
+        >
+          <AlertDescription>{uploadStatus.message}</AlertDescription>
+        </Alert>
       )}
     </div>
   );

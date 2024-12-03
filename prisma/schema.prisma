@@ -143,14 +143,20 @@ model Case {
   withinSLA         Boolean
   caseNumber        String   @unique
   authorizationType String
+  customType        String?  // Campo opcional para tipos personalizados
   details           String
   status            String   @default("pending")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   userId            Int
-  teamId            Int?     // Ajuste para permitir null
+  teamId            Int?
+  reiteratedFrom    Int?     // Referencia al caso original
+  originalCase      Case?    @relation("Reiterations", fields: [reiteratedFrom], references: [id])
+  reiterations      Case[]   @relation("Reiterations")
   team              Team?    @relation(fields: [teamId], references: [id])
   user              User     @relation(fields: [userId], references: [id])
+
+  @@index([caseNumber])
 }
 
 model Notification {

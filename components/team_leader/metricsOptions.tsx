@@ -3,13 +3,20 @@ import React, { useState } from 'react';
 import Sidebar from './sidebar';
 import MetricUpload from './MetricUpload';
 import MetricVisualization from './MetricVisualization';
+import { BarChart2, Clock, Activity, ThumbsUp } from 'lucide-react';
+import { MetricType, ViewType, MetricOption } from '@/types/metrics';
 
-type MetricType = 'trimestral' | 'semanal' | 'tmo' | 'nps-diario';
-type ViewType = 'upload' | 'metrics';
+const METRIC_OPTIONS: MetricOption[] = [
+  { type: 'trimestral' as MetricType, label: 'Métricas Trimestrales', icon: BarChart2 },
+  { type: 'semanal' as MetricType, label: 'Métricas Semanales', icon: Clock },
+  { type: 'tmo' as MetricType, label: 'Métricas TMO', icon: Activity },
+  { type: 'nps-diario' as MetricType, label: 'NPS Diario', icon: ThumbsUp },
+];
 
 const Dashboard: React.FC = () => {
   const [selectedView, setSelectedView] = useState<ViewType>('metrics');
   const [selectedMetric, setSelectedMetric] = useState<MetricType>('trimestral');
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState(true);
 
   const handleViewChange = (view: ViewType) => {
     setSelectedView(view);
@@ -20,11 +27,39 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen">
-      <Sidebar onViewChange={handleViewChange} onMetricChange={handleMetricChange} />
-      <div className="flex-1 ml-64 p-8">
-        {selectedView === 'upload' && <MetricUpload fileType={selectedMetric} />}
-        {selectedView === 'metrics' && <MetricVisualization metricType={selectedMetric} />}
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <Sidebar 
+        onViewChange={handleViewChange} 
+        onMetricChange={handleMetricChange}
+        isExpanded={isSidebarExpanded}
+        onToggleExpand={() => setIsSidebarExpanded(!isSidebarExpanded)}
+        selectedView={selectedView}
+        selectedMetric={selectedMetric}
+        metricOptions={METRIC_OPTIONS}
+      />
+
+      {/* Main Content */}
+      <div className={`flex-1 transition-all duration-300 ${isSidebarExpanded ? 'ml-64' : 'ml-20'}`}>
+        {/* Header */}
+        <div className="bg-white shadow-sm">
+          <div className="px-6 py-4">
+            <h1 className="text-xl font-bold text-gray-900">
+              {selectedView === 'metrics' ? 'Visualización de Métricas' : 'Carga de Métricas'}
+            </h1>
+          </div>
+        </div>
+
+        {/* Content Area */}
+        <div className="p-6">
+          <div className="bg-white rounded-lg shadow">
+            {selectedView === 'upload' ? (
+              <MetricUpload fileType={selectedMetric} />
+            ) : (
+              <MetricVisualization metricType={selectedMetric} />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
