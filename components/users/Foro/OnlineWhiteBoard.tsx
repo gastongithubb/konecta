@@ -1,12 +1,20 @@
 'use client'
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Image from 'next/image';
-import { Sticker, StickyNote, X, PinIcon, Save, Search, CornerRightDown, Palette } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { StickyNote, X, PinIcon, Save, CornerRightDown, Palette, Moon, Sun, Sticker } from 'lucide-react';
+
+interface ButtonBaseProps {
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  children: React.ReactNode;
+  className?: string;
+}
 
 type NoteColor = {
   name: string;
   bgColor: string;
+  darkBgColor: string;
   textColor: string;
+  darkTextColor: string;
 };
 
 type NoteType = {
@@ -25,54 +33,74 @@ type StickerType = {
   content: string;
   x: number;
   y: number;
-  isGif: boolean;
-  gifUrl?: string;
 };
 
-interface GiphyImage {
-  fixed_height_small: {
-    url: string;
-  };
-  fixed_height: {
-    url: string;
-  };
-}
-
-interface GiphyResult {
-  id: string;
-  title: string;
-  images: GiphyImage;
-}
-
 const NOTE_COLORS: NoteColor[] = [
-  { name: 'Amarillo', bgColor: 'bg-yellow-200', textColor: 'text-black' },
-  { name: 'Rosa Pastel', bgColor: 'bg-pink-200', textColor: 'text-black' },
-  { name: 'Celeste', bgColor: 'bg-blue-200', textColor: 'text-black' },
-  { name: 'Verde Pastel', bgColor: 'bg-green-200', textColor: 'text-black' },
-  { name: 'Lavanda', bgColor: 'bg-purple-200', textColor: 'text-black' },
-  { name: 'Naranja Claro', bgColor: 'bg-orange-200', textColor: 'text-black' },
-  { name: 'Gris Claro', bgColor: 'bg-gray-200', textColor: 'text-black' },
-  { name: 'Azul Oscuro', bgColor: 'bg-blue-700', textColor: 'text-white' },
-  { name: 'Verde Oscuro', bgColor: 'bg-green-700', textColor: 'text-white' },
-  { name: 'Púrpura', bgColor: 'bg-purple-700', textColor: 'text-white' },
+  { 
+    name: 'Amarillo',
+    bgColor: 'bg-yellow-200',
+    darkBgColor: 'dark:bg-yellow-900',
+    textColor: 'text-black',
+    darkTextColor: 'dark:text-yellow-100'
+  },
+  {
+    name: 'Rosa',
+    bgColor: 'bg-pink-200',
+    darkBgColor: 'dark:bg-pink-900',
+    textColor: 'text-black',
+    darkTextColor: 'dark:text-pink-100'
+  },
+  {
+    name: 'Celeste',
+    bgColor: 'bg-blue-200',
+    darkBgColor: 'dark:bg-blue-900',
+    textColor: 'text-black',
+    darkTextColor: 'dark:text-blue-100'
+  },
+  {
+    name: 'Verde',
+    bgColor: 'bg-green-200',
+    darkBgColor: 'dark:bg-green-900',
+    textColor: 'text-black',
+    darkTextColor: 'dark:text-green-100'
+  },
+  {
+    name: 'Lavanda',
+    bgColor: 'bg-purple-200',
+    darkBgColor: 'dark:bg-purple-900',
+    textColor: 'text-black',
+    darkTextColor: 'dark:text-purple-100'
+  }
 ];
 
-const DEFAULT_NOTE_COLOR: NoteColor = NOTE_COLORS[0];
-
+// Emojis optimizados para compatibilidad multiplataforma
 const STICKER_OPTIONS = [
-  '😀', '🚀', '💡', '🎉', '🐱', '🌈', '🍕', '🎸',
-  '🌺', '🦄', '🍦', '🎨', '📚', '🏆', '🎭', '🌙',
-  '🌴', '🏄', '🍔', '🚲', '🎧', '🏀', '🌍', '🍓',
-  '👌🏻', '🦷', '👅', '👁️', '👣', '🧠', '🫀', '🫁',
-  '👨🏻‍💻', '🧑🏻‍💼', '👩🏻‍💼', '👩🏻‍💻', 
-  '👩🏻‍🦯‍➡️', '🧑🏻‍🦯‍➡️', '🐭', '🐥',
-  '🌚', '❄️', '🍼', '💊', '💉', '🩺', '🩹', '❌',
-  '✅', '🕧'
+  // Emociones básicas - alta compatibilidad
+  '😊', '😄', '😃', '😉', '😍',
+  // Objetos comunes
+  '📝', '📌', '📎', '✏️', '📚',
+  // Símbolos
+  '❤️', '⭐', '✨', '☀️', '🌙',
+  // Naturaleza
+  '🌺', '🌸', '🍀', '🌿', '🌴',
+  // Animales comunes
+  '🐱', '🐶', '🐼', '🐨', '🦊',
+  // Comida
+  '🍎', '🍕', '☕', '🍰', '🍪',
+  // Actividades
+  '💻', '📱', '✉️', '📞', '🎮',
+  // Tiempo y clima
+  '⌚', '⏰', '☔', '⛅', '❄️',
+  // Transportes
+  '🚗', '✈️', '🚲', '🚌', '⛵',
+  // Varios
+  '💡', '🎵', '🎨', '🎯', '🎪'
 ];
 
-const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY;
+const DEFAULT_NOTE_COLOR = NOTE_COLORS[0];
 
 const OnlineWhiteboard = () => {
+  const { theme, setTheme } = useTheme();
   const [notes, setNotes] = useState<NoteType[]>([]);
   const [stickers, setStickers] = useState<StickerType[]>([]);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
@@ -80,8 +108,6 @@ const OnlineWhiteboard = () => {
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [showStickerPicker, setShowStickerPicker] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState<string | null>(null);
-  const [gifSearchTerm, setGifSearchTerm] = useState('');
-  const [gifResults, setGifResults] = useState<GiphyResult[]>([]);
   const whiteboardRef = useRef<HTMLDivElement>(null);
 
   const saveData = useCallback(() => {
@@ -130,31 +156,15 @@ const OnlineWhiteboard = () => {
     setNotes([...notes, newNote]);
   };
 
-  const addSticker = (content: string, isGif: boolean = false, gifUrl?: string) => {
+  const addSticker = (content: string) => {
     const newSticker: StickerType = {
       id: Date.now().toString(),
       content,
       x: Math.random() * 80,
       y: Math.random() * 80,
-      isGif,
-      gifUrl,
     };
     setStickers([...stickers, newSticker]);
     setShowStickerPicker(false);
-  };
-
-  const searchGif = async () => {
-    if (!GIPHY_API_KEY) {
-      console.error('GIPHY API key is not set');
-      return;
-    }
-    try {
-      const response = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${gifSearchTerm}&limit=9`);
-      const data = await response.json();
-      setGifResults(data.data);
-    } catch (error) {
-      console.error('Error fetching GIFs:', error);
-    }
   };
 
   const updateNote = (id: string, newText: string) => {
@@ -245,90 +255,138 @@ const OnlineWhiteboard = () => {
     };
   }, [resizingNote, handleResize, handleResizeEnd]);
 
+  const ButtonBase: React.FC<ButtonBaseProps> = ({ onClick, children, className = "" }) => (
+    <button
+      onClick={onClick}
+      className={`inline-flex items-center px-4 py-2 rounded-lg transition-all duration-200 
+      font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+      hover:bg-opacity-90 hover:shadow-lg ${className}`}
+    >
+      {children}
+    </button>
+  );
+
   return (
-    <div className="relative w-full h-screen bg-gray-100 overflow-hidden flex flex-col">
-      {/* Barra de control superior */}
-      <div className="bg-white shadow-md p-4 flex items-center justify-between">
-        <div className="flex space-x-2">
-          <button
+    <div className="relative w-full h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col transition-colors duration-200">
+      {/* Control Bar */}
+      <div className="bg-white dark:bg-gray-800 shadow-md p-4 flex items-center justify-between transition-colors duration-200">
+        <div className="flex space-x-3">
+          <ButtonBase
             onClick={addNote}
-            className="bg-blue-500 text-white p-2 rounded flex items-center"
+            className="bg-blue-500 text-white hover:bg-blue-600"
           >
-            <StickyNote className="mr-1" /> Añadir Nota
-          </button>
-          <button
+            <StickyNote className="mr-2 h-4 w-4" /> Añadir Nota
+          </ButtonBase>
+          
+          <ButtonBase
             onClick={() => setShowStickerPicker(!showStickerPicker)}
-            className="bg-green-500 text-white p-2 rounded flex items-center"
+            className="bg-green-500 text-white hover:bg-green-600"
           >
-            <Sticker className="mr-1" /> Añadir Sticker/GIF
-          </button>
-          <button
+            <Sticker className="mr-2 h-4 w-4" /> Añadir Emoji
+          </ButtonBase>
+          
+          <ButtonBase
             onClick={saveData}
-            className="bg-purple-500 text-white p-2 rounded flex items-center"
+            className="bg-purple-500 text-white hover:bg-purple-600"
           >
-            <Save className="mr-1" /> Guardar
-          </button>
+            <Save className="mr-2 h-4 w-4" /> Guardar
+          </ButtonBase>
         </div>
-        <span className={`ml-2 ${
-          saveStatus === 'saved' ? 'text-green-500' :
-          saveStatus === 'saving' ? 'text-yellow-500' :
-          'text-red-500'
-        }`}>
-          {saveStatus === 'saved' ? 'Guardado' :
-           saveStatus === 'saving' ? 'Guardando...' :
-           'Error al guardar'}
-        </span>
+
+        <div className="flex items-center space-x-4">
+          <span className={`transition-colors duration-200 ${
+            saveStatus === 'saved' ? 'text-green-500 dark:text-green-400' :
+            saveStatus === 'saving' ? 'text-yellow-500 dark:text-yellow-400' :
+            'text-red-500 dark:text-red-400'
+          }`}>
+            {saveStatus === 'saved' ? 'Guardado' :
+             saveStatus === 'saving' ? 'Guardando...' :
+             'Error al guardar'}
+          </span>
+
+          <ButtonBase
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </ButtonBase>
+        </div>
       </div>
 
-      {/* Pizarra */}
+      {/* Whiteboard Area */}
       <div ref={whiteboardRef} className="flex-grow relative overflow-hidden">
         <div className="absolute inset-0 p-4">
-          {/* Notas */}
+          {/* Notes */}
           {notes.map((note) => (
             <div
               key={note.id}
-              className={`absolute p-2 ${note.color?.bgColor || DEFAULT_NOTE_COLOR.bgColor} ${note.color?.textColor || DEFAULT_NOTE_COLOR.textColor} rounded shadow group ${note.isPinned ? 'cursor-default' : 'cursor-move'}`}
-              style={{ left: `${note.x}%`, top: `${note.y}%`, width: `${note.width}px`, height: `${note.height}px` }}
+              className={`absolute p-2 rounded-lg shadow-lg group transition-all duration-200
+                ${note.color?.bgColor || DEFAULT_NOTE_COLOR.bgColor}
+                ${note.color?.darkBgColor || DEFAULT_NOTE_COLOR.darkBgColor}
+                ${note.color?.textColor || DEFAULT_NOTE_COLOR.textColor}
+                ${note.color?.darkTextColor || DEFAULT_NOTE_COLOR.darkTextColor}
+                ${note.isPinned ? 'cursor-default' : 'cursor-move'}
+                hover:shadow-xl`}
+              style={{
+                left: `${note.x}%`,
+                top: `${note.y}%`,
+                width: `${note.width}px`,
+                height: `${note.height}px`
+              }}
               draggable={!note.isPinned}
               onDragStart={(e) => handleDragStart(e, note.id)}
               onDrag={handleDrag}
               onDragEnd={handleDragEnd}
             >
               <textarea
-                className={`w-full h-full bg-transparent resize-none focus:outline-none ${note.color?.textColor || DEFAULT_NOTE_COLOR.textColor}`}
+                className={`w-full h-full bg-transparent resize-none focus:outline-none transition-colors duration-200
+                  ${note.color?.textColor || DEFAULT_NOTE_COLOR.textColor}
+                  ${note.color?.darkTextColor || DEFAULT_NOTE_COLOR.darkTextColor}`}
                 value={note.text}
                 onChange={(e) => updateNote(note.id, e.target.value)}
               />
-              <button
-                onClick={() => deleteNote(note.id)}
-                className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X size={16} />
-              </button>
-              <button
-                onClick={() => togglePinNote(note.id)}
-                className={`absolute bottom-0 right-0 ${note.isPinned ? 'bg-blue-500' : 'bg-gray-500'} text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity`}
-              >
-                <PinIcon size={16} />
-              </button>
-              <button
-                onClick={() => setShowColorPicker(note.id)}
-                className="absolute top-0 left-0 bg-gray-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Palette size={16} />
-              </button>
+              
+              {/* Note Controls */}
+              <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <button
+                  onClick={() => deleteNote(note.id)}
+                  className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors duration-200"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+                
+                <button
+                  onClick={() => togglePinNote(note.id)}
+                  className={`p-1 rounded-full transition-colors duration-200 text-white
+                    ${note.isPinned ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-500 hover:bg-gray-600'}`}
+                >
+                  <PinIcon className="h-4 w-4" />
+                </button>
+                
+                <button
+                  onClick={() => setShowColorPicker(note.id)}
+                  className="p-1 rounded-full bg-gray-500 text-white hover:bg-gray-600 transition-colors duration-200"
+                >
+                  <Palette className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Resize Handle */}
               <div
-                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                 onMouseDown={(e) => handleResizeStart(e, note.id)}
               >
-                <CornerRightDown size={16} />
+                <CornerRightDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </div>
+
+              {/* Color Picker */}
               {showColorPicker === note.id && (
-                <div className="absolute top-6 left-0 bg-white p-2 rounded shadow-lg z-10">
+                <div className="absolute top-12 left-2 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-xl z-10 grid grid-cols-5 gap-2 transition-colors duration-200">
                   {NOTE_COLORS.map((color) => (
                     <button
                       key={color.name}
-                      className={`w-6 h-6 m-1 rounded-full ${color.bgColor}`}
+                      className={`w-6 h-6 rounded-full transition-transform duration-200 hover:scale-110 
+                        ${color.bgColor} ${color.darkBgColor}`}
                       onClick={() => changeNoteColor(note.id, color)}
                       title={color.name}
                     />
@@ -338,80 +396,53 @@ const OnlineWhiteboard = () => {
             </div>
           ))}
 
-          {/* Stickers y GIFs */}
+          {/* Stickers */}
           {stickers.map((sticker) => (
             <div
               key={sticker.id}
               className="absolute cursor-move group"
-              style={{ left: `${sticker.x}%`, top: `${sticker.y}%` }}
+              style={{ 
+                left: `${sticker.x}%`, 
+                top: `${sticker.y}%`,
+                fontSize: '2rem'
+              }}
               draggable
               onDragStart={(e) => handleDragStart(e, sticker.id)}
               onDrag={handleDrag}
               onDragEnd={handleDragEnd}
             >
-              {sticker.isGif ? (
-                <Image 
-                  src={sticker.gifUrl || ''}
-                  alt={sticker.content}
-                  width={96}
-                  height={96}
-                  className="object-cover"
-                />
-              ) : (
-                <span className="text-4xl" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}>{sticker.content}</span>
-              )}
-              <button
-                onClick={() => deleteSticker(sticker.id)}
-                className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X size={16} />
-              </button>
+              <div className="relative group">
+                <span className="select-none">{sticker.content}</span>
+                <button
+                  onClick={() => deleteSticker(sticker.id)}
+                  className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white 
+                    hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-all duration-200 
+                    transform scale-75 hover:scale-100"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Selector de Stickers y GIFs */}
+      {/* Emoji Picker Modal */}
       {showStickerPicker && (
-        <div className="absolute top-16 left-4 bg-white p-4 rounded shadow-lg max-w-md z-10">
-          <div className="grid grid-cols-6 gap-2 mb-4">
-            {STICKER_OPTIONS.map((sticker, index) => (
+        <div className="absolute top-20 left-4 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl 
+          max-w-2xl z-10 transition-colors duration-200 border dark:border-gray-700">
+          <div className="grid grid-cols-10 gap-2">
+            {STICKER_OPTIONS.map((emoji, index) => (
               <button
                 key={index}
-                onClick={() => addSticker(sticker)}
-                className="text-2xl hover:bg-gray-200 rounded p-1"
-                style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif' }}
+                onClick={() => addSticker(emoji)}
+                className="text-2xl p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 
+                  transition-colors duration-200 focus:outline-none focus:ring-2 
+                  focus:ring-blue-500 focus:ring-opacity-50"
+                title={`Emoji ${index + 1}`}
               >
-                {sticker}
+                <span className="select-none">{emoji}</span>
               </button>
-            ))}
-          </div>
-          <div className="flex items-center mb-2">
-            <input
-              type="text"
-              value={gifSearchTerm}
-              onChange={(e) => setGifSearchTerm(e.target.value)}
-              placeholder="Buscar GIF..."
-              className="border rounded p-1 mr-2 flex-grow"
-            />
-            <button
-              onClick={searchGif}
-              className="bg-blue-500 text-white p-2 rounded flex items-center"
-            >
-              <Search className="mr-1" /> Buscar
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {gifResults.map((gif) => (
-              <Image
-                key={gif.id}
-                src={gif.images.fixed_height_small.url}
-                alt={gif.title}
-                width={120}
-                height={90}
-                className="object-cover cursor-pointer"
-                onClick={() => addSticker(gif.title, true, gif.images.fixed_height.url)}
-              />
             ))}
           </div>
         </div>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useTheme } from "next-themes";
 
 interface TrackingData {
   caseNumber: string;
@@ -19,6 +20,7 @@ interface TrackingData {
 const TrackingForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const { theme } = useTheme();
   const [trackingData, setTrackingData] = useState<TrackingData>({
     caseNumber: '',
     action: 'Derivar',
@@ -65,15 +67,17 @@ const TrackingForm: React.FC = () => {
   };
 
   return (
-    <Card className="max-w-md mx-auto shadow-lg">
-      <CardHeader className="bg-gray-50">
-        <CardTitle className="text-xl font-semibold text-gray-800">Nuevo Seguimiento</CardTitle>
+    <Card className="max-w-md mx-auto shadow-lg dark:shadow-blue-500/5 transition-all">
+      <CardHeader className="bg-gray-50 dark:bg-gray-800/50 transition-colors">
+        <CardTitle className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          Nuevo Seguimiento
+        </CardTitle>
       </CardHeader>
-      <CardContent className="pt-6">
+      <CardContent className="pt-6 dark:bg-gray-900/50">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Número de Caso
               </label>
               <Input
@@ -81,22 +85,23 @@ const TrackingForm: React.FC = () => {
                 onChange={(e) => handleChange('caseNumber', e.target.value)}
                 required
                 placeholder="Ej: CAS-12345"
-                className="h-9"
+                className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 
+                  dark:placeholder-gray-400 transition-colors"
               />
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Acción
               </label>
               <Select
                 value={trackingData.action}
                 onValueChange={(value) => handleChange('action', value)}
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                   <SelectValue placeholder="Seleccione acción" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                   <SelectItem value="Derivar">Derivar</SelectItem>
                   <SelectItem value="Cerrar">Cerrar</SelectItem>
                 </SelectContent>
@@ -106,7 +111,7 @@ const TrackingForm: React.FC = () => {
 
           {trackingData.action === 'Derivar' && (
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Área
               </label>
               <Select
@@ -114,10 +119,10 @@ const TrackingForm: React.FC = () => {
                 onValueChange={(value) => handleChange('area', value)}
                 required
               >
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                   <SelectValue placeholder="Seleccione área" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                   <SelectItem value="Autorizaciones">Autorizaciones</SelectItem>
                   <SelectItem value="Medicamentos">Medicamentos</SelectItem>
                   <SelectItem value="Afiliaciones">Afiliaciones</SelectItem>
@@ -131,7 +136,7 @@ const TrackingForm: React.FC = () => {
           )}
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Motivo
             </label>
             <Textarea
@@ -139,14 +144,16 @@ const TrackingForm: React.FC = () => {
               onChange={(e) => handleChange('reason', e.target.value)}
               required
               placeholder="Describe brevemente el motivo..."
-              className="h-20 resize-none"
+              className="h-20 resize-none dark:bg-gray-800 dark:border-gray-700 
+                dark:text-gray-100 dark:placeholder-gray-400 transition-colors"
             />
           </div>
 
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 h-9"
+            className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 
+              dark:hover:bg-blue-800 h-9 transition-colors"
           >
             {isSubmitting ? 'Guardando...' : 'Enviar Caso'}
           </Button>
@@ -158,8 +165,9 @@ const TrackingForm: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <Alert className="mt-4 bg-green-50 border-green-200">
-              <AlertDescription className="text-green-800">
+            <Alert className="mt-4 bg-green-50 dark:bg-green-900/20 
+              border-green-200 dark:border-green-800 transition-colors">
+              <AlertDescription className="text-green-800 dark:text-green-300">
                 Caso enviado exitosamente
               </AlertDescription>
             </Alert>

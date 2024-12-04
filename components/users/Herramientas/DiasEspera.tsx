@@ -1,6 +1,7 @@
-
 'use client'
 import React, { useState } from 'react';
+import { useTheme } from 'next-themes';
+import { Edit2, Save, X } from 'lucide-react';
 
 interface Practica {
   nombre: string;
@@ -25,6 +26,7 @@ const practicasIniciales: Practica[] = [
 ];
 
 const PracticasEspera: React.FC = () => {
+  const { theme } = useTheme();
   const [practicas, setPracticas] = useState<Practica[]>(practicasIniciales);
   const [editIndex, setEditIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState<string>("");
@@ -47,121 +49,83 @@ const PracticasEspera: React.FC = () => {
     setEditIndex(null);
   };
 
-  const containerStyle: React.CSSProperties = {
-    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
-    maxWidth: '900px',
-    margin: '0 auto',
-    padding: '30px',
-    backgroundColor: '#f0f4f8',
-    borderRadius: '10px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-  };
-
-  const headerStyle: React.CSSProperties = {
-    fontSize: '28px',
-    color: '#2c3e50',
-    marginBottom: '20px',
-    textAlign: 'center',
-    borderBottom: '2px solid #3498db',
-    paddingBottom: '10px',
-  };
-
-  const tableStyle: React.CSSProperties = {
-    width: '100%',
-    borderCollapse: 'separate',
-    borderSpacing: '0 10px',
-  };
-
-  const thStyle: React.CSSProperties = {
-    backgroundColor: '#3498db',
-    color: 'white',
-    padding: '12px',
-    textAlign: 'left',
-    borderRadius: '5px 5px 0 0',
-  };
-
-  const tdStyle: React.CSSProperties = {
-    backgroundColor: 'white',
-    padding: '12px',
-    border: 'none',
-    borderBottom: '1px solid #e0e0e0',
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    padding: '8px 12px',
-    borderRadius: '4px',
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'background-color 0.3s',
-  };
-
-  const editButtonStyle: React.CSSProperties = {
-    ...buttonStyle,
-    backgroundColor: '#2ecc71',
-    color: 'white',
-  };
-
-  const saveButtonStyle: React.CSSProperties = {
-    ...buttonStyle,
-    backgroundColor: '#3498db',
-    color: 'white',
-    marginRight: '5px',
-  };
-
-  const cancelButtonStyle: React.CSSProperties = {
-    ...buttonStyle,
-    backgroundColor: '#e74c3c',
-    color: 'white',
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: '60px',
-    padding: '5px',
-    borderRadius: '4px',
-    border: '1px solid #bdc3c7',
-  };
-
   return (
-    <div style={containerStyle}>
-      <h1 style={headerStyle}>Tiempos de Espera - Prácticas Médicas</h1>
-      <table style={tableStyle}>
-        <thead>
-          <tr>
-            <th style={thStyle}>Práctica</th>
-            <th style={{...thStyle, width: '150px'}}>Días de Espera</th>
-            <th style={{...thStyle, width: '120px'}}>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {practicas.map((practica, index) => (
-            <tr key={index}>
-              <td style={tdStyle}>{practica.nombre}</td>
-              <td style={tdStyle}>
-                {editIndex === index ? (
-                  <input
-                    type="number"
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    style={inputStyle}
-                  />
-                ) : (
-                  practica.diasEspera
-                )}
-              </td>
-              <td style={tdStyle}>
-                {editIndex === index ? (
-                  <>
-                    <button onClick={handleSave} style={saveButtonStyle}>Guardar</button>
-                    <button onClick={handleCancel} style={cancelButtonStyle}>Cancelar</button>
-                  </>
-                ) : (
-                  <button onClick={() => handleEdit(index)} style={editButtonStyle}>Editar</button>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="w-full max-w-5xl mx-auto p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 transition-colors duration-200">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white mb-6 text-center pb-4 border-b border-blue-500">
+          Tiempos de Espera - Prácticas Médicas
+        </h1>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="px-6 py-4 bg-blue-500 text-white font-semibold text-left rounded-tl-lg">
+                  Práctica
+                </th>
+                <th className="px-6 py-4 bg-blue-500 text-white font-semibold text-left w-32">
+                  Días de Espera
+                </th>
+                <th className="px-6 py-4 bg-blue-500 text-white font-semibold text-left w-32 rounded-tr-lg">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {practicas.map((practica, index) => (
+                <tr 
+                  key={index}
+                  className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                >
+                  <td className="px-6 py-4 text-gray-800 dark:text-gray-200">
+                    {practica.nombre}
+                  </td>
+                  <td className="px-6 py-4 text-gray-800 dark:text-gray-200">
+                    {editIndex === index ? (
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="w-20 px-2 py-1 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      practica.diasEspera
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {editIndex === index ? (
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={handleSave}
+                          className="flex items-center px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-150"
+                        >
+                          <Save className="w-4 h-4 mr-1" />
+                          <span>Guardar</span>
+                        </button>
+                        <button
+                          onClick={handleCancel}
+                          className="flex items-center px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-150"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          <span>Cancelar</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleEdit(index)}
+                        className="flex items-center px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-150"
+                      >
+                        <Edit2 className="w-4 h-4 mr-1" />
+                        <span>Editar</span>
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

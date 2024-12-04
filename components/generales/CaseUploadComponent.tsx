@@ -1,4 +1,4 @@
-'use client';
+'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
@@ -20,8 +20,8 @@ import { useSocket } from '@/hooks/useSocket';
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Search, Loader2 } from 'lucide-react';
-
+import { Search, Loader2, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 // Tipos
 export interface Case {
   id: number;
@@ -63,16 +63,16 @@ const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleSt
   return (
     <div className="space-y-4">
       {cases.map((caseItem) => (
-        <Card key={caseItem.id}>
+        <Card key={caseItem.id} className="dark:bg-gray-800/50 dark:border-gray-700">
           <CardContent className="p-4">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
-                <div className="font-medium">{caseItem.caseNumber}</div>
-                <div className="text-sm text-gray-500">
+                <div className="font-medium dark:text-gray-100">{caseItem.caseNumber}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
                   {format(new Date(caseItem.claimDate), 'PPP', { locale: es })}
                 </div>
                 {caseItem.reiteratedFrom && (
-                  <div className="text-sm text-yellow-600">
+                  <div className="text-sm text-yellow-600 dark:text-yellow-400">
                     Caso reiterado
                   </div>
                 )}
@@ -82,36 +82,42 @@ const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleSt
                   defaultValue={caseItem.status}
                   onValueChange={(value) => onToggleStatus(caseItem.id, value)}
                 >
-                  <SelectTrigger className="w-32">
+                  <SelectTrigger className="w-32 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="in-progress">En Proceso</SelectItem>
-                    <SelectItem value="completed">Completado</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
+                  <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                    <SelectItem value="pending" className="dark:text-gray-100 dark:focus:bg-gray-700">Pendiente</SelectItem>
+                    <SelectItem value="in-progress" className="dark:text-gray-100 dark:focus:bg-gray-700">En Proceso</SelectItem>
+                    <SelectItem value="completed" className="dark:text-gray-100 dark:focus:bg-gray-700">Completado</SelectItem>
+                    <SelectItem value="cancelled" className="dark:text-gray-100 dark:focus:bg-gray-700">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button variant="outline" size="sm" onClick={() => onEdit(caseItem.id)}>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onEdit(caseItem.id)}
+                  className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-700"
+                >
                   Editar
                 </Button>
                 <Button 
-                  variant="destructive" 
+                  variant="destructive"
                   size="sm"
                   onClick={() => onDelete(caseItem.id)}
+                  className="dark:bg-red-900 dark:hover:bg-red-800 dark:text-gray-100"
                 >
                   Eliminar
                 </Button>
               </div>
             </div>
             <div className="mt-2">
-              <div className="text-sm">
-                <span className="font-medium">Tipo: </span>
+              <div className="text-sm dark:text-gray-300">
+                <span className="font-medium dark:text-gray-200">Tipo: </span>
                 {caseItem.authorizationType}
                 {caseItem.customType && ` - ${caseItem.customType}`}
               </div>
-              <div className="text-sm mt-1">
-                <span className="font-medium">Detalles: </span>
+              <div className="text-sm mt-1 dark:text-gray-300">
+                <span className="font-medium dark:text-gray-200">Detalles: </span>
                 {caseItem.details}
               </div>
             </div>
@@ -119,7 +125,7 @@ const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleSt
         </Card>
       ))}
       {cases.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No se encontraron casos
         </div>
       )}
@@ -129,6 +135,7 @@ const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleSt
 
 // Componente Principal
 const CaseUploadComponent: React.FC = () => {
+  const { theme, setTheme } = useTheme();
   const { data: session, status } = useSession();
   const { toast } = useToast();
   const socket = useSocket(session?.user?.id ? session.user.id.toString() : '');
@@ -432,21 +439,32 @@ const CaseUploadComponent: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-4">
+    <div className="max-w-7xl mx-auto p-4 bg-background dark:bg-gray-900 min-h-screen transition-colors duration-200">
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-700"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
+      </div>
+
       <div className="grid grid-cols-12 gap-4">
         {/* Stats Cards */}
         <div className="col-span-12 lg:col-span-4">
           <div className="grid grid-cols-2 gap-4">
-            <Card>
+            <Card className="dark:bg-gray-800/50 dark:border-gray-700">
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{dailyCount}</div>
-                <div className="text-sm text-gray-500">Casos Hoy</div>
-                </CardContent>
+                <div className="text-2xl font-bold dark:text-gray-100">{dailyCount}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Casos Hoy</div>
+              </CardContent>
             </Card>
-            <Card>
+            <Card className="dark:bg-gray-800/50 dark:border-gray-700">
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold">{monthlyCount}</div>
-                <div className="text-sm text-gray-500">Casos del Mes</div>
+                <div className="text-2xl font-bold dark:text-gray-100">{monthlyCount}</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Casos del Mes</div>
               </CardContent>
             </Card>
           </div>
@@ -455,13 +473,13 @@ const CaseUploadComponent: React.FC = () => {
         {/* Search Bar */}
         <div className="col-span-12 lg:col-span-8">
           <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
             <Input
               type="text"
               placeholder="Buscar por número de caso, tipo o detalles"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="pl-8 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-400"
             />
           </div>
         </div>
@@ -469,13 +487,23 @@ const CaseUploadComponent: React.FC = () => {
         {/* Main Content Area */}
         <div className="col-span-12">
           <Tabs defaultValue="list" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="list">Lista de Casos</TabsTrigger>
-              <TabsTrigger value="new">Nuevo Caso</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 dark:bg-gray-800/50 dark:border-gray-700">
+              <TabsTrigger 
+                value="list" 
+                className="dark:text-gray-100 data-[state=active]:dark:bg-gray-700"
+              >
+                Lista de Casos
+              </TabsTrigger>
+              <TabsTrigger 
+                value="new" 
+                className="dark:text-gray-100 data-[state=active]:dark:bg-gray-700"
+              >
+                Nuevo Caso
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="list">
-              <Card>
+              <Card className="dark:bg-gray-800/50 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <CaseList
                     cases={filteredCases}
@@ -488,7 +516,7 @@ const CaseUploadComponent: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="new">
-              <Card>
+              <Card className="dark:bg-gray-800/50 dark:border-gray-700">
                 <CardContent className="pt-6">
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -498,29 +526,36 @@ const CaseUploadComponent: React.FC = () => {
                           name="claimDate"
                           render={({ field }) => (
                             <FormItem className="flex flex-col">
-                              <FormLabel>Fecha de reclamo</FormLabel>
+                              <FormLabel className="dark:text-gray-100">Fecha de reclamo</FormLabel>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <FormControl>
-                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                    <Button 
+                                      variant="outline" 
+                                      className="w-full justify-start text-left font-normal dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+                                    >
                                       {field.value ? (
                                         format(field.value, "PPP", { locale: es })
                                       ) : (
-                                        <span>Seleccione una fecha</span>
+                                        <span className="dark:text-gray-400">Seleccione una fecha</span>
                                       )}
                                     </Button>
                                   </FormControl>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
+                                <PopoverContent 
+                                  className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700" 
+                                  align="start"
+                                >
                                   <Calendar
                                     mode="single"
                                     selected={field.value}
                                     onSelect={field.onChange}
                                     initialFocus
+                                    className="dark:bg-gray-800 dark:text-gray-100"
                                   />
                                 </PopoverContent>
                               </Popover>
-                              <FormMessage />
+                              <FormMessage className="dark:text-red-400" />
                             </FormItem>
                           )}
                         />
@@ -530,29 +565,36 @@ const CaseUploadComponent: React.FC = () => {
                           name="startDate"
                           render={({ field }) => (
                             <FormItem className="flex flex-col">
-                              <FormLabel>Fecha de inicio</FormLabel>
+                              <FormLabel className="dark:text-gray-100">Fecha de inicio</FormLabel>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <FormControl>
-                                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                    <Button 
+                                      variant="outline" 
+                                      className="w-full justify-start text-left font-normal dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+                                    >
                                       {field.value ? (
                                         format(field.value, "PPP", { locale: es })
                                       ) : (
-                                        <span>Seleccione una fecha</span>
+                                        <span className="dark:text-gray-400">Seleccione una fecha</span>
                                       )}
                                     </Button>
                                   </FormControl>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
+                                <PopoverContent 
+                                  className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700" 
+                                  align="start"
+                                >
                                   <Calendar
                                     mode="single"
                                     selected={field.value}
                                     onSelect={field.onChange}
                                     initialFocus
+                                    className="dark:bg-gray-800 dark:text-gray-100"
                                   />
                                 </PopoverContent>
                               </Popover>
-                              <FormMessage />
+                              <FormMessage className="dark:text-red-400" />
                             </FormItem>
                           )}
                         />
@@ -562,15 +604,16 @@ const CaseUploadComponent: React.FC = () => {
                           name="caseNumber"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Número de caso</FormLabel>
+                              <FormLabel className="dark:text-gray-100">Número de caso</FormLabel>
                               <FormControl>
                                 <Input 
                                   {...field}
                                   onChange={(e) => handleCaseNumberChange(e.target.value)}
                                   placeholder="Ingrese el número de caso"
+                                  className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-400"
                                 />
                               </FormControl>
-                              <FormMessage />
+                              <FormMessage className="dark:text-red-400" />
                             </FormItem>
                           )}
                         />
@@ -580,22 +623,22 @@ const CaseUploadComponent: React.FC = () => {
                           name="authorizationType"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Tipo de autorización</FormLabel>
+                              <FormLabel className="dark:text-gray-100">Tipo de autorización</FormLabel>
                               <Select onValueChange={handleTypeChange} defaultValue={field.value}>
                                 <FormControl>
-                                  <SelectTrigger>
+                                  <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                                     <SelectValue placeholder="Seleccione el tipo" />
                                   </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Medicamentos">Medicamentos</SelectItem>
-                                  <SelectItem value="Cirugías">Cirugías</SelectItem>
-                                  <SelectItem value="Ambulatorio">Ambulatorio</SelectItem>
-                                  <SelectItem value="Leches medicamentosas">Leches medicamentosas</SelectItem>
-                                  <SelectItem value="Otros">Otros</SelectItem>
+                                <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
+                                  <SelectItem value="Medicamentos" className="dark:text-gray-100 dark:focus:bg-gray-700">Medicamentos</SelectItem>
+                                  <SelectItem value="Cirugías" className="dark:text-gray-100 dark:focus:bg-gray-700">Cirugías</SelectItem>
+                                  <SelectItem value="Ambulatorio" className="dark:text-gray-100 dark:focus:bg-gray-700">Ambulatorio</SelectItem>
+                                  <SelectItem value="Leches medicamentosas" className="dark:text-gray-100 dark:focus:bg-gray-700">Leches medicamentosas</SelectItem>
+                                  <SelectItem value="Otros" className="dark:text-gray-100 dark:focus:bg-gray-700">Otros</SelectItem>
                                 </SelectContent>
                               </Select>
-                              <FormMessage />
+                              <FormMessage className="dark:text-red-400" />
                             </FormItem>
                           )}
                         />
@@ -606,14 +649,15 @@ const CaseUploadComponent: React.FC = () => {
                             name="customType"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Especificar tipo</FormLabel>
+                                <FormLabel className="dark:text-gray-100">Especificar tipo</FormLabel>
                                 <FormControl>
                                   <Input 
                                     {...field} 
                                     placeholder="Describa el tipo de autorización"
+                                    className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-400"
                                   />
                                 </FormControl>
-                                <FormMessage />
+                                <FormMessage className="dark:text-red-400" />
                               </FormItem>
                             )}
                           />
@@ -624,14 +668,15 @@ const CaseUploadComponent: React.FC = () => {
                         control={form.control}
                         name="withinSLA"
                         render={({ field }) => (
-                          <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                          <FormItem className="flex items-center justify-between rounded-lg border p-3 dark:border-gray-700">
                             <div className="space-y-0.5">
-                              <FormLabel>Dentro del SLA</FormLabel>
+                              <FormLabel className="dark:text-gray-100">Dentro del SLA</FormLabel>
                             </div>
                             <FormControl>
                               <Switch
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
+                                className="dark:bg-gray-700"
                               />
                             </FormControl>
                           </FormItem>
@@ -643,22 +688,22 @@ const CaseUploadComponent: React.FC = () => {
                         name="details"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Detalles del caso</FormLabel>
+                            <FormLabel className="dark:text-gray-100">Detalles del caso</FormLabel>
                             <FormControl>
                               <Textarea
                                 {...field}
                                 placeholder="Proporcione detalles sobre el caso"
-                                className="resize-none h-24"
+                                className="resize-none h-24 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-400"
                               />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="dark:text-red-400" />
                           </FormItem>
                         )}
                       />
 
                       <Button 
                         type="submit" 
-                        className="w-full"
+                        className="w-full dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                         disabled={isLoading}
                       >
                         {isLoading ? (
@@ -680,16 +725,20 @@ const CaseUploadComponent: React.FC = () => {
       </div>
 
       <AlertDialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="dark:bg-gray-800 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>Caso duplicado detectado</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="dark:text-gray-100">
+              Caso duplicado detectado
+            </AlertDialogTitle>
+            <AlertDialogDescription className="dark:text-gray-400">
               Este caso ya fue registrado anteriormente. ¿Desea crear una reiteración del caso?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={createReiteratedCase}>
+            <AlertDialogCancel className="dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction className="dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
               Crear reiteración
             </AlertDialogAction>
           </AlertDialogFooter>
