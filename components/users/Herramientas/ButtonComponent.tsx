@@ -77,15 +77,21 @@ const ButtonComponent = () => {
     },
     {
       name: "Tutorial CRM",
-      color: "bg-[#FDC500]",
+      color: "bg-[#588B8B]",
       hoverColor: "hover:bg-[#ffcd1a]",
       url: "https://portaldedatos.grupokonecta.com.ar/?page_id=3298"
     },
     {
       name: "Configuracion Xlite",
-      color: "bg-[#FDC500]",
+      color: "bg-[#588B8B]",
       hoverColor: "hover:bg-[#ffcd1a]",
-      url: "https://portaldedatos.grupokonecta.com.ar/?page_id=3298"
+      url: "https://www.canva.com/design/DAGX3s_UmOw/PB9sHCLqmcKUZ4m6xpTcOQ/view?utm_content=DAGX3s_UmOw&utm_campaign=designshare&utm_medium=link&utm_source=editor"
+    },
+    {
+      name: "Biblioteca Experiencia",
+      color: "bg-[#588B8B]",
+      hoverColor: "hover:bg-[#ffcd1a]",
+      url: "https://sites.google.com/sancorsalud.com.ar/copiadeexperiencia-tubibliotec?usp=sharing&pli=1&authuser=1"
     },
   ];
 

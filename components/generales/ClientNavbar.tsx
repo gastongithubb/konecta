@@ -26,7 +26,7 @@ import {
   BadgePlus
 } from 'lucide-react';
 import LogoSrc from '@/public/Logo.webp';
-import { ThemeToggle } from '@/components/Themeprovider';
+import { ThemeToggle } from '@/components/ThemeProvider';
 import { useTheme } from "next-themes";
 import {
   DropdownMenu,
