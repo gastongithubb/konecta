@@ -1,6 +1,8 @@
+"use client"
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-
+import { useTheme } from "next-themes"
 import { cn } from "@/app/lib/utils"
 
 const badgeVariants = cva(
@@ -8,13 +10,10 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
-        outline: "text-foreground",
+        default: "border-transparent bg-blue-600 dark:bg-blue-500 text-white shadow hover:bg-blue-700 dark:hover:bg-blue-600",
+        secondary: "border-transparent bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600",
+        destructive: "border-transparent bg-red-600 dark:bg-red-500 text-white shadow hover:bg-red-700 dark:hover:bg-red-600",
+        outline: "border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100",
       },
     },
     defaultVariants: {
@@ -29,7 +28,10 @@ export interface BadgeProps
 
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div 
+      className={cn(badgeVariants({ variant }), className)} 
+      {...props} 
+    />
   )
 }
 

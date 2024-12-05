@@ -4,8 +4,27 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useSession } from 'next-auth/react';
-import { UserPlus, Save, X, AlertCircle, CheckCircle, Users, Trash2, Link } from 'lucide-react';
+import { 
+  UserPlus, 
+  Save, 
+  X, 
+  AlertCircle, 
+  CheckCircle, 
+  Users, 
+  Trash2, 
+  Link, 
+  Loader2,
+  Calendar,
+  Building2,
+  User,
+  MapPin,
+  Briefcase,
+  Clock
+} from 'lucide-react';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 interface Team {
   id: number;
@@ -60,7 +79,6 @@ const AddMember: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<Nomina[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
 
-  // Fetch teams on component mount
   useEffect(() => {
     const fetchTeams = async () => {
       try {
@@ -79,7 +97,6 @@ const AddMember: React.FC = () => {
     fetchTeams();
   }, []);
 
-  // Fetch team members when session or team changes
   useEffect(() => {
     const fetchTeamMembers = async () => {
       if (session?.user?.teamId) {
@@ -100,7 +117,6 @@ const AddMember: React.FC = () => {
     fetchTeamMembers();
   }, [session]);
 
-  // Handle team selection
   const handleTeamSelect = (teamId: string) => {
     const team = teams.find(t => t.id === parseInt(teamId));
     setSelectedTeam(team || null);
@@ -110,7 +126,6 @@ const AddMember: React.FC = () => {
     }));
   };
 
-  // Update team links
   const handleTeamLinkUpdate = async () => {
     if (!selectedTeam) return;
 
@@ -137,7 +152,6 @@ const AddMember: React.FC = () => {
     }
   };
 
-  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNomina((prev) => ({
@@ -146,18 +160,11 @@ const AddMember: React.FC = () => {
     }));
   };
 
-  // Submit new member
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(null);
-
-    if (!nomina.teamId) {
-      setError('Por favor, selecciona un equipo válido.');
-      setLoading(false);
-      return;
-    }
 
     try {
       const response = await fetch('/api/nomina', {
@@ -165,11 +172,7 @@ const AddMember: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...nomina,
-          teamId: nomina.teamId,
-          lider: session?.user?.name
-        }),
+        body: JSON.stringify(nomina),
       });
 
       if (response.ok) {
@@ -206,7 +209,6 @@ const AddMember: React.FC = () => {
     }
   };
 
-  // Delete team member
   const handleDeleteMember = async (memberId: number) => {
     try {
       const response = await fetch(`/api/nomina/${memberId}`, {
@@ -225,53 +227,91 @@ const AddMember: React.FC = () => {
     }
   };
 
-  // Loading state
-  if (status === 'loading' || loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen p-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  const FormField = ({ 
+    label, 
+    name, 
+    value, 
+    onChange, 
+    placeholder, 
+    type = "text",
+    required = false,
+    icon: Icon
+  }: {
+    label: string;
+    name: string;
+    value: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    placeholder?: string;
+    type?: string;
+    required?: boolean;
+    icon?: React.ComponentType<any>;
+  }) => (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {label}
+      </label>
+      <div className="relative">
+        {Icon && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
+            <Icon className="w-4 h-4" />
+          </div>
+        )}
+        <Input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          className={`bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 ${
+            Icon ? 'pl-10' : ''
+          }`}
+        />
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <Card className="w-full max-w-7xl mx-auto shadow-lg">
-        {/* Card Header */}
-        <CardHeader className="bg-gray-50 border-b p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-            <UserPlus className="hidden sm:block w-8 h-8 text-primary" />
+      <Card className="w-full max-w-7xl mx-auto shadow-lg border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center space-x-4">
+            <div className="p-2 rounded-full bg-blue-100/80 dark:bg-blue-900/30">
+              <UserPlus className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
             <div>
-              <CardTitle className="text-xl sm:text-2xl font-bold text-gray-800">
+              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 Agregar Nuevo Miembro
               </CardTitle>
-              <CardDescription className="text-sm text-gray-500">
+              <CardDescription className="text-gray-500 dark:text-gray-400 mt-1">
                 Complete todos los campos para registrar un nuevo miembro del equipo
               </CardDescription>
             </div>
           </div>
         </CardHeader>
 
-        <CardContent className="p-4 sm:p-6">
-          {/* Team Group Links Section */}
-          <Card className="mb-4">
-            <CardHeader className="bg-gray-50 border-b p-4">
-              <CardTitle className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
-                <Link className="mr-2 w-6 h-6 text-primary" />
-                Links del Equipo
-              </CardTitle>
+        <CardContent className="p-6 space-y-6">
+          {/* Links del Equipo */}
+          <Card className="border border-gray-200 dark:border-gray-700">
+            <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center space-x-3">
+                <Link className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                  Links del Equipo
+                </CardTitle>
+              </div>
             </CardHeader>
             <CardContent className="p-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Seleccionar Equipo
                   </label>
                   <Select
                     onValueChange={handleTeamSelect}
                     value={selectedTeam?.id.toString() || ''}
                   >
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
                       <SelectValue placeholder="Seleccionar Equipo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -283,35 +323,43 @@ const AddMember: React.FC = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
                 {selectedTeam && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Grupo de Novedades
                       </label>
                       <Input
                         type="url"
-                        placeholder="URL del grupo de novedades"
                         value={selectedTeam.grupoNovedades || ''}
-                        onChange={(e) => setSelectedTeam(prev => prev ? { ...prev, grupoNovedades: e.target.value } : null)}
+                        onChange={(e) => setSelectedTeam(prev => 
+                          prev ? { ...prev, grupoNovedades: e.target.value } : null
+                        )}
+                        placeholder="URL del grupo de novedades"
+                        className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Grupo General del Equipo
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Grupo General
                       </label>
                       <Input
                         type="url"
-                        placeholder="URL del grupo general del equipo"
                         value={selectedTeam.grupoGeneral || ''}
-                        onChange={(e) => setSelectedTeam(prev => prev ? { ...prev, grupoGeneral: e.target.value } : null)}
+                        onChange={(e) => setSelectedTeam(prev => 
+                          prev ? { ...prev, grupoGeneral: e.target.value } : null
+                        )}
+                        placeholder="URL del grupo general"
+                        className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700"
                       />
                     </div>
                     <div className="col-span-full">
                       <Button
                         onClick={handleTeamLinkUpdate}
-                        disabled={!selectedTeam}
+                        className="w-full sm:w-auto"
                       >
+                        <Save className="w-4 h-4 mr-2" />
                         Actualizar Links de Equipo
                       </Button>
                     </div>
@@ -320,290 +368,289 @@ const AddMember: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-          <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo</label>
-                <Input
-                  type="text"
+
+          {/* Formulario Principal */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Información Personal */}
+            <Card className="border border-gray-200 dark:border-gray-700">
+              <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center space-x-3">
+                  <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Información Personal
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  label="Nombre Completo"
                   name="apellidoYNombre"
                   value={nomina.apellidoYNombre}
                   onChange={handleChange}
-                  placeholder="Apellido y Nombre"
+                  placeholder="  Apellido y Nombre"
                   required
-                  className="w-full"
+                  icon={User}
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
-                <Input
-                  type="text"
+                <FormField
+                  label="Cargo"
                   name="cargo"
                   value={nomina.cargo}
                   onChange={handleChange}
-                  placeholder="Cargo"
+                  placeholder="  Cargo"
                   required
-                  className="w-full"
+                  icon={Briefcase}
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Equipo</label>
-                <Select
-                  name="teamId"
-                  value={nomina.teamId?.toString() || ''}
-                  onValueChange={(value) => handleChange({
-                    target: {
-                      name: 'teamId',
-                      value
-                    }
-                  } as React.ChangeEvent<HTMLSelectElement>)}
-                  required
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar Equipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id.toString()}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Servicio</label>
-                <Input
-                  type="text"
-                  name="servicio"
-                  value={nomina.servicio}
-                  onChange={handleChange}
-                  placeholder="Servicio"
-                  required
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Usuario Orion</label>
-                <Input
-                  type="text"
+                <FormField
+                  label="Usuario Orion"
                   name="usuarioOrion"
                   value={nomina.usuarioOrion}
                   onChange={handleChange}
                   placeholder="Usuario Orion"
                   required
-                  className="w-full"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Provincia</label>
-                <Input
-                  type="text"
+                <FormField
+                  label="Usuario Salesforce"
+                  name="usuarioSalesforce"
+                  value={nomina.usuarioSalesforce}
+                  onChange={handleChange}
+                  placeholder="Usuario Salesforce"
+                />
+              </CardContent>
+            </Card>
+
+            {/* Información Laboral */}
+            <Card className="border border-gray-200 dark:border-gray-700">
+              <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center space-x-3">
+                  <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Información Laboral
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  label="Estado Actual"
+                  name="estadoActual"
+                  value={nomina.estadoActual}
+                  onChange={handleChange}
+                  placeholder="Estado Actual"
+                />
+                <FormField
+                  label="Cuenta"
+                  name="cuenta"
+                  value={nomina.cuenta}
+                  onChange={handleChange}
+                  placeholder="Cuenta"
+                />
+                <FormField
+                  label="Servicio"
+                  name="servicio"
+                  value={nomina.servicio}
+                  onChange={handleChange}
+                  placeholder="Servicio"
+                  required
+                />
+                <FormField
+                  label="Modalidad"
+                  name="modalidad"
+                  value={nomina.modalidad}
+                  onChange={handleChange}
+                  placeholder="Modalidad"
+                />
+                <FormField
+                  label="Box"
+                  name="box"
+                  value={nomina.box}
+                  onChange={handleChange}
+                  placeholder="Box"
+                />
+                <FormField
+                  label="Líder"
+                  name="lider"
+                  value={nomina.lider}
+                  onChange={handleChange}
+                  placeholder="Líder"
+                  required
+                />
+              </CardContent>
+            </Card>
+
+            {/* Ubicación */}
+            <Card className="border border-gray-200 dark:border-gray-700">
+              <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center space-x-3">
+                  <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Ubicación
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  label="Provincia"
                   name="provincia"
                   value={nomina.provincia}
                   onChange={handleChange}
                   placeholder="Provincia"
                   required
-                  className="w-full"
                 />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estado Actual</label>
-                <Input
-                  type="text"
-                  name="estadoActual"
-                  value={nomina.estadoActual}
-                  onChange={handleChange}
-                  placeholder="Estado Actual"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta</label>
-                <Input
-                  type="text"
-                  name="cuenta"
-                  value={nomina.cuenta}
-                  onChange={handleChange}
-                  placeholder="Cuenta"
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sitio</label>
-                <Input
-                  type="text"
+                <FormField
+                  label="Site"
                   name="site"
                   value={nomina.site}
                   onChange={handleChange}
-                  placeholder="Sitio"
-                  className="w-full"
+                  placeholder="Site"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Líder</label>
-                <Input
-                  type="text"
-                  name="lider"
-                  value={nomina.lider}
-                  onChange={handleChange}
-                  placeholder="Líder"
-                  className="w-full"
-                />
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Usuario Salesforce</label>
-                <Input
-                  type="text"
-                  name="usuarioSalesforce"
-                  value={nomina.usuarioSalesforce}
-                  onChange={handleChange}
-                  placeholder="Usuario Salesforce"
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Modalidad</label>
-                <Input
-                  type="text"
-                  name="modalidad"
-                  value={nomina.modalidad}
-                  onChange={handleChange}
-                  placeholder="Modalidad"
-                  className="w-full"
-                />
-              </div>
-            </div>
+            {/* Horarios */}
+<Card className="border border-gray-200 dark:border-gray-700">
+  <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
+    <div className="flex items-center space-x-3">
+      <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+      <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        Horarios
+      </CardTitle>
+    </div>
+  </CardHeader>
+  <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <FormField
+      label="Horario de Ingreso"
+      name="ingreso"
+      value={nomina.ingreso}
+      onChange={handleChange}
+      type="time"
+      placeholder="HH:MM"
+    />
+    <FormField
+      label="Horario de Egreso"
+      name="egreso"
+      value={nomina.egreso}
+      onChange={handleChange}
+      type="time"
+      placeholder="HH:MM"
+    />
+  </CardContent>
+</Card>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Ingreso</label>
-                <Input
-                  type="Time"
-                  name="ingreso"
-                  value={nomina.ingreso}
-                  onChange={handleChange}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Egreso</label>
-                <Input
-                  type="Time"
-                  name="egreso"
-                  value={nomina.egreso}
-                  onChange={handleChange}
-                  className="w-full"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Box</label>
-              <Input
-                type="text"
-                name="box"
-                value={nomina.box}
-                onChange={handleChange}
-                placeholder="Box"
-                className="w-full"
-              />
-            </div>
-
-
-            <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+            {/* Botones de acción */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 type="submit"
-                className="w-full sm:w-auto"
+                disabled={loading}
+                className="flex-1 sm:flex-none"
               >
-                <Save className="mr-2 h-4 w-4" /> Guardar Miembro
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4 mr-2" />
+                    Guardar Miembro
+                  </>
+                )}
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="w-full sm:w-auto"
+                className="flex-1 sm:flex-none"
+                onClick={() => {
+                  setNomina({
+                    estadoActual: '',
+                    cuenta: '',
+                    servicio: '',
+                    cargo: '',
+                    provincia: '',
+                    site: '',
+                    lider: session?.user?.name || '',
+                    apellidoYNombre: '',
+                    usuarioOrion: '',
+                    usuarioSalesforce: '',
+                    modalidad: '',
+                    ingreso: '',
+                    egreso: '',
+                    box: '',
+                    teamId: nomina.teamId,
+                  });
+                }}
               >
-                <X className="mr-2 h-4 w-4" /> Cancelar
+                <X className="w-4 h-4 mr-2" />
+                Cancelar
               </Button>
             </div>
           </form>
 
-          {/* Team Members List */}
-          <Card className="mt-4 sm:mt-6">
-            <CardHeader className="bg-gray-50 border-b p-4">
-              <div className="flex items-center space-x-2">
-                <Users className="w-6 h-6 text-primary" />
-                <CardTitle className="text-lg sm:text-xl font-semibold text-gray-800">
-                  Miembros del Equipo
-                </CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="p-4">
-              {teamMembers.length === 0 ? (
-                <div className="text-center text-gray-500 text-sm sm:text-base">
-                  No hay miembros en el equipo
+          {/* Lista de Miembros */}
+          {teamMembers.length > 0 && (
+            <Card className="border border-gray-200 dark:border-gray-700">
+              <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                      Miembros del Equipo
+                    </CardTitle>
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Total: {teamMembers.length}
+                  </span>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {teamMembers.map((member) => (
-                    <Card key={member.id} className="shadow-md">
-                      <CardContent className="p-3 sm:p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-grow pr-2">
-                            <p className="font-semibold text-sm sm:text-base text-gray-800 truncate">
-                              {member.apellidoYNombre}
-                            </p>
-                            <p className="text-xs sm:text-sm text-gray-600 truncate">
-                              {member.cargo} - {member.servicio}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {member.usuarioOrion}
-                            </p>
+              </CardHeader>
+              <CardContent className="p-4">
+                <ScrollArea className="h-[300px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {teamMembers.map((member) => (
+                      <Card 
+                        key={member.id} 
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                {member.apellidoYNombre}
+                              </p>
+                              <p className="text-sm text-gray-600 dark:text-gray-300 truncate mt-1">
+                                {member.cargo} - {member.servicio}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                                {member.usuarioOrion}
+                              </p>
+                            </div>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteMember(member.id!)}
+                              className="shrink-0"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteMember(member.id!)}
-                            className="text-xs px-2 py-1"
-                          >
-                            <Trash2 className="w-3 h-3 mr-1" /> Eliminar
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Error and Success Messages */}
+          {/* Mensajes de error y éxito */}
           {error && (
-            <div className="mt-3 sm:mt-4 flex items-center space-x-2 text-red-500 bg-red-50 p-2 sm:p-3 rounded-md">
-              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>{error}</span>
-            </div>
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="w-4 h-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
           {success && (
-            <div className="mt-4 flex items-center space-x-2 text-green-600 bg-green-50 p-3 rounded-md">
-              <CheckCircle className="w-5 h-5" />
-              <span>{success}</span>
-            </div>
+            <Alert className="mt-4 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800">
+              <CheckCircle className="w-4 h-4" />
+              <AlertDescription>{success}</AlertDescription>
+            </Alert>
           )}
         </CardContent>
       </Card>

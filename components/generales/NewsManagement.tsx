@@ -7,17 +7,41 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import Spinner from '@/components/generales/Loading';
+import { useTheme } from "next-themes";
+
 interface News {
   id: string;
   name: string;
   url: string;
   date: string;
   status: 'active' | 'updated' | 'obsolete';
+  createdAt: string;
+  updatedAt: string;
+  creatorId: number;
 }
 
+const formatDateForInput = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toISOString().slice(0, 16); // Formato YYYY-MM-DDThh:mm
+};
+
+const formatDateForDisplay = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleString('es-AR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+};
+
 const NewsManagement: React.FC = () => {
+  const { theme } = useTheme();
   const [news, setNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,11 +142,18 @@ const NewsManagement: React.FC = () => {
     if (newNews.name.trim() && newNews.url.trim() && newNews.date) {
       try {
         setLoading(true);
+        const newsData = {
+          ...newNews,
+          date: new Date(newNews.date).toISOString(),
+          status: 'active'
+        };
+
         const response = await fetchWithTokenRefresh('/api/news', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...newNews, status: 'active' }),
+          body: JSON.stringify(newsData),
         });
+
         if (!response) {
           throw new Error('Failed to add news: No response received');
         }
@@ -144,7 +175,6 @@ const NewsManagement: React.FC = () => {
       setError('Por favor, complete todos los campos requeridos');
     }
   };
-  
 
   const handleUpdateStatus = async (id: string, status: 'active' | 'updated' | 'obsolete') => {
     try {
@@ -193,6 +223,34 @@ const NewsManagement: React.FC = () => {
     window.open(secureUrl, '_blank', 'noopener,noreferrer');
   };
 
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      active: { 
+        className: "bg-green-500 text-white dark:bg-green-500 dark:text-white border border-green-500/20", 
+        label: "Activa" 
+      },
+      updated: { 
+        className: "bg-yellow-500 text-white dark:bg-yellow-500/20 dark:text-white border border-yellow-500/20", 
+        label: "Actualizada" 
+      },
+      obsolete: { 
+        className: "bg-red-500 text-white dark:bg-white dark:text-red-400 border border-red-500/20", 
+        label: "Sin Utilidad" 
+      }
+    };
+  
+    const config = statusConfig[status as keyof typeof statusConfig];
+    return (
+      <Badge variant="outline" className={`ml-2 ${config.className}`}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewNews({...newNews, date: e.target.value});
+  };
+
   const filteredNews = news.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -211,8 +269,8 @@ const NewsManagement: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-3xl font-bold mb-6">Gestión de Novedades</h1>
+    <div className="container mx-auto p-4 space-y-6 dark:bg-gray-900 transition-colors duration-200">
+      <h1 className="text-3xl font-bold mb-6 dark:text-white">Gestión de Novedades</h1>
       
       <div className="flex items-center space-x-4">
         <Input
@@ -220,7 +278,7 @@ const NewsManagement: React.FC = () => {
           placeholder="Buscar novedades..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-grow"
+          className="flex-grow dark:bg-gray-800 dark:text-white dark:border-gray-700"
         />
         {userRole === 'team_leader' && (
           <Button onClick={() => setIsAddingNews(true)}>
@@ -230,11 +288,12 @@ const NewsManagement: React.FC = () => {
       </div>
 
       {isAddingNews && (
-        <Card>
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex justify-between items-center">
+            <CardTitle className="flex justify-between items-center dark:text-white">
               Nueva Novedad
-              <Button variant="ghost" onClick={() => setIsAddingNews(false)}>
+              <Button variant="ghost" onClick={() => setIsAddingNews(false)} 
+                      className="dark:hover:bg-gray-700">
                 <X className="h-4 w-4" />
               </Button>
             </CardTitle>
@@ -246,51 +305,57 @@ const NewsManagement: React.FC = () => {
                 placeholder="Nombre de la novedad"
                 value={newNews.name}
                 onChange={(e) => setNewNews({...newNews, name: e.target.value})}
+                className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
               <Input
                 type="url"
                 placeholder="URL de la novedad"
                 value={newNews.url}
                 onChange={(e) => setNewNews({...newNews, url: e.target.value})}
+                className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
               <Input
-                type="date"
+                type="datetime-local"
                 value={newNews.date}
-                onChange={(e) => setNewNews({...newNews, date: e.target.value})}
+                onChange={handleDateTimeChange}
+                className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
               />
               <Button onClick={handleAddNews} disabled={loading} className="w-full">
-                {loading ? <Spinner className="text-blue-500" />  : 'Agregar Novedad'}
+                {loading ? <Spinner className="text-blue-500" /> : 'Agregar Novedad'}
               </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {loading && <div className="flex justify-center"> <Spinner className="text-blue-500" /> </div>}
+      {loading && <div className="flex justify-center"><Spinner className="text-blue-500" /></div>}
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {Object.entries(groupedNews).map(([month, monthNews]) => (
-        <Card key={month} className="mb-4">
+        <Card key={month} className="mb-4 dark:bg-gray-800 dark:border-gray-700">
           <CardHeader>
             <Button
               variant="ghost"
               onClick={() => toggleMonth(month)}
-              className="w-full flex justify-between items-center"
+              className="w-full flex justify-between items-center dark:text-white dark:hover:bg-gray-700"
             >
-              <CardTitle>{month}</CardTitle>
+              <CardTitle className="dark:text-white">{month}</CardTitle>
               {expandedMonths[month] ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
             </Button>
           </CardHeader>
           <CardContent className={`space-y-4 transition-all duration-300 ease-in-out ${expandedMonths[month] ? 'max-h-full opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
             {monthNews.map((item) => (
-              <div key={item.id} className="p-4 bg-gray-100 rounded-lg">
-                <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
+              <div key={item.id} className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <h3 className="font-semibold text-lg dark:text-white">{item.name}</h3>
+                  {getStatusBadge(item.status)}
+                </div>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         variant="link"
-                        className="p-0 h-auto font-normal text-blue-500 hover:text-blue-700"
+                        className="p-0 h-auto font-normal text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                         onClick={() => handleExternalLink(item.url)}
                       >
                         Ir a la Novedad <ExternalLink size={16} className="ml-1 inline" />
@@ -301,8 +366,8 @@ const NewsManagement: React.FC = () => {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <p className="text-sm text-gray-500 mt-2 mb-4">
-                  {new Date(item.date).toLocaleDateString()}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 mb-4">
+                  {formatDateForDisplay(item.date)}
                 </p>
                 <div className="flex items-center justify-between">
                   <Select
@@ -310,10 +375,10 @@ const NewsManagement: React.FC = () => {
                     onValueChange={(value: 'active' | 'updated' | 'obsolete') => handleUpdateStatus(item.id, value)}
                     disabled={userRole !== 'team_leader'}
                   >
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[180px] dark:bg-gray-700 dark:text-white dark:border-gray-600">
                       <SelectValue placeholder="Estado" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-gray-800 dark:border-gray-700">
                       <SelectItem value="active">Activa</SelectItem>
                       <SelectItem value="updated">Actualizada</SelectItem>
                       <SelectItem value="obsolete">Sin Utilidad</SelectItem>
@@ -326,15 +391,15 @@ const NewsManagement: React.FC = () => {
                           <Trash size={16} className="mr-2" /> Eliminar
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="dark:bg-gray-800 dark:text-white">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                          <AlertDialogDescription>
+                          <AlertDialogTitle className="dark:text-white">¿Estás seguro?</AlertDialogTitle>
+                          <AlertDialogDescription className="dark:text-gray-400">
                             Esta acción no se puede deshacer. Esto eliminará permanentemente la novedad.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogCancel className="dark:bg-gray-700 dark:text-white">Cancelar</AlertDialogCancel>
                           <AlertDialogAction onClick={() => handleDeleteNews(item.id)}>
                             Eliminar
                           </AlertDialogAction>

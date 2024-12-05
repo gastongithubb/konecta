@@ -79,7 +79,7 @@ const ButtonComponent = () => {
       name: "Tutorial CRM",
       color: "bg-[#588B8B]",
       hoverColor: "hover:bg-[#ffcd1a]",
-      url: "https://portaldedatos.grupokonecta.com.ar/?page_id=3298"
+      url: "https://sites.google.com/sancorsalud.com.ar/experienciatubibliotecavirtual/crm/antes-de-cargar-un-caso"
     },
     {
       name: "Configuracion Xlite",
@@ -91,7 +91,7 @@ const ButtonComponent = () => {
       name: "Biblioteca Experiencia",
       color: "bg-[#588B8B]",
       hoverColor: "hover:bg-[#ffcd1a]",
-      url: "https://sites.google.com/sancorsalud.com.ar/copiadeexperiencia-tubibliotec?usp=sharing&pli=1&authuser=1"
+      url: "https://sites.google.com/sancorsalud.com.ar/copiadeexperiencia-tubibliotec/home?authuser=0"
     },
   ];
 

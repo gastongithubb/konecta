@@ -181,7 +181,7 @@ model Event {
 
 model News {
   id        String   @id @default(cuid())
-  date      DateTime
+  date      DateTime 
   status    String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

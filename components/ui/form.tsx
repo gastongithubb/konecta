@@ -3,6 +3,7 @@
 import * as React from "react"
 import * as LabelPrimitive from "@radix-ui/react-label"
 import { Slot } from "@radix-ui/react-slot"
+import { useTheme } from "next-themes"
 import {
   Controller,
   ControllerProps,
@@ -91,11 +92,16 @@ const FormLabel = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField()
+  const { theme } = useTheme()
 
   return (
     <Label
       ref={ref}
-      className={cn(error && "text-destructive", className)}
+      className={cn(
+        error && (theme === "dark" ? "text-red-400" : "text-red-500"),
+        theme === "dark" ? "text-gray-100" : "text-gray-900",
+        className
+      )}
       htmlFor={formItemId}
       {...props}
     />
@@ -130,12 +136,17 @@ const FormDescription = React.forwardRef<
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => {
   const { formDescriptionId } = useFormField()
+  const { theme } = useTheme()
 
   return (
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-[0.8rem] text-muted-foreground", className)}
+      className={cn(
+        "text-[0.8rem]",
+        theme === "dark" ? "text-gray-400" : "text-gray-500",
+        className
+      )}
       {...props}
     />
   )
@@ -147,6 +158,7 @@ const FormMessage = React.forwardRef<
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField()
+  const { theme } = useTheme()
   const body = error ? String(error?.message) : children
 
   if (!body) {
@@ -157,7 +169,11 @@ const FormMessage = React.forwardRef<
     <p
       ref={ref}
       id={formMessageId}
-      className={cn("text-[0.8rem] font-medium text-destructive", className)}
+      className={cn(
+        "text-[0.8rem] font-medium",
+        theme === "dark" ? "text-red-400" : "text-red-500",
+        className
+      )}
       {...props}
     >
       {body}

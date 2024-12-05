@@ -114,7 +114,6 @@ const Banner: React.FC = () => {
               height={450}
               alt="Hero"
               className={`transition-all duration-300 rounded-lg
-                ${theme === 'dark' ? 'filter dark:invert dark:hue-rotate-180 opacity-80' : 'filter brightness-110'} 
                 hover:brightness-110 dark:hover:opacity-100
                 shadow-lg dark:shadow-blue-500/10`}
               priority

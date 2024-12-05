@@ -1,6 +1,5 @@
 // ClientNavbar.tsx
 'use client'
-
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -27,7 +26,6 @@ import {
 } from 'lucide-react';
 import LogoSrc from '@/public/Logo.webp';
 import { ThemeToggle } from '@/components/ThemeProvider';
-import { useTheme } from "next-themes";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -281,43 +279,43 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     },
   ] : [];
 
-  const renderNotificationDropdown = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          className="relative rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
-        >
-          <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-          {unreadCount > 0 && (
-            <Badge 
-              variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
-            >
-              {unreadCount}
-            </Badge>
-          )}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80 p-2 bg-white dark:bg-gray-900" align="end">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notificaciones</p>
-          {unreadCount > 0 && (
-            <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-              {unreadCount} nueva{unreadCount !== 1 && 's'}
-            </Badge>
-          )}
-        </div>
-        <ScrollArea className="h-[300px]">
-          {/* ... Notification content with dark mode classes ... */}
-        </ScrollArea>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+  // const renderNotificationDropdown = () => (
+  //   <DropdownMenu>
+  //     <DropdownMenuTrigger asChild>
+  //       <Button 
+  //         variant="ghost" 
+  //         size="sm"
+  //         className="relative rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+  //       >
+  //         <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+  //         {unreadCount > 0 && (
+  //           <Badge 
+  //             variant="destructive"
+  //             className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse"
+  //           >
+  //             {unreadCount}
+  //           </Badge>
+  //         )}
+  //       </Button>
+  //     </DropdownMenuTrigger>
+  //     <DropdownMenuContent className="w-80 p-2 bg-white dark:bg-gray-900" align="end">
+  //       <div className="flex items-center justify-between mb-2">
+  //         <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Notificaciones</p>
+  //         {unreadCount > 0 && (
+  //           <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
+  //             {unreadCount} nueva{unreadCount !== 1 && 's'}
+  //           </Badge>
+  //         )}
+  //       </div>
+  //       <ScrollArea className="h-[300px]">
+  //         {/* ... Notification content with dark mode classes ... */}
+  //       </ScrollArea>
+  //     </DropdownMenuContent>
+  //   </DropdownMenu>
+  // );
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 dark:text-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -402,57 +400,61 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               </>
             )}
 
-            {user.role.toLowerCase() === 'user' && (
-              <>
-                {navLinks.map((link, index) => (
-                  <div key={index} className="relative group">
-                    {link.href ? (
-                      <NavLink 
-                        href={link.href}
-                        isActive={pathname === link.href}
-                        icon={link.icon}
-                      >
+{user.role.toLowerCase() === 'user' && (
+          <>
+            {navLinks.map((link, index) => (
+              <div key={index} className="relative group">
+                {link.href ? (
+                  <NavLink 
+                    href={link.href}
+                    isActive={pathname === link.href}
+                    icon={link.icon}
+                  >
+                    {link.label}
+                  </NavLink>
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-all">
+                        {link.icon && <link.icon className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />}
                         {link.label}
-                      </NavLink>
-                    ) : (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-all"
+                        <ChevronDown size={16} className="ml-1" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      className="w-64 p-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 shadow-lg"
+                      align="end"
+                    >
+                      {link.dropdown?.map((item, itemIndex) => (
+                        <DropdownMenuItem 
+                          key={itemIndex}
+                          className="focus:bg-gray-100 dark:focus:bg-gray-800 rounded-md"
+                        >
+                          <Link
+                            href={item.href}
+                            target={item.target}
+                            className="flex items-center justify-between w-full px-2 py-2 text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                           >
-                            {link.icon && <link.icon className="mr-2 h-4 w-4 text-gray-500" />}
-                            {link.label}
-                            <ChevronDown size={16} className="ml-1" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56">
-                          {link.dropdown?.map((item, itemIndex) => (
-                            <DropdownMenuItem key={itemIndex}>
-                              <Link
-                                href={item.href}
-                                target={item.target}
-                                className="flex items-center w-full text-sm text-gray-700 hover:text-gray-900"
-                              >
-                                {item.label}
-                                {item.target === '_blank' && (
-                                  <ChevronRight className="ml-auto h-4 w-4" />
-                                )}
-                              </Link>
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
+                            <span className="flex-1">{item.label}</span>
+                            {item.target === '_blank' && (
+                              <ChevronRight className="ml-2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                            )}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
 
           {/* Right side items */}
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            {renderNotificationDropdown()}
+            {/* {renderNotificationDropdown()} */}
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
