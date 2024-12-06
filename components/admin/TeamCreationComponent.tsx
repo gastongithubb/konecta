@@ -165,32 +165,44 @@ const ComponenteGestionEquipos: React.FC = () => {
   };  
 
   const manejarGuardarEquipo = async () => {
+    if (!currentUser) {
+      setError('No hay usuario autenticado');
+      return;
+    }
+  
     if (!nombreEquipo.trim()) {
       setError('Por favor, ingrese un nombre para el equipo');
       return;
     }
-
+  
     if (!liderSeleccionado) {
       setError('Por favor, seleccione un líder de equipo');
       return;
     }
-
+  
     if (miembrosSeleccionados.length === 0) {
       setError('Por favor, seleccione al menos un miembro para el equipo');
       return;
     }
-
+  
     try {
+      const requestBody = {
+        name: nombreEquipo.trim(),
+        teamLeaderId: currentUser.role === 'team_leader' ? currentUser.id : liderSeleccionado,
+        managerId: currentUser.role === 'team_leader' ? null : currentUser.id,
+        memberIds: miembrosSeleccionados,
+        grupoNovedades: "",
+        grupoGeneral: ""
+      };
+  
+      console.log('Sending request with body:', requestBody);
+  
       const respuesta = await fetch('/api/teams', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: nombreEquipo.trim(),
-          teamLeaderId: currentUser?.role === 'team_leader' ? currentUser.id : liderSeleccionado,
-          memberIds: miembrosSeleccionados
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       if (!respuesta.ok) {
@@ -213,7 +225,7 @@ const ComponenteGestionEquipos: React.FC = () => {
       console.error('Error al guardar el equipo:', error);
       setError(error instanceof Error ? error.message : 'Hubo un error al guardar el equipo. Por favor, intenta de nuevo.');
     }
-  }; 
+  };
 
   if (loading) {
     return (

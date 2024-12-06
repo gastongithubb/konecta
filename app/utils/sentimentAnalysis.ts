@@ -37,7 +37,11 @@ interface SentimentWord {
     'sobrecargado': -2,
     'insatisfecho': -2,
     'molesto': -1,
-    'agotado': -2
+    'agotado': -2,
+    'Me Duele el Coxis': -1,
+    'estres': -1,
+    'fusilada': -1,
+    "con mucho estrés por problemas personales": -1
   };
   
   export const analyzeSentiment = (text: string) => {
