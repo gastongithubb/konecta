@@ -77,7 +77,7 @@ model Team {
 model DailyMetrics {
   id        Int      @id @default(autoincrement())
   date      DateTime
-  nsp       Int
+  name      String
   q         Int
   nps       Int
   csat      Float

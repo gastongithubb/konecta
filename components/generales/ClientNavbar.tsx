@@ -214,20 +214,6 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(dateString));
-  };
 
   const dashboardLink = `/dashboard/${user.role.toLowerCase()}`;
 

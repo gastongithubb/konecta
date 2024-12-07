@@ -1,5 +1,6 @@
 import React from 'react'
-import Sidebar from '@/components/team_leader/metricsOptions'
+// import Sidebar from '@/components/team_leader/metricsOptions'
+import Sidebar from '@/components/team_leader/Metrics'
 
 export default function Casespage() {
   return (

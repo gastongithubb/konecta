@@ -1,3 +1,17 @@
+// app/lib/auth.ts
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  teamId: number;
+}
+
+export interface UserResponse {
+  user: User;
+}
+
 export async function login(email: string, password: string) {
   const response = await fetch('/api/auth/login', {
     method: 'POST',
@@ -23,25 +37,31 @@ export async function logoutClient() {
     throw new Error('Logout failed');
   }
 
-  // Redirigir al usuario a la página de login después de cerrar sesión
   window.location.href = '/login';
 }
 
-export function isAuthenticated() {
-  return document.cookie.includes('auth_token=');
-}
-
-export async function getUser() {
+export async function getUser(): Promise<UserResponse> {
   const response = await fetch('/api/auth/user', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
   });
 
   if (!response.ok) {
-    throw new Error('Failed to get user data');
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to get user data');
   }
 
   return response.json();
+}
+
+export function isAuthenticated(): boolean {
+  try {
+    return document.cookie.includes('auth_token=');
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    return false;
+  }
 }

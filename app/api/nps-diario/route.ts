@@ -30,16 +30,16 @@ export async function POST(request: NextRequest) {
 
     const results = await prisma.$transaction(async (prisma) => {
       return Promise.all(metrics.map(async (metric) => {
-        const { date, nsp, q, nps, csat, ces, rd } = metric;
+        const { date, name, q, nps, csat, ces, rd } = metric;
 
-        if (!date || isNaN(nsp) || isNaN(q) || isNaN(nps) || isNaN(csat) || isNaN(ces) || isNaN(rd)) {
+        if (!date || isNaN(name) || isNaN(q) || isNaN(nps) || isNaN(csat) || isNaN(ces) || isNaN(rd)) {
           return { error: 'Datos incompletos o inválidos', metric };
         }
 
         return prisma.dailyMetrics.create({
           data: {
             date: new Date(date),
-            nsp,
+            name,
             q,
             nps,
             csat,
