@@ -26,11 +26,34 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
+interface ApiResponse<T> {
+  data: T;
+  error?: string;
+}
+
 interface Team {
   id: number;
   name: string;
   grupoNovedades: string;
   grupoGeneral: string;
+  manager: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+  teamLeader: {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  };
+  members: Array<{
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+  }>;
 }
 
 interface Nomina {
@@ -78,19 +101,29 @@ const AddMember: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamMembers, setTeamMembers] = useState<Nomina[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(true);
 
   useEffect(() => {
     const fetchTeams = async () => {
+      setIsLoadingTeams(true);
+      setError(null);
+      
       try {
         const response = await fetch('/api/teams');
-        const data = await response.json();
-        if (response.ok) {
-          setTeams(data);
+        const result: ApiResponse<Team[]> = await response.json();
+        
+        if (response.ok && result.data) {
+          setTeams(result.data);
         } else {
-          setError(data.error || 'Error al cargar los equipos');
+          setTeams([]);
+          setError(result.error || 'Error al cargar los equipos');
         }
       } catch (err) {
+        console.error('Error fetching teams:', err);
+        setTeams([]);
         setError('Error al cargar los equipos');
+      } finally {
+        setIsLoadingTeams(false);
       }
     };
 
@@ -312,14 +345,24 @@ const AddMember: React.FC = () => {
                     value={selectedTeam?.id.toString() || ''}
                   >
                     <SelectTrigger className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
-                      <SelectValue placeholder="Seleccionar Equipo" />
+                      <SelectValue placeholder={isLoadingTeams ? "Cargando equipos..." : "Seleccionar Equipo"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id.toString()}>
-                          {team.name}
+                      {isLoadingTeams ? (
+                        <SelectItem value="loading" disabled>
+                          Cargando...
                         </SelectItem>
-                      ))}
+                      ) : teams.length > 0 ? (
+                        teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id.toString()}>
+                            {team.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-teams" disabled>
+                          No hay equipos disponibles
+                        </SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -387,7 +430,7 @@ const AddMember: React.FC = () => {
                   name="apellidoYNombre"
                   value={nomina.apellidoYNombre}
                   onChange={handleChange}
-                  placeholder="  Apellido y Nombre"
+                  placeholder="Apellido y Nombre"
                   required
                   icon={User}
                 />
@@ -396,7 +439,7 @@ const AddMember: React.FC = () => {
                   name="cargo"
                   value={nomina.cargo}
                   onChange={handleChange}
-                  placeholder="  Cargo"
+                  placeholder="Cargo"
                   required
                   icon={Briefcase}
                 />
@@ -506,34 +549,34 @@ const AddMember: React.FC = () => {
             </Card>
 
             {/* Horarios */}
-<Card className="border border-gray-200 dark:border-gray-700">
-  <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
-    <div className="flex items-center space-x-3">
-      <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-      <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-        Horarios
-      </CardTitle>
-    </div>
-  </CardHeader>
-  <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-    <FormField
-      label="Horario de Ingreso"
-      name="ingreso"
-      value={nomina.ingreso}
-      onChange={handleChange}
-      type="time"
-      placeholder="HH:MM"
-    />
-    <FormField
-      label="Horario de Egreso"
-      name="egreso"
-      value={nomina.egreso}
-      onChange={handleChange}
-      type="time"
-      placeholder="HH:MM"
-    />
-  </CardContent>
-</Card>
+            <Card className="border border-gray-200 dark:border-gray-700">
+              <CardHeader className="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 p-4">
+                <div className="flex items-center space-x-3">
+                  <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    Horarios
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  label="Horario de Ingreso"
+                  name="ingreso"
+                  value={nomina.ingreso}
+                  onChange={handleChange}
+                  type="time"
+                  placeholder="HH:MM"
+                />
+                <FormField
+                  label="Horario de Egreso"
+                  name="egreso"
+                  value={nomina.egreso}
+                  onChange={handleChange}
+                  type="time"
+                  placeholder="HH:MM"
+                />
+              </CardContent>
+            </Card>
 
             {/* Botones de acción */}
             <div className="flex flex-col sm:flex-row gap-3">
