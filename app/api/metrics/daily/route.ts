@@ -1,29 +1,30 @@
-// /app/api/metrics/trimestral/route.ts
+// /app/api/metrics/daily/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+import  prisma  from '@/app/lib/prisma';
 import { z } from 'zod';
 
-const TrimestralMetricSchema = z.object({
+const DailyMetricSchema = z.object({
+  date: z.string().transform((str) => new Date(str)),
   name: z.string(),
-  month: z.string(),
-  qResp: z.number(),
+  q: z.number(),
   nps: z.number(),
-  sat: z.number(),
+  csat: z.number(),
+  ces: z.number(),
   rd: z.number(),
-  teamLeaderId: z.number(),
+  userId: z.number(),
   teamId: z.number(),
 });
 
-const TrimestralMetricsArraySchema = z.array(TrimestralMetricSchema);
+const DailyMetricsArraySchema = z.array(DailyMetricSchema);
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const validatedData = TrimestralMetricsArraySchema.parse(body);
+    const validatedData = DailyMetricsArraySchema.parse(body);
 
     const createdMetrics = await prisma.$transaction(
       validatedData.map((metric) =>
-        prisma.trimestralMetrics.create({
+        prisma.dailyMetrics.create({
           data: metric,
         })
       )
@@ -31,9 +32,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(createdMetrics, { status: 201 });
   } catch (error) {
-    console.error('Error creating trimestral metrics:', error);
+    console.error('Error creating daily metrics:', error);
     return NextResponse.json(
-      { error: 'Error creating trimestral metrics' },
+      { error: 'Error creating daily metrics' },
       { status: 500 }
     );
   }
@@ -43,23 +44,23 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('teamId');
-    const teamLeaderId = searchParams.get('teamLeaderId');
+    const userId = searchParams.get('userId');
 
-    const metrics = await prisma.trimestralMetrics.findMany({
+    const metrics = await prisma.dailyMetrics.findMany({
       where: {
         ...(teamId && { teamId: parseInt(teamId) }),
-        ...(teamLeaderId && { teamLeaderId: parseInt(teamLeaderId) }),
+        ...(userId && { userId: parseInt(userId) }),
       },
       orderBy: {
-        month: 'desc',
+        date: 'desc',
       },
     });
 
     return NextResponse.json(metrics);
   } catch (error) {
-    console.error('Error fetching trimestral metrics:', error);
+    console.error('Error fetching daily metrics:', error);
     return NextResponse.json(
-      { error: 'Error fetching trimestral metrics' },
+      { error: 'Error fetching daily metrics' },
       { status: 500 }
     );
   }

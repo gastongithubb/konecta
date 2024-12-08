@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Upload } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 import { getUser, isAuthenticated, type User, type UserResponse } from '@/app/lib/auth';
 
 // Interfaces
@@ -46,9 +47,8 @@ interface TrimestralMetric {
 }
 
 interface TMOMetric {
-  id: number;
   name: string;
-  qLlAtendidas: number;
+  qLlAtendidas: number | null;
   tiempoACD: string;
   acw: string;
   hold: string;
@@ -66,6 +66,7 @@ interface MetricsState {
 }
 
 const MetricsDashboard: React.FC = () => {
+    const router = useRouter();
     const { theme } = useTheme();
     const [metrics, setMetrics] = useState<MetricsState>({
       daily: [],
@@ -83,48 +84,62 @@ const MetricsDashboard: React.FC = () => {
     const [isLoaded, setIsLoaded] = useState(false);
   
     useEffect(() => {
-      const fetchUserData = async () => {
-        try {
-          if (!isAuthenticated()) {
-            console.log('No authentication token found');
-            window.location.href = '/login';
-            return;
-          }
-  
-          const response = await getUser();
-          const userData = response.user;
-  
-          if (!userData || !userData.teamId) {
-            console.log('Invalid user data:', userData);
-            toast({
-              title: "Error",
-              description: "Usuario no autorizado o sin equipo asignado",
-              variant: "destructive",
+        let isMounted = true;
+      
+        const fetchUserData = async () => {
+          try {
+            const response = await fetch('/api/auth/user', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include',
             });
-            window.location.href = '/login';
-            return;
+      
+            if (!response.ok) {
+              throw new Error('Failed to fetch user data');
+            }
+      
+            const data = await response.json();
+            
+            if (isMounted && data.user) {
+              if (data.user.role !== 'team_leader') {
+                toast({
+                  title: "Error",
+                  description: "No tienes permisos para acceder a esta sección",
+                  variant: "destructive",
+                });
+                return;
+              }
+      
+              setUserData({
+                id: data.user.id,
+                teamId: data.user.teamId
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching user data:', error);
+            if (isMounted) {
+              toast({
+                title: "Error",
+                description: "Error al obtener datos del usuario",
+                variant: "destructive",
+              });
+            }
+          } finally {
+            if (isMounted) {
+              setIsLoaded(true);
+            }
           }
-  
-          setUserData({
-            id: userData.id,
-            teamId: userData.teamId
-          });
-  
-        } catch (error) {
-          console.error('Error in auth check:', error);
-          toast({
-            title: "Error",
-            description: "Error al verificar la autenticación",
-            variant: "destructive",
-          });
-          window.location.href = '/login';
-        } finally {
-          setIsLoaded(true);
-        }
-      };
-  
-      fetchUserData();
-    }, []);
+        };
+      
+        fetchUserData();
+      
+        return () => {
+          isMounted = false;
+        };
+      }, []);
+      
 
    // Mostrar estado de carga mientras se verifica la autenticación
   if (!isLoaded) {
@@ -154,21 +169,23 @@ const MetricsDashboard: React.FC = () => {
   };
 
   const processTMOData = (data: Record<string, any>[]): TMOMetric[] => {
-    if (!userData) return [];
-
+    if (!userData?.id || !userData?.teamId) {
+      console.error('User data is missing:', userData);
+      return [];
+    }
+  
     return data
       .filter(row => row['Usuario Orion'] && row['Q Ll atendidas'])
       .map(row => ({
-        id: 0,
         name: row['Usuario Orion'].trim(),
         qLlAtendidas: parseInt(row['Q Ll atendidas']?.toString() || '0', 10),
-        tiempoACD: row['Tiempo ACD'].trim(),
-        acw: row['ACW'].trim(),
-        hold: row['HOLD'].trim(),
-        ring: row['RING'].trim(),
-        tmo: row['TMO'].trim(),
+        tiempoACD: row['Tiempo ACD']?.trim() || '0:00:00',
+        acw: row['ACW']?.trim() || '0:00:00',
+        hold: row['HOLD']?.trim() || '0:00:00',
+        ring: row['RING']?.trim() || '0:00:00',
+        tmo: row['TMO']?.trim() || '0:00:00',
         teamLeaderId: userData.id,
-        teamId: userData.teamId,
+        teamId: userData.teamId
       }));
   };
 
@@ -328,6 +345,9 @@ const MetricsDashboard: React.FC = () => {
   const handleFileUpload = (type: keyof MetricsState) => async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('userData before processing:', userData); // Verificar datos del usuario
+      const processedData = await processCSV(file, type);
+      console.log('Processed TMO data:', processedData);
       await processCSV(file, type);
     }
   };

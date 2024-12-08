@@ -123,12 +123,12 @@ model SemanalMetrics {
 model TMOMetrics {
   id           Int      @id @default(autoincrement())
   name         String
-  qLlAtendidas Int
-  tiempoACD    String
-  acw          String
-  hold         String
-  ring         String
-  tmo          String
+  qLlAtendidas Int?     // Habilitar null
+  tiempoACD    Int?     // Cambiar a Int?
+  acw          Int?     // Cambiar a Int?
+  hold         Int?     // Cambiar a Int?
+  ring         Int?     // Cambiar a Int?
+  tmo          Int?     // Cambiar a Int?
   teamLeaderId Int
   teamId       Int
   createdAt    DateTime @default(now())

@@ -1,126 +1,86 @@
-// app/api/metrics/tmo/route.ts
-import prisma from '@/app/lib/prisma';
+// En la API (app/api/metrics/tmo/route.ts)
 import { NextResponse } from 'next/server';
-import { authenticateRequest } from '@/app/lib/auth.server';
+import prisma from '@/app/lib/prisma';
+import { z } from 'zod';
 
-interface TMOMetricInput {
-  name: string;
-  qLlAtendidas: number;
-  tiempoACD: string;
-  acw: string;
-  hold: string;
-  ring: string;
-  tmo: string;
+function timeToSeconds(timeStr: string): number {
+  if (!timeStr || timeStr === '0:00:00') return 0;
+  
+  const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+  return (hours * 3600) + (minutes * 60) + seconds;
 }
+
+const TMOMetricSchema = z.object({
+  name: z.string(),
+  qLlAtendidas: z.number().int().nullable(),
+  tiempoACD: z.string()
+    .transform((val) => timeToSeconds(val)),
+  acw: z.string()
+    .transform((val) => timeToSeconds(val)),
+  hold: z.string()
+    .transform((val) => timeToSeconds(val)),
+  ring: z.string()
+    .transform((val) => timeToSeconds(val)),
+  tmo: z.string()
+    .transform((val) => timeToSeconds(val)),
+  teamLeaderId: z.number().int(),
+  teamId: z.number().int()
+});
+
+const TMOMetricsArraySchema = z.array(TMOMetricSchema);
 
 export async function POST(request: Request) {
   try {
-    // Autenticar la solicitud
-    const user = await authenticateRequest();
+    const body = await request.json();
     
-    if (!user) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
+    console.log('Received data:', JSON.stringify(body[0], null, 2));
 
-    if (!user.teamId) {
+    if (!body?.[0]?.teamId || !body?.[0]?.teamLeaderId) {
       return NextResponse.json(
-        { error: 'Usuario no asociado a un equipo' },
+        { error: 'Missing required fields: teamId or teamLeaderId' },
         { status: 400 }
       );
     }
 
-    const data = await request.json();
+    const validatedData = TMOMetricsArraySchema.parse(body);
 
-    if (!Array.isArray(data)) {
-      return NextResponse.json(
-        { error: 'Los datos deben ser un array' },
-        { status: 400 }
-      );
-    }
-
-    const validData = data.filter((item): item is TMOMetricInput => {
-      return (
-        typeof item.name === 'string' &&
-        item.name.length > 0 &&
-        typeof item.qLlAtendidas === 'number' &&
-        !isNaN(item.qLlAtendidas) &&
-        typeof item.tiempoACD === 'string' &&
-        typeof item.acw === 'string' &&
-        typeof item.hold === 'string' &&
-        typeof item.ring === 'string' &&
-        typeof item.tmo === 'string'
-      );
-    });
-
-    if (validData.length === 0) {
-      return NextResponse.json(
-        { error: 'No hay datos válidos para procesar' },
-        { status: 400 }
-      );
-    }
-
-    // Borrar registros existentes del equipo específico
-    await prisma.tMOMetrics.deleteMany({
-      where: {
-        teamId: user.teamId
-      }
-    });
-
-    // Insertar nuevos registros con los IDs del usuario autenticado
-    const result = await prisma.tMOMetrics.createMany({
-      data: validData.map(item => ({
-        ...item,
-        teamId: user.teamId!,
-        teamLeaderId: user.id
-      }))
-    });
-
-    return NextResponse.json({ 
-      message: `${result.count} registros de TMO creados correctamente`,
-      count: result.count
-    });
-  } catch (error) {
-    console.error('Error en TMO metrics:', error);
-    return NextResponse.json(
-      { error: 'Error al procesar TMO metrics' }, 
-      { status: 500 }
+    const createdMetrics = await prisma.$transaction(
+      validatedData.map((metric) => 
+        prisma.tMOMetrics.create({
+          data: {
+            name: metric.name,
+            qLlAtendidas: metric.qLlAtendidas,
+            tiempoACD: metric.tiempoACD,
+            acw: metric.acw,
+            hold: metric.hold,
+            ring: metric.ring,
+            tmo: metric.tmo,
+            teamLeaderId: metric.teamLeaderId,
+            teamId: metric.teamId
+          }
+        })
+      )
     );
-  }
-}
 
-export async function GET(request: Request) {
-  try {
-    const user = await authenticateRequest();
+    return NextResponse.json(createdMetrics, { status: 201 });
+  } catch (error) {
+    console.error('Error details:', error);
     
-    if (!user) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
-    if (!user.teamId) {
-      return NextResponse.json(
-        { error: 'Usuario no asociado a un equipo' },
+        { 
+          error: 'Validation error',
+          details: error.errors.map(e => ({
+            path: e.path,
+            message: e.message
+          }))
+        },
         { status: 400 }
       );
     }
 
-    // Obtener solo las métricas del equipo del usuario
-    const metrics = await prisma.tMOMetrics.findMany({
-      where: {
-        teamId: user.teamId
-      }
-    });
-
-    return NextResponse.json(metrics);
-  } catch (error) {
-    console.error('Error al obtener TMO metrics:', error);
     return NextResponse.json(
-      { error: 'Error al obtener TMO metrics' }, 
+      { error: 'Error creating TMO metrics' },
       { status: 500 }
     );
   }

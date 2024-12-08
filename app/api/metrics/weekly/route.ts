@@ -1,29 +1,28 @@
-// /app/api/metrics/trimestral/route.ts
+// /app/api/metrics/weekly/route.ts
 import { NextResponse } from 'next/server';
 import prisma from '@/app/lib/prisma';
 import { z } from 'zod';
 
-const TrimestralMetricSchema = z.object({
+const WeeklyMetricSchema = z.object({
   name: z.string(),
-  month: z.string(),
-  qResp: z.number(),
+  week: z.string(),
+  q: z.number(),
   nps: z.number(),
-  sat: z.number(),
-  rd: z.number(),
+  csat: z.number(),
   teamLeaderId: z.number(),
   teamId: z.number(),
 });
 
-const TrimestralMetricsArraySchema = z.array(TrimestralMetricSchema);
+const WeeklyMetricsArraySchema = z.array(WeeklyMetricSchema);
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const validatedData = TrimestralMetricsArraySchema.parse(body);
+    const validatedData = WeeklyMetricsArraySchema.parse(body);
 
     const createdMetrics = await prisma.$transaction(
       validatedData.map((metric) =>
-        prisma.trimestralMetrics.create({
+        prisma.semanalMetrics.create({
           data: metric,
         })
       )
@@ -31,9 +30,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(createdMetrics, { status: 201 });
   } catch (error) {
-    console.error('Error creating trimestral metrics:', error);
+    console.error('Error creating weekly metrics:', error);
     return NextResponse.json(
-      { error: 'Error creating trimestral metrics' },
+      { error: 'Error creating weekly metrics' },
       { status: 500 }
     );
   }
@@ -45,21 +44,21 @@ export async function GET(request: Request) {
     const teamId = searchParams.get('teamId');
     const teamLeaderId = searchParams.get('teamLeaderId');
 
-    const metrics = await prisma.trimestralMetrics.findMany({
+    const metrics = await prisma.semanalMetrics.findMany({
       where: {
         ...(teamId && { teamId: parseInt(teamId) }),
         ...(teamLeaderId && { teamLeaderId: parseInt(teamLeaderId) }),
       },
       orderBy: {
-        month: 'desc',
+        week: 'desc',
       },
     });
 
     return NextResponse.json(metrics);
   } catch (error) {
-    console.error('Error fetching trimestral metrics:', error);
+    console.error('Error fetching weekly metrics:', error);
     return NextResponse.json(
-      { error: 'Error fetching trimestral metrics' },
+      { error: 'Error fetching weekly metrics' },
       { status: 500 }
     );
   }

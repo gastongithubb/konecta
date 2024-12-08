@@ -1,3 +1,5 @@
+// app/api/auth/user/route.ts
+
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyAccessToken } from '@/app/lib/auth.server';
@@ -8,17 +10,28 @@ export async function GET() {
   const token = cookieStore.get('auth_token')?.value;
 
   if (!token) {
-    return NextResponse.json({ error: 'No token provided' }, { status: 401 });
+    return new NextResponse(
+      JSON.stringify({ error: 'No token provided' }),
+      { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 
   try {
     const decodedToken = await verifyAccessToken(token);
     
     if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      return new NextResponse(
+        JSON.stringify({ error: 'Invalid token' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    // Obtener datos completos del usuario desde la base de datos
     const user = await prisma.user.findUnique({
       where: { id: parseInt(decodedToken.sub) },
       select: {
@@ -31,17 +44,31 @@ export async function GET() {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return new NextResponse(
+        JSON.stringify({ error: 'User not found' }),
+        { 
+          status: 404,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    return NextResponse.json({ user });
-  } catch (error: unknown) {
+    return new NextResponse(
+      JSON.stringify({ user }),
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+
+  } catch (error) {
     console.error('Error verifying token:', error);
-    
-    if (error instanceof Error) {
-      return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
-    } else {
-      return NextResponse.json({ error: 'Internal server error', details: 'Unknown error occurred' }, { status: 500 });
-    }
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 }

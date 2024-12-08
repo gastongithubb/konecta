@@ -40,28 +40,38 @@ export async function logoutClient() {
   window.location.href = '/login';
 }
 
-export async function getUser(): Promise<UserResponse> {
-  const response = await fetch('/api/auth/user', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to get user data');
-  }
-
-  return response.json();
-}
-
 export function isAuthenticated(): boolean {
   try {
-    return document.cookie.includes('auth_token=');
+    const cookies = document.cookie.split(';');
+    const authToken = cookies.find(cookie => 
+      cookie.trim().startsWith('auth_token=')
+    );
+    const token = authToken?.split('=')?.[1];
+    return !!token && token !== 'undefined' && token !== 'null';
   } catch (error) {
     console.error('Error checking authentication:', error);
     return false;
+  }
+}
+
+export async function getUser(): Promise<UserResponse> {
+  try {
+    const response = await fetch('/api/auth/user', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get user data');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error getting user data:', error);
+    throw error;
   }
 }
