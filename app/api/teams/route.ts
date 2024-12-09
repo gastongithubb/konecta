@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/app/lib/auth.server';
-import prisma from '@/app/lib/prisma';
+import { prisma } from '@/app/lib/prisma'
 import { Prisma } from '@prisma/client';
 
 // Type definitions for better type safety

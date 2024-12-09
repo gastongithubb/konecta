@@ -4,32 +4,32 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  url       = env("DATABASE_POSTGRES_PRISMA_URL")
+  directUrl = env("DATABASE_POSTGRES_URL_NON_POOLING")
 }
 
 model User {
-  id                Int                 @id @default(autoincrement())
-  name              String
-  email             String              @unique
-  password          String
-  role              String
-  isPasswordChanged Boolean             @default(false)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  teamId            Int?
-  cases             Case[]
-  dailyMetrics      DailyMetrics[]
-  events            Event[]
-  news              News[]
-  notifications     Notification[]
-  semanalMetrics    SemanalMetrics[]    @relation("TeamLeaderSemanalMetrics")
-  tmoMetrics        TMOMetrics[]        @relation("TeamLeaderTMOMetrics")
-  managedTeams      Team[]              @relation("ManagerToTeam")
-  leadTeams         Team[]              @relation("TeamLeaderToTeam")
-  trimestralMetrics TrimestralMetrics[] @relation("TeamLeaderTrimestralMetrics")
-  team              Team?               @relation(fields: [teamId], references: [id])
-  nomencladorChanges NomencladorChange[] // Nueva relación
+  id                 Int                 @id @default(autoincrement())
+  name               String
+  email              String              @unique
+  password           String
+  role               String
+  isPasswordChanged  Boolean             @default(false)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  teamId             Int?
+  cases              Case[]
+  dailyMetrics       DailyMetrics[]
+  events             Event[]
+  news               News[]
+  nomencladorChanges NomencladorChange[]
+  notifications      Notification[]
+  semanalMetrics     SemanalMetrics[]    @relation("TeamLeaderSemanalMetrics")
+  TMOMetrics         TMOMetrics[]
+  managedTeams       Team[]              @relation("ManagerToTeam")
+  leadTeams          Team[]              @relation("TeamLeaderToTeam")
+  trimestralMetrics  TrimestralMetrics[] @relation("TeamLeaderTrimestralMetrics")
+  team               Team?               @relation(fields: [teamId], references: [id])
 }
 
 model Nomina {
@@ -50,8 +50,8 @@ model Nomina {
   box               String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-  teamId            Int      // Nuevo campo para la relación con Team
-  team              Team     @relation(fields: [teamId], references: [id]) // Relación con Team
+  teamId            Int
+  team              Team     @relation(fields: [teamId], references: [id])
 }
 
 model Team {
@@ -61,34 +61,17 @@ model Team {
   updatedAt         DateTime            @updatedAt
   managerId         Int
   teamLeaderId      Int
+  grupoNovedades    String?
+  grupoGeneral      String?
   cases             Case[]
   dailyMetrics      DailyMetrics[]
+  Nomina            Nomina[]
   semanalMetrics    SemanalMetrics[]
   tmoMetrics        TMOMetrics[]
   manager           User                @relation("ManagerToTeam", fields: [managerId], references: [id])
   teamLeader        User                @relation("TeamLeaderToTeam", fields: [teamLeaderId], references: [id])
   trimestralMetrics TrimestralMetrics[]
   members           User[]
-  Nomina            Nomina[]            // Relación inversa con Nomina
-  grupoNovedades    String?
-  grupoGeneral      String? 
-}
-
-model DailyMetrics {
-  id        Int      @id @default(autoincrement())
-  date      DateTime
-  name      String
-  q         Int
-  nps       Int
-  csat      Float
-  ces       Float
-  rd        Float
-  userId    Int
-  teamId    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  team      Team     @relation(fields: [teamId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
 }
 
 model TrimestralMetrics {
@@ -120,20 +103,43 @@ model SemanalMetrics {
   teamLeader   User     @relation("TeamLeaderSemanalMetrics", fields: [teamLeaderId], references: [id])
 }
 
+model DailyMetrics {
+  id           Int      @id @default(autoincrement())
+  name         String
+  q            Int
+  nps          Float
+  csat         Float
+  ces          Float
+  rd           Float
+  teamId       Int
+  teamLeaderId Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  team         Team     @relation(fields: [teamId], references: [id])
+  teamLeader   User     @relation(fields: [teamLeaderId], references: [id])
+
+  @@index([teamId])
+  @@index([teamLeaderId])
+}
+
 model TMOMetrics {
   id           Int      @id @default(autoincrement())
   name         String
-  qLlAtendidas Int?     // Habilitar null
-  tiempoACD    Int?     // Cambiar a Int?
-  acw          Int?     // Cambiar a Int?
-  hold         Int?     // Cambiar a Int?
-  ring         Int?     // Cambiar a Int?
-  tmo          Int?     // Cambiar a Int?
-  teamLeaderId Int
+  qLlAtendidas Int
+  tiempoACD    String   @default("00:00:00")
+  acw          String   @default("00:00:00")
+  hold         String   @default("00:00:00")
+  ring         String   @default("00:00:00")
+  tmo          String   @default("00:00:00")
   teamId       Int
+  teamLeaderId Int
   createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   team         Team     @relation(fields: [teamId], references: [id])
-  teamLeader   User     @relation("TeamLeaderTMOMetrics", fields: [teamLeaderId], references: [id])
+  teamLeader   User     @relation(fields: [teamLeaderId], references: [id])
+
+  @@index([teamId])
+  @@index([teamLeaderId])
 }
 
 model Case {
@@ -143,14 +149,14 @@ model Case {
   withinSLA         Boolean
   caseNumber        String   @unique
   authorizationType String
-  customType        String?  // Campo opcional para tipos personalizados
+  customType        String?
   details           String
   status            String   @default("pending")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   userId            Int
   teamId            Int?
-  reiteratedFrom    Int?     // Referencia al caso original
+  reiteratedFrom    Int?
   originalCase      Case?    @relation("Reiterations", fields: [reiteratedFrom], references: [id])
   reiterations      Case[]   @relation("Reiterations")
   team              Team?    @relation(fields: [teamId], references: [id])
@@ -181,7 +187,7 @@ model Event {
 
 model News {
   id        String   @id @default(cuid())
-  date      DateTime 
+  date      DateTime
   status    String   @default("active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -193,69 +199,67 @@ model News {
 
 model Survey {
   id                Int      @id @default(autoincrement())
-  moodRating       Float
-  workEnvironment  Float
+  moodRating        Float
+  workEnvironment   Float
   personalWellbeing Float
-  workLifeBalance  Float
-  stressLevel      Float
-  feedback         String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @default(now())
+  workLifeBalance   Float
+  stressLevel       Float
+  feedback          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @default(now())
 }
 
 model NomencladorNM {
-  id            Int       @id @default(autoincrement())
-  descripcion   String    @db.Text
-  comoPedirse   String    @db.Text
-  codigo        String    @unique
-  observaciones String?   @db.Text
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now())
-  changes       NomencladorChange[] @relation("NomencladorChangeToNM")
+  id             Int                       @id @default(autoincrement())
+  descripcion    String
+  comoPedirse    String
+  codigo         String                    @unique
+  observaciones  String?
+  isActive       Boolean                   @default(true)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @default(now())
+  changesNM      NomencladorChange[]       @relation("NomencladorChangeToNM")
   equivalentesNU NomencladorEquivalencia[] @relation("NMtoNU")
 }
 
 model NomencladorNU {
-  id            Int       @id @default(autoincrement())
-  descripcion   String    @db.Text
-  comoPedirse   String    @db.Text
-  codigo        String
-  nucodigo      String
-  observaciones String?   @db.Text
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now())
-  changes       NomencladorChange[] @relation("NomencladorChangeToNU")
+  id             Int                       @id @default(autoincrement())
+  descripcion    String
+  comoPedirse    String
+  codigo         String
+  nucodigo       String
+  observaciones  String?
+  isActive       Boolean                   @default(true)
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @default(now())
+  changesNU      NomencladorChange[]       @relation("NomencladorChangeToNU")
   equivalentesNM NomencladorEquivalencia[] @relation("NMtoNU")
 
   @@unique([codigo, nucodigo])
 }
 
 model NomencladorEquivalencia {
-  id          Int           @id @default(autoincrement())
-  nmId        Int
-  nuId        Int
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
-  nm          NomencladorNM @relation("NMtoNU", fields: [nmId], references: [id])
-  nu          NomencladorNU @relation("NMtoNU", fields: [nuId], references: [id])
+  id        Int           @id @default(autoincrement())
+  nmId      Int
+  nuId      Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @default(now())
+  nm        NomencladorNM @relation("NMtoNU", fields: [nmId], references: [id])
+  nu        NomencladorNU @relation("NMtoNU", fields: [nuId], references: [id])
 
   @@unique([nmId, nuId])
 }
 
 model NomencladorChange {
-  id            Int       @id @default(autoincrement())
-  nomenclador   String    // "NM" o "NU"
-  practiceId    Int       // ID de la práctica modificada
-  field         String    // Campo modificado
-  oldValue      String?   @db.Text
-  newValue      String    @db.Text
-  createdAt     DateTime  @default(now())
-  modifiedBy    Int       // ID del usuario que realizó el cambio
-  
-  // Referencias con nombres únicos para los constraints
-  user          User      @relation(fields: [modifiedBy], references: [id])
+  id            Int            @id @default(autoincrement())
+  nomenclador   String
+  practiceId    Int
+  field         String
+  oldValue      String?
+  newValue      String
+  createdAt     DateTime       @default(now())
+  modifiedBy    Int
+  user          User           @relation(fields: [modifiedBy], references: [id])
   nomencladorNM NomencladorNM? @relation("NomencladorChangeToNM", fields: [practiceId], references: [id], map: "NomencladorChange_practiceId_nm_fkey")
   nomencladorNU NomencladorNU? @relation("NomencladorChangeToNU", fields: [practiceId], references: [id], map: "NomencladorChange_practiceId_nu_fkey")
 
@@ -264,12 +268,12 @@ model NomencladorChange {
 }
 
 model CaseTracking {
-  id          Int      @id @default(autoincrement())
-  caseNumber  String   @unique
-  action      String   // "Derivar" or "Cerrar"
-  area        String?  // Null when action is "Cerrar"
-  reason      String
-  completed   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  caseNumber String   @unique
+  action     String
+  area       String?
+  reason     String
+  completed  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

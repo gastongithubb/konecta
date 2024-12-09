@@ -1,11 +1,10 @@
 import React from 'react'
-// import Sidebar from '@/components/team_leader/metricsOptions'
-import Sidebar from '@/components/team_leader/Metrics'
+import CargarCasos from '@/components/metrics/TMOMetricsTable'
 
 export default function Casespage() {
   return (
-    <main className="flex min-h-screen w-full bg-corporate-white">
-      <Sidebar />
+    <main className="flex min-h-screen w-full items-center justify-center bg-corporate-white">
+      <CargarCasos />
     </main>
   )
 }

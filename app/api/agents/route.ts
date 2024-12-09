@@ -1,9 +1,8 @@
+// api/agents/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { PrismaClient } from '@prisma/client';
 import { verifyAccessToken } from '@/app/lib/auth.server';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/app/lib/prisma';
 
 export async function GET() {
   try {

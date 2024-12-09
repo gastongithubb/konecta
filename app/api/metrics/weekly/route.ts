@@ -1,6 +1,6 @@
 // /app/api/metrics/weekly/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+import { prisma } from '@/app/lib/prisma';
 import { z } from 'zod';
 
 const WeeklyMetricSchema = z.object({

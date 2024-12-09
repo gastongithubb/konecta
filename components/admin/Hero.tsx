@@ -3,10 +3,11 @@ import {
   Sun, Cloud, CloudRain, Search, Coffee, Lightbulb, Trophy,
   Target, TrendingUp, Users, FileText, ChevronRight
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
+import Link from 'next/link';
 
 const frases = [
   "Liderando con visión y propósito",
@@ -28,11 +29,6 @@ const DashboardGerencia: React.FC = () => {
   const [frase, setFrase] = useState<string>('');
   const [ubicacion, setUbicacion] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
-
-  const handleTeamLeadersClick = () => {
-    window.location.href = '/dashboard/team-leaders';
-  };
 
   const fetchClima = useCallback(async (location: string) => {
     const apiKey = process.env.NEXT_PUBLIC_WEATHER_API_KEY;
@@ -58,6 +54,8 @@ const DashboardGerencia: React.FC = () => {
   }, []);
 
   const getUserLocation = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
     const locationPermission = localStorage.getItem('locationPermission');
 
     if (locationPermission === 'granted') {
@@ -120,10 +118,6 @@ const DashboardGerencia: React.FC = () => {
     if (ubicacion.trim()) {
       fetchClima(ubicacion);
     }
-  };
-
-  const handleNewsClick = () => {
-    window.location.href = '/news';
   };
 
   const getClimaIcon = () => {
@@ -217,35 +211,37 @@ const DashboardGerencia: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button
-              variant="outline"
-              className="h-auto p-4 flex items-center gap-4 hover:bg-muted transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideRight"
-              onClick={handleTeamLeadersClick}
-            >
-              <div className="rounded-full p-2 bg-primary/10">
-                <Users className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-semibold text-foreground">Ver Líderes</h3>
-                <p className="text-sm text-muted-foreground">Gestiona y conecta con tu equipo de liderazgo</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1" />
-            </Button>
+            <Link href="/dashboard/team-leaders" className="block">
+              <Button
+                variant="outline"
+                className="w-full h-auto p-4 flex items-center gap-4 hover:bg-muted transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideRight"
+              >
+                <div className="rounded-full p-2 bg-primary/10">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h3 className="font-semibold text-foreground">Ver Líderes</h3>
+                  <p className="text-sm text-muted-foreground">Gestiona y conecta con tu equipo de liderazgo</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+            </Link>
 
-            <Button
-              variant="outline"
-              className="h-auto p-4 flex items-center gap-4 hover:bg-muted transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideLeft"
-              onClick={handleNewsClick}
-            >
-              <div className="rounded-full p-2 bg-secondary/10">
-                <FileText className="h-5 w-5 text-secondary" />
-              </div>
-              <div className="flex-1 text-left">
-                <h3 className="font-semibold text-foreground">Novedades</h3>
-                <p className="text-sm text-muted-foreground">Últimas actualizaciones y noticias importantes</p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1" />
-            </Button>
+            <Link href="/news" className="block">
+              <Button
+                variant="outline"
+                className="w-full h-auto p-4 flex items-center gap-4 hover:bg-muted transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideLeft"
+              >
+                <div className="rounded-full p-2 bg-black/10">
+                  <FileText className="h-5 w-5 text-black" />
+                </div>
+                <div className="flex-1 text-left">
+                  <h3 className="font-semibold text-foreground">Novedades</h3>
+                  <p className="text-sm text-muted-foreground">Últimas actualizaciones y noticias importantes</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -318,13 +314,15 @@ const DashboardGerencia: React.FC = () => {
           {/* Side Content - Image */}
           <div className="lg:col-span-1">
             <Card className="overflow-hidden transform transition-all duration-500 hover:shadow-xl animate-fadeIn">
-              <div className="relative w-full h-full aspect-[4/3] group">
+              <div className="relative aspect-[4/3] w-full">
                 <Image
                   src="/gerenciahero.jpg"
                   alt="Liderazgo y Gestión"
-                  layout="fill"
-                  objectFit="cover"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  priority
                   className="transition-transform duration-500 group-hover:scale-110"
+                  style={{ objectFit: 'cover' }}
                 />
               </div>
             </Card>

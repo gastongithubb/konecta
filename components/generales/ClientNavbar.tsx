@@ -4,37 +4,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { logoutClient } from '@/app/lib/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { 
-  LogOut, 
-  ChevronDown, 
-  Bell,
-  Circle,
-  Check,
-  Menu,
-  X,
-  User,
-  Users,
-  Calendar,
-  Activity,
-  FileText,
-  Wrench,
-  Book,
-  Grid,
-  ChevronRight,
-  BadgePlus,
-} from 'lucide-react';
-import LogoSrc from '@/public/Logo.webp';
+import { LogOut, ChevronDown, Menu, User, Users, Calendar, Activity, FileText, Wrench, Book, Grid, ChevronRight, BadgePlus } from 'lucide-react';
+import { useTheme } from "next-themes";
 import { ThemeToggle } from '@/components/ThemeProvider';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { LucideIcon } from 'lucide-react';
 
 
@@ -153,7 +126,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const { theme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   
@@ -365,17 +338,18 @@ return (
       <div className="flex items-center justify-between h-16">
         {/* Logo */}
         <div className="flex items-center">
-          <Link href={dashboardLink} className="flex items-center">
-            <Image 
-              src={LogoSrc} 
-              alt="Logo" 
-              width={120} 
-              height={40} 
-              className="mr-2 dark:brightness-200" 
-              unoptimized 
-            />
-          </Link>
-        </div>
+  <Link href={dashboardLink} className="flex items-center">
+    <Image 
+      src={theme === 'dark' ? "/Logo-dark.png" : "/Logo.webp"} 
+      alt="Logo" 
+      width={120} 
+      height={40}
+      priority
+      className="mr-2 dark:brightness-200" 
+      unoptimized 
+    />
+  </Link>
+</div>
 
         {/* Desktop Navigation */}
         <div className="flex items-center space-x-4">

@@ -1,6 +1,6 @@
 //app/api/cases/check-duplicate/[caseNumber]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+import { prisma } from '@/app/lib/prisma';
 import { authenticateRequest } from '@/app/lib/auth.server';
 
 export async function GET(

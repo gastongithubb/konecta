@@ -1,6 +1,6 @@
 // app/api/survey/route.ts
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+import { prisma } from '@/app/lib/prisma'
 import { unstable_noStore as noStore } from 'next/cache';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';

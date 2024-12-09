@@ -80,7 +80,7 @@ const Banner: React.FC = () => {
   };
 
   return (
-    <div className="container px-4 py-12 mx-auto lg:py-24 bg-white dark:bg-[#020817] transition-colors">
+    <div className="container px-4 py-12 mx-auto lg:py-24 bg-[#FAFAFA] dark:bg-[#020817] transition-colors">
       <div className="relative flex flex-col-reverse items-center md:flex-row" id="hero">
         <div className="md:w-1/2 lg:pr-12">
           <div className="space-y-8 text-left">

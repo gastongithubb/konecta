@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyAccessToken } from '@/app/lib/auth.server';
-import prisma from '@/app/lib/prisma';
+import { prisma } from '@/app/lib/prisma';
 
 export async function GET() {
   const cookieStore = cookies();

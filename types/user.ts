@@ -9,7 +9,8 @@ export interface User {
   updatedAt: Date;
 }
 
-export type UserRole = 'manager' | 'team_leader' | 'leader' | 'agent' | 'user';
+// types/user.ts
+export type UserRole = 'user' | 'team_leader' | 'manager';
 
 export interface UserData {
   name: string;

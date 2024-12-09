@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/app/lib/prisma';
+import { prisma } from '@/app/lib/prisma';
 import { verifyAccessToken } from '@/app/lib/auth.server';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
