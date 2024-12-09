@@ -1,7 +1,20 @@
+'use client'
+
 import React, { useState, useEffect, useCallback, ChangeEvent, FormEvent } from 'react';
+import { useTheme } from "next-themes";
 import {
-  Sun, Cloud, CloudRain, Search, Coffee, Lightbulb, Trophy,
-  Target, TrendingUp, Users, FileText, ChevronRight
+  Sun,
+  Cloud,
+  CloudRain,
+  Search,
+  Coffee,
+  Lightbulb,
+  Trophy,
+  Target,
+  TrendingUp,
+  Users,
+  FileText,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +36,12 @@ interface ClimaState {
   ciudad: string;
 }
 
-const DashboardGerencia: React.FC = () => {
+interface DashboardGerenciaProps {
+  userRole: string;
+}
+
+const DashboardGerencia: React.FC<DashboardGerenciaProps> = ({ userRole }) => {
+  const { theme } = useTheme();
   const [fecha, setFecha] = useState<Date>(new Date());
   const [clima, setClima] = useState<ClimaState>({ temp: 0, condicion: 'soleado', ciudad: '' });
   const [frase, setFrase] = useState<string>('');
@@ -55,7 +73,7 @@ const DashboardGerencia: React.FC = () => {
 
   const getUserLocation = useCallback(() => {
     if (typeof window === 'undefined') return;
-    
+
     const locationPermission = localStorage.getItem('locationPermission');
 
     if (locationPermission === 'granted') {
@@ -102,10 +120,6 @@ const DashboardGerencia: React.FC = () => {
     setFrase(frases[Math.floor(Math.random() * frases.length)]);
     getUserLocation();
 
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-
     return () => clearInterval(timer);
   }, [getUserLocation]);
 
@@ -139,17 +153,17 @@ const DashboardGerencia: React.FC = () => {
     trendColor: string,
     delay: string
   ) => (
-    <Card className={`transform transition-all duration-300 hover:scale-105 hover:shadow-lg ${delay}`}>
+    <Card className={`transform transition-all duration-300 hover:scale-105 hover:shadow-lg ${delay} dark:bg-gray-800 dark:border-gray-700`}>
       <CardContent className="pt-6">
         <div className="flex items-center gap-4">
-          <div className="rounded-xl p-2 bg-gray-100 transition-colors duration-300 hover:bg-gray-200">
+          <div className="rounded-xl p-2 bg-gray-100 dark:bg-gray-700 transition-colors duration-300 hover:bg-gray-200 dark:hover:bg-gray-600">
             {icon}
           </div>
           <div className="flex-1">
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
             <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">{label}</p>
-              <p className={`text-sm ${trendColor} flex items-center gap-1 transition-all duration-300 hover:translate-x-1`}>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+              <p className={`text-sm ${trendColor} dark:text-green-400 flex items-center gap-1 transition-all duration-300 hover:translate-x-1`}>
                 <TrendingUp className="h-4 w-4" />
                 {trend}
               </p>
@@ -161,16 +175,15 @@ const DashboardGerencia: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <div className="border-b">
+    <div className="min-h-screen bg-background dark:bg-gray-900">
+      <div className="border-b dark:border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="h-16 flex items-center justify-between animate-fadeIn">
             <div>
-              <h1 className="text-xl font-semibold text-foreground animate-slideDown">
+              <h1 className="text-xl font-semibold text-foreground dark:text-gray-100 animate-slideDown">
                 Dashboard Ejecutivo
               </h1>
-              <p className="text-sm text-muted-foreground animate-slideRight">
+              <p className="text-sm text-muted-foreground dark:text-gray-400 animate-slideRight">
                 {fecha.toLocaleString('es-ES', {
                   weekday: 'long',
                   day: 'numeric',
@@ -186,16 +199,19 @@ const DashboardGerencia: React.FC = () => {
                   value={ubicacion}
                   onChange={handleUbicacionChange}
                   placeholder="Buscar ubicación"
-                  className="border rounded-l-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300"
+                  className="border dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 rounded-l-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300"
                 />
-                <button type="submit" className="bg-primary text-primary-foreground rounded-r-lg px-3 py-1 hover:bg-primary/90 transition-colors duration-300">
+                <button 
+                  type="submit" 
+                  className="bg-primary text-primary-foreground dark:bg-primary/90 rounded-r-lg px-3 py-1 hover:bg-primary/90 dark:hover:bg-primary/80 transition-colors duration-300"
+                >
                   <Search className="h-4 w-4" />
                 </button>
               </form>
-              <div className={`flex items-center gap-2 bg-muted rounded-lg px-3 py-1 transition-all duration-300 hover:shadow-md ${isLoading ? 'animate-pulse' : 'animate-slideLeft'}`}>
+              <div className={`flex items-center gap-2 bg-muted dark:bg-gray-800 rounded-lg px-3 py-1 transition-all duration-300 hover:shadow-md ${isLoading ? 'animate-pulse' : 'animate-slideLeft'}`}>
                 {getClimaIcon()}
-                <span className="font-medium">{clima.temp}°C</span>
-                <span className="text-sm text-muted-foreground">{clima.ciudad}</span>
+                <span className="font-medium dark:text-gray-100">{clima.temp}°C</span>
+                <span className="text-sm text-muted-foreground dark:text-gray-400">{clima.ciudad}</span>
               </div>
             </div>
           </div>
@@ -203,65 +219,62 @@ const DashboardGerencia: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6 animate-slideDown">
+          <h2 className="text-2xl font-bold text-foreground dark:text-gray-100 mb-6 animate-slideDown">
             {frase}
           </h2>
 
-          {/* Action Buttons */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Link href="/dashboard/team-leaders" className="block">
-              <Button
-                variant="outline"
-                className="w-full h-auto p-4 flex items-center gap-4 hover:bg-muted transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideRight"
-              >
-                <div className="rounded-full p-2 bg-primary/10">
+            <Button
+              variant="outline"
+              asChild
+              className="w-full h-auto p-4 flex items-center gap-4 hover:bg-muted dark:hover:bg-gray-800 dark:border-gray-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideRight"
+            >
+              <Link href="/team-leaders">
+                <div className="rounded-full p-2 bg-primary/10 dark:bg-primary/20">
                   <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="font-semibold text-foreground">Ver Líderes</h3>
-                  <p className="text-sm text-muted-foreground">Gestiona y conecta con tu equipo de liderazgo</p>
+                  <h3 className="font-semibold text-foreground dark:text-gray-100">Ver Líderes</h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">Gestiona y conecta con tu equipo de liderazgo</p>
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1" />
-              </Button>
-            </Link>
+                <ChevronRight className="h-5 w-5 text-muted-foreground dark:text-gray-400 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+            </Button>
 
             <Link href="/news" className="block">
               <Button
                 variant="outline"
-                className="w-full h-auto p-4 flex items-center gap-4 hover:bg-muted transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideLeft"
+                className="w-full h-auto p-4 flex items-center gap-4 hover:bg-muted dark:hover:bg-gray-800 dark:border-gray-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md animate-slideLeft"
               >
-                <div className="rounded-full p-2 bg-black/10">
-                  <FileText className="h-5 w-5 text-black" />
+                <div className="rounded-full p-2 bg-primary/10 dark:bg-primary/20">
+                  <FileText className="h-5 w-5 text-secundary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <h3 className="font-semibold text-foreground">Novedades</h3>
-                  <p className="text-sm text-muted-foreground">Últimas actualizaciones y noticias importantes</p>
+                  <h3 className="font-semibold text-foreground dark:text-gray-100">Novedades</h3>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">Últimas actualizaciones y noticias importantes</p>
                 </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1" />
+                <ChevronRight className="h-5 w-5 text-muted-foreground dark:text-gray-400 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Metrics Section */}
           <div className="lg:col-span-2">
             <Tabs defaultValue="overview" className="space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-foreground">Métricas Clave</h3>
-                <TabsList className="transition-all duration-300 hover:shadow-md">
-                  <TabsTrigger value="overview">General</TabsTrigger>
-                  <TabsTrigger value="details">Detalles</TabsTrigger>
+                <h3 className="text-lg font-semibold text-foreground dark:text-gray-100">Métricas Clave</h3>
+                <TabsList className="transition-all duration-300 hover:shadow-md dark:bg-gray-800">
+                  <TabsTrigger value="overview" className="data-[state=active]:dark:bg-gray-700">General</TabsTrigger>
+                  <TabsTrigger value="details" className="data-[state=active]:dark:bg-gray-700">Detalles</TabsTrigger>
                 </TabsList>
               </div>
 
               <TabsContent value="overview" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {renderMetricCard(
-                    <Coffee className="h-5 w-5 text-primary" />,
+                    <Coffee className="h-5 w-5 text-primary dark:text-primary/90" />,
                     "1,234",
                     "Tazas de café",
                     "+12.5%",
@@ -269,7 +282,7 @@ const DashboardGerencia: React.FC = () => {
                     "animate-fadeIn"
                   )}
                   {renderMetricCard(
-                    <Lightbulb className="h-5 w-5 text-yellow-600" />,
+                    <Lightbulb className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />,
                     "42",
                     "Ideas innovadoras",
                     "+8.3%",
@@ -277,7 +290,7 @@ const DashboardGerencia: React.FC = () => {
                     "animate-fadeIn delay-100"
                   )}
                   {renderMetricCard(
-                    <Trophy className="h-5 w-5 text-orange-600" />,
+                    <Trophy className="h-5 w-5 text-orange-600 dark:text-orange-500" />,
                     "99%",
                     "Tasa de éxito",
                     "+2.1%",
@@ -285,7 +298,7 @@ const DashboardGerencia: React.FC = () => {
                     "animate-fadeIn delay-200"
                   )}
                   {renderMetricCard(
-                    <Target className="h-5 w-5 text-purple-600" />,
+                    <Target className="h-5 w-5 text-purple-600 dark:text-purple-500" />,
                     "3.14",
                     "Objetivos superados",
                     "+5.7%",
@@ -296,12 +309,12 @@ const DashboardGerencia: React.FC = () => {
               </TabsContent>
 
               <TabsContent value="details" className="animate-fadeIn">
-                <Card>
+                <Card className="dark:bg-gray-800 dark:border-gray-700">
                   <CardContent className="pt-6">
                     <div className="space-y-4">
-                      <h4 className="font-semibold text-foreground">Análisis Detallado</h4>
-                      <p className="text-muted-foreground">
-                        Visualización detallada de métricas y KPIs empresariales.
+                      <h4 className="font-semibold text-foreground dark:text-gray-100">Análisis Detallado</h4>
+                      <p className="text-muted-foreground dark:text-gray-400">
+                      Visualización detallada de métricas y KPIs empresariales.
                         Este panel muestra información más específica sobre el rendimiento.
                       </p>
                     </div>
@@ -311,9 +324,8 @@ const DashboardGerencia: React.FC = () => {
             </Tabs>
           </div>
 
-          {/* Side Content - Image */}
           <div className="lg:col-span-1">
-            <Card className="overflow-hidden transform transition-all duration-500 hover:shadow-xl animate-fadeIn">
+            <Card className="overflow-hidden transform transition-all duration-500 hover:shadow-xl animate-fadeIn dark:bg-gray-800 dark:border-gray-700">
               <div className="relative aspect-[4/3] w-full">
                 <Image
                   src="/gerenciahero.jpg"
@@ -321,7 +333,7 @@ const DashboardGerencia: React.FC = () => {
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   priority
-                  className="transition-transform duration-500 group-hover:scale-110"
+                  className="transition-transform duration-500 group-hover:scale-110 dark:opacity-90"
                   style={{ objectFit: 'cover' }}
                 />
               </div>

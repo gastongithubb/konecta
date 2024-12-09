@@ -277,3 +277,19 @@ model CaseTracking {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+model Incident {
+  id          Int      @id @default(autoincrement())
+  system      String   // Orion, Xlite, Salesforce
+  startTime   DateTime
+  endTime     DateTime?
+  ticketNumber String  @unique
+  status      String   @default("active") // active, resolved
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ticketNumber])
+  @@index([system])
+  @@index([status])
+}

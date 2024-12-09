@@ -1,5 +1,8 @@
 'use client'
+
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Accordion,
@@ -17,35 +20,43 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useRouter } from 'next/navigation';
+import { Search, Users, UserPlus, User } from 'lucide-react';
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ReloadIcon } from "@radix-ui/react-icons";
 
-type Usuario = {
+interface Usuario {
   id: number;
   name: string;
   email: string;
   role: string;
   teamId: number | null;
-};
+}
 
-type Equipo = {
+interface Equipo {
   id: number;
   name: string;
   teamLeader: Usuario;
   members: Usuario[];
-};
+}
 
 const ComponenteGestionEquipos: React.FC = () => {
   const router = useRouter();
+  const { theme } = useTheme();
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
   const [lideresEquipo, setLideresEquipo] = useState<Usuario[]>([]);
   const [agentes, setAgentes] = useState<Usuario[]>([]);
+  const [agentesFiltrados, setAgentesFiltrados] = useState<Usuario[]>([]);
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [nombreEquipo, setNombreEquipo] = useState<string>('');
   const [liderSeleccionado, setLiderSeleccionado] = useState<string>('');
   const [miembrosSeleccionados, setMiembrosSeleccionados] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>('');
 
   const canCreateTeam = currentUser?.role === 'manager' || currentUser?.role === 'team_leader';
 
@@ -68,7 +79,6 @@ const ComponenteGestionEquipos: React.FC = () => {
         if (userData.user) {
           setCurrentUser(userData.user);
           
-          // Obtener datos adicionales solo si tenemos un usuario válido
           const [usuariosRes, equiposRes] = await Promise.all([
             fetch('/api/agents'),
             fetch('/api/teams')
@@ -81,27 +91,24 @@ const ComponenteGestionEquipos: React.FC = () => {
           const usuariosData = await usuariosRes.json();
           const equiposData = await equiposRes.json();
   
-          // Procesar usuarios
           const todosUsuarios = usuariosData.data || [];
           
           if (userData.user.role === 'team_leader') {
             setLideresEquipo([userData.user]);
             setLiderSeleccionado(String(userData.user.id));
           } else {
-            // Si es manager, filtra los team_leaders disponibles
             const lideresDisponibles = todosUsuarios.filter(
-              (u: Usuario) => u.role === 'team_leader' && (!u.teamId || u.teamId === null)
+              (u: Usuario) => u.role === 'team_leader' && !u.teamId
             );
             setLideresEquipo(lideresDisponibles);
           }
           
-          // Filtrar agentes que no están asignados a ningún equipo
           const agentesDisponibles = todosUsuarios.filter(
-            (u: Usuario) => u.role === 'user' && (!u.teamId || u.teamId === null)
+            (u: Usuario) => u.role === 'user' && !u.teamId
           );
           setAgentes(agentesDisponibles);
+          setAgentesFiltrados(agentesDisponibles);
           
-          // Procesar equipos
           setEquipos(equiposData.data?.teams || []);
         } else {
           router.push('/login');
@@ -118,41 +125,12 @@ const ComponenteGestionEquipos: React.FC = () => {
   }, [router]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!currentUser) return;
-      
-      try {
-        const [usuariosRes, equiposRes] = await Promise.all([
-          fetch('/api/agents'),
-          fetch('/api/teams')
-        ]);
-
-        if (!usuariosRes.ok || !equiposRes.ok) {
-          throw new Error('Error en la respuesta del servidor');
-        }
-
-        const usuariosData = await usuariosRes.json();
-        const equiposData = await equiposRes.json();
-
-        const todosUsuarios = usuariosData.data || [];
-        
-        if (currentUser.role === 'team_leader') {
-          setLideresEquipo([currentUser]);
-          setLiderSeleccionado(String(currentUser.id));
-        } else {
-          setLideresEquipo(todosUsuarios.filter((u: Usuario) => u.role === 'team_leader'));
-        }
-        
-        setAgentes(todosUsuarios.filter((u: Usuario) => u.role === 'user'));
-        setEquipos(equiposData.data?.teams || []);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError('Error al cargar datos. Por favor, intente de nuevo.');
-      }
-    };
-
-    fetchData();
-  }, [currentUser]);
+    const filteredAgents = agentes.filter(agente => 
+      agente.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      agente.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setAgentesFiltrados(filteredAgents);
+  }, [searchTerm, agentes]);
 
   const manejarCambioLider = (valor: string) => {
     setLiderSeleccionado(valor);
@@ -195,8 +173,6 @@ const ComponenteGestionEquipos: React.FC = () => {
         grupoGeneral: ""
       };
   
-      console.log('Sending request with body:', requestBody);
-  
       const respuesta = await fetch('/api/teams', {
         method: 'POST',
         headers: {
@@ -214,13 +190,17 @@ const ComponenteGestionEquipos: React.FC = () => {
       setEquipos(prev => [...prev, nuevoEquipo]);
       setExito('Equipo guardado exitosamente');
       
-      // Reset form
       setNombreEquipo('');
       if (currentUser?.role === 'manager') {
         setLiderSeleccionado('');
       }
       setMiembrosSeleccionados([]);
       setError(null);
+      
+      setAgentes(prev => prev.filter(agente => 
+        !miembrosSeleccionados.includes(String(agente.id))
+      ));
+      setSearchTerm('');
     } catch (error) {
       console.error('Error al guardar el equipo:', error);
       setError(error instanceof Error ? error.message : 'Hubo un error al guardar el equipo. Por favor, intenta de nuevo.');
@@ -230,13 +210,52 @@ const ComponenteGestionEquipos: React.FC = () => {
   if (loading) {
     return (
       <Card className="w-full max-w-4xl mx-auto">
-        <CardContent className="p-6">
-          <Alert>
-            <AlertDescription>
-              Cargando información...
-            </AlertDescription>
-          </Alert>
+        <CardHeader>
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-12 w-12 rounded-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-[250px]" />
+              <Skeleton className="h-4 w-[200px]" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-center p-8">
+            <div className="flex flex-col items-center space-y-4">
+              <ReloadIcon className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Cargando información...
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-1/3" />
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center space-x-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-3 w-[150px]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+  
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-1/4" />
+            <div className="grid grid-cols-2 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-[60px] rounded-lg" />
+              ))}
+            </div>
+          </div>
         </CardContent>
+        <CardFooter className="border-t dark:border-gray-800 pt-6">
+          <Skeleton className="h-10 w-full" />
+        </CardFooter>
       </Card>
     );
   }
@@ -270,110 +289,205 @@ const ComponenteGestionEquipos: React.FC = () => {
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto bg-card dark:bg-gray-900 border dark:border-gray-800">
       <CardHeader>
-        <h2 className="text-2xl font-bold">Gestión de Equipos</h2>
+        <div className="flex items-center space-x-2">
+          <Users className="h-6 w-6 text-primary" />
+          <CardTitle>Gestión de Equipos</CardTitle>
+        </div>
+        <CardDescription>
+          Administra los equipos y sus miembros
+        </CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-6">
-        {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-        {exito && <Alert variant="default" className="bg-green-100 text-green-800 border-green-300"><AlertDescription>{exito}</AlertDescription></Alert>}
+        {error && (
+          <Alert variant="destructive" className="dark:bg-red-900/20 dark:text-red-200">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {exito && (
+          <Alert variant="default" className="dark:bg-green-900/20 dark:text-green-200 dark:border-green-800">
+            <AlertDescription>{exito}</AlertDescription>
+          </Alert>
+        )}
         
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="equipos-existentes">
-            <AccordionTrigger>Equipos Existentes</AccordionTrigger>
+        <Accordion type="single" collapsible className="w-full dark:border-gray-800">
+          <AccordionItem value="equipos-existentes" className="dark:border-gray-800">
+            <AccordionTrigger className="hover:no-underline">
+              <div className="flex items-center space-x-2">
+                <Users className="h-4 w-4" />
+                <span>Equipos Existentes</span>
+                <Badge variant="secondary" className="ml-2">
+                  {equipos.length}
+                </Badge>
+              </div>
+            </AccordionTrigger>
             <AccordionContent>
-              {equipos.length > 0 ? (
-                equipos.map((equipo) => (
-                  <Accordion type="single" collapsible className="w-full" key={equipo.id}>
-                    <AccordionItem value={`equipo-${equipo.id}`}>
-                      <AccordionTrigger>{equipo.name}</AccordionTrigger>
-                      <AccordionContent>
-                        <p>Líder: {equipo.teamLeader?.name || 'No asignado'}</p>
-                        <p>Miembros:</p>
-                        <ul className="list-disc pl-5">
-                          {equipo.members?.map((miembro) => (
-                            <li key={miembro.id}>{miembro.name}</li>
-                          )) || <li>No hay miembros asignados</li>}
-                        </ul>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                ))
-              ) : (
-                <p>No hay equipos existentes.</p>
-              )}
+              <ScrollArea className="h-[300px] rounded-md border dark:border-gray-800 p-4">
+                {equipos.length > 0 ? (
+                  equipos.map((equipo) => (
+                    <div key={equipo.id} className="mb-4 last:mb-0">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-lg font-semibold dark:text-gray-200">{equipo.name}</h4>
+                      </div>
+                      <div className="mt-2 space-y-2">
+                        <div className="flex items-center space-x-2 text-sm dark:text-gray-400">
+                          <User className="h-4 w-4" />
+                          <span>Líder: {equipo.teamLeader?.name || 'No asignado'}</span>
+                        </div>
+                        <div className="pl-6">
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Miembros:</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            {equipo.members?.map((miembro) => (
+                              <Badge 
+                                key={miembro.id} 
+                                variant="outline"
+                                className="justify-start dark:border-gray-700"
+                              >
+                                {miembro.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <Separator className="mt-4 dark:bg-gray-800" />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-gray-500 dark:text-gray-400">No hay equipos existentes.</p>
+                )}
+              </ScrollArea>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
 
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Crear Nuevo Equipo</h3>
-          
-          <div className="space-y-2">
-            <label htmlFor="team-name" className="block text-sm font-medium text-gray-700">
-              Nombre del Equipo
-            </label>
-            <Input
-              id="team-name"
-              value={nombreEquipo}
-              onChange={(e) => setNombreEquipo(e.target.value)}
-              placeholder="Ingrese el nombre del equipo"
-              className="w-full"
-            />
+        <div className="space-y-6">
+          <div className="flex items-center space-x-2">
+            <UserPlus className="h-5 w-5" />
+            <h3 className="text-xl font-semibold dark:text-gray-200">Crear Nuevo Equipo</h3>
           </div>
-
-          {currentUser.role === 'manager' && (
+          
+          <div className="space-y-4 border dark:border-gray-800 rounded-lg p-4">
             <div className="space-y-2">
-              <label htmlFor="team-leader" className="block text-sm font-medium text-gray-700">
-                Líder del Equipo
+              <label htmlFor="team-name" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Nombre del Equipo
               </label>
-              <Select onValueChange={manejarCambioLider} value={liderSeleccionado}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Selecciona un líder" />
-                </SelectTrigger>
-                <SelectContent>
-                  {lideresEquipo.map((lider) => (
-                    <SelectItem key={lider.id} value={String(lider.id)}>
-                      {lider.name}
-                    </SelectItem>
+              <Input
+                id="team-name"
+                value={nombreEquipo}
+                onChange={(e) => setNombreEquipo(e.target.value)}
+                placeholder="Ingrese el nombre del equipo"
+                className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+              />
+            </div>
+
+            {currentUser.role === 'manager' && (
+              <div className="space-y-2">
+                <label htmlFor="team-leader" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Líder del Equipo
+                </label>
+                <Select onValueChange={manejarCambioLider} value={liderSeleccionado}>
+                  <SelectTrigger className="w-full dark:bg-gray-800 dark:border-gray-700">
+                    <SelectValue placeholder="Selecciona un líder" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-gray-900 dark:border-gray-700">
+                    {lideresEquipo.map((lider) => (
+                      <SelectItem 
+                        key={lider.id} 
+                        value={String(lider.id)}
+                        className="dark:text-gray-200 dark:focus:bg-gray-800"
+                      >
+                        {lider.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {lideresEquipo.length === 0 && (
+                  <p className="text-yellow-600 dark:text-yellow-500">
+                    No hay líderes de equipo disponibles.
+                  </p>
+                )}
+              </div>
+            )}
+          
+            <div className="space-y-4">
+              <label htmlFor="team-members" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Miembros del Equipo
+              </label>
+              <div className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Buscar agentes por nombre o email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
+                />
+              </div>
+              <ScrollArea className="h-[200px] rounded-md border dark:border-gray-800 p-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {agentesFiltrados.map((agente) => (
+                    <Button
+                      key={agente.id}
+                      variant={miembrosSeleccionados.includes(String(agente.id)) ? "default" : "outline"}
+                      onClick={() => manejarCambioMiembro(String(agente.id))}
+                      className="justify-start h-auto py-2 dark:border-gray-700 dark:hover:bg-gray-800"
+                    >
+                      <div className="text-left">
+                        <div className="font-medium">{agente.name}</div>
+                        <div className="text-xs opacity-70">{agente.email}</div>
+                      </div>
+                    </Button>
                   ))}
-                </SelectContent>
-              </Select>
-              {lideresEquipo.length === 0 && (
-                <p className="text-yellow-600">No hay líderes de equipo disponibles.</p>
+                </div>
+                {agentes.length === 0 ? (
+                  <p className="text-center text-yellow-600 dark:text-yellow-500">
+                    No hay agentes disponibles.
+                  </p>
+                ) : agentesFiltrados.length === 0 && (
+                  <p className="text-center text-yellow-600 dark:text-yellow-500">
+                    No se encontraron agentes con ese criterio de búsqueda.
+                  </p>
+                )}
+              </ScrollArea>
+              {miembrosSeleccionados.length > 0 && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    Agentes seleccionados: {miembrosSeleccionados.length}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {miembrosSeleccionados.map((id) => {
+                      const agente = agentes.find(a => String(a.id) === id);
+                      return agente ? (
+                        <Badge 
+                          key={id}
+                          variant="secondary" 
+                          className="dark:bg-gray-800 dark:text-gray-200"
+                        >
+                          {agente.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
               )}
             </div>
-          )}
-          
-          <div className="space-y-2">
-            <label htmlFor="team-members" className="block text-sm font-medium text-gray-700">
-              Miembros del Equipo
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {agentes.map((agente) => (
-                <Button
-                  key={agente.id}
-                  variant={miembrosSeleccionados.includes(String(agente.id)) ? "default" : "outline"}
-                  onClick={() => manejarCambioMiembro(String(agente.id))}
-                  className="justify-start"
-                >
-                  {agente.name}
-                </Button>
-              ))}
-            </div>
-            {agentes.length === 0 && (
-              <p className="text-yellow-600">No hay agentes disponibles.</p>
-            )}
           </div>
         </div>
       </CardContent>
-      <CardFooter>
+
+      <CardFooter className="border-t dark:border-gray-800 pt-6">
         <Button 
           onClick={manejarGuardarEquipo} 
-          className="w-full"
+          className="w-full dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
           disabled={!nombreEquipo.trim() || !liderSeleccionado || miembrosSeleccionados.length === 0}
         >
-          Guardar Equipo
+          <UserPlus className="mr-2 h-4 w-4" />
+          {miembrosSeleccionados.length > 0 
+            ? `Guardar Equipo con ${miembrosSeleccionados.length} miembro${miembrosSeleccionados.length === 1 ? '' : 's'}`
+            : 'Guardar Equipo'
+          }
         </Button>
       </CardFooter>
     </Card>

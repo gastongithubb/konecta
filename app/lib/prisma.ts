@@ -11,7 +11,8 @@ const prismaClientSingleton = () => {
       db: {
         url: process.env.DATABASE_POSTGRES_PRISMA_URL
       }
-    }
+    },
+    log: ['query', 'error', 'warn']  // Add logging for better debugging
   })
 }
 
