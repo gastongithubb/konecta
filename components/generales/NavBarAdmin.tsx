@@ -7,15 +7,12 @@ const NavbarAdmin = async () => {
     const user = await authenticateRequest();
 
     if (!user) {
-      // Si no hay usuario autenticado, podrías redirigir a la página de login
-      // o mostrar un componente diferente
       return null;
     }
 
     return <ClientNavbar user={user} />;
   } catch (error) {
     console.error('Error authenticating user:', error);
-    // Manejar el error apropiadamente, tal vez mostrando un mensaje de error
     return null;
   }
 };
