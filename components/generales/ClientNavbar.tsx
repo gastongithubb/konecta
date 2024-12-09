@@ -330,6 +330,17 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
           ]
         },
       ]
+    },
+    
+    {
+      type: 'dropdown',
+      label: 'Herramientas',
+      icon: Wrench,
+      dropdown: [
+        { type: 'link', href: '/dashboard/team_leader/caseSeguimiento', label: 'Derivar/Finalizar' },
+        { type: 'link', href: '/dashboard/team_leader/caselist', label: 'Reclamos F4' },
+        { type: 'link', href: '/dashboard/team_leader/calidad', label: 'Calidad' }
+      ]
     }
   ] : [];
 
@@ -475,25 +486,11 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                   Mi Equipo
                 </NavLink>
                 <NavLink
-                  href="/dashboard/team_leader/caselist"
-                  isActive={pathname === '/dashboard/team_leader/caselist'}
-                  icon={FileText}
-                >
-                  casos reclamados
-                </NavLink>
-                <NavLink
                   href="/dashboard/team_leader/bienestar"
                   isActive={pathname === '/dashboard/team_leader/bienestar'}
                   icon={Activity}
                 >
                   HiSancor
-                </NavLink>
-                <NavLink
-                  href="/dashboard/team_leader/caseSeguimiento"
-                  isActive={pathname === '/dashboard/team_leader/caseSeguimiento'}
-                  icon={FileText}
-                >
-                  Casos
                 </NavLink>
               </>
             )}

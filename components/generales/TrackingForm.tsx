@@ -15,11 +15,20 @@ interface TrackingData {
   action: 'Derivar' | 'Cerrar';
   area: string;
   reason: string;
+  teamId?: number;
+  userId?: number;
+}
+
+interface ApiResponse {
+  message: string;
+  data?: any;
+  error?: string;
 }
 
 const TrackingForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { theme } = useTheme();
   const [trackingData, setTrackingData] = useState<TrackingData>({
     caseNumber: '',
@@ -29,6 +38,7 @@ const TrackingForm: React.FC = () => {
   });
 
   const handleChange = (name: string, value: string) => {
+    setError(null);
     setTrackingData(prev => ({
       ...prev,
       [name]: value,
@@ -39,6 +49,7 @@ const TrackingForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/case-tracking', {
@@ -47,7 +58,11 @@ const TrackingForm: React.FC = () => {
         body: JSON.stringify(trackingData),
       });
 
-      if (!response.ok) throw new Error('Error saving tracking');
+      const result: ApiResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al procesar el seguimiento');
+      }
 
       setTrackingData({
         caseNumber: '',
@@ -59,8 +74,7 @@ const TrackingForm: React.FC = () => {
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error al procesar el seguimiento');
+      setError(error instanceof Error ? error.message : 'Error al procesar el seguimiento');
     } finally {
       setIsSubmitting(false);
     }
@@ -96,7 +110,7 @@ const TrackingForm: React.FC = () => {
               </label>
               <Select
                 value={trackingData.action}
-                onValueChange={(value) => handleChange('action', value)}
+                onValueChange={(value: 'Derivar' | 'Cerrar') => handleChange('action', value)}
               >
                 <SelectTrigger className="h-9 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100">
                   <SelectValue placeholder="Seleccione acción" />
@@ -158,6 +172,15 @@ const TrackingForm: React.FC = () => {
             {isSubmitting ? 'Guardando...' : 'Enviar Caso'}
           </Button>
         </form>
+
+        {error && (
+          <Alert className="mt-4 bg-red-50 dark:bg-red-900/20 
+            border-red-200 dark:border-red-800">
+            <AlertDescription className="text-red-800 dark:text-red-300">
+              {error}
+            </AlertDescription>
+          </Alert>
+        )}
 
         {showSuccess && (
           <motion.div

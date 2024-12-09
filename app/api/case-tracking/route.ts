@@ -1,66 +1,68 @@
 // src/app/api/case-tracking/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
+import { authenticateRequest } from '@/app/lib/auth.server';
+import { Prisma } from '@prisma/client';
 
 export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    console.log('Received data:', data);
+    const user = await authenticateRequest();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const data = await req.json();
+    
     if (!data.caseNumber || !data.action || !data.reason) {
       return NextResponse.json(
-        { error: 'Faltan campos requeridos' },
+        { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
     const result = await prisma.caseTracking.create({
       data: {
-        caseNumber: data.caseNumber,
-        action: data.action,
+        ...data,
+        teamId: user.teamId,
+        userId: user.id,
         area: data.action === 'Derivar' ? data.area : null,
-        reason: data.reason,
-        completed: false,
       },
     });
 
-    return NextResponse.json({
-      message: 'Seguimiento creado exitosamente',
-      data: result
-    });
-
-  } catch (error: any) {
-    console.error('Error detallado:', error);
-    
-    // Manejo específico para error de caseNumber único
-    if (error.code === 'P2002') {
-      return NextResponse.json(
-        { error: 'El número de caso ya existe' },
-        { status: 400 }
-      );
+    return NextResponse.json({ message: 'Success', data: result });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Case number already exists' },
+          { status: 400 }
+        );
+      }
     }
-
+    
+    console.error('Error creating case tracking:', error);
     return NextResponse.json(
-      { error: 'Error al crear el seguimiento del caso' },
+      { error: 'Failed to create case tracking' },
       { status: 500 }
     );
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const user = await authenticateRequest();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const cases = await prisma.caseTracking.findMany({
-      orderBy: {
-        createdAt: 'desc',
+      where: { 
+        teamId: Number(user.teamId)
       },
+      orderBy: { createdAt: 'desc' },
+      include: { user: { select: { name: true } } }
     });
+    
     return NextResponse.json(cases);
   } catch (error) {
     console.error('Error fetching cases:', error);
-    return NextResponse.json(
-      { error: 'Error al obtener los seguimientos' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Error al obtener los seguimientos' }, { status: 500 });
   }
 }
 
@@ -80,7 +82,7 @@ export async function PUT(req: Request) {
         id: data.id,
       },
       data: {
-        completed: data.completed,
+        completed: !!data.completed,
       },
     });
     

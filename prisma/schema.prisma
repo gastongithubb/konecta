@@ -30,6 +30,8 @@ model User {
   leadTeams          Team[]              @relation("TeamLeaderToTeam")
   trimestralMetrics  TrimestralMetrics[] @relation("TeamLeaderTrimestralMetrics")
   team               Team?               @relation(fields: [teamId], references: [id])
+
+  CaseTracking CaseTracking[]
 }
 
 model Nomina {
@@ -72,6 +74,8 @@ model Team {
   teamLeader        User                @relation("TeamLeaderToTeam", fields: [teamLeaderId], references: [id])
   trimestralMetrics TrimestralMetrics[]
   members           User[]
+
+  CaseTracking CaseTracking[]
 }
 
 model TrimestralMetrics {
@@ -276,6 +280,10 @@ model CaseTracking {
   completed  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  teamId     Int
+  userId     Int
+  team       Team     @relation(fields: [teamId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model Incident {
