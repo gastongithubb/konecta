@@ -28,7 +28,7 @@ export default function DashboardManagerClient({ user }: DashboardManagerClientP
   return (
     <DashboardBase userRole={userRole}>
       {/* Otro contenido del dashboard específico para cada rol */}
-      <Hero />
+      <Hero userRole={''} />
     </DashboardBase>
   );
 }
