@@ -92,7 +92,7 @@ const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleSt
                     <SelectItem value="cancelled" className="dark:text-gray-100 dark:focus:bg-gray-700">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button 
+                <Button
                   variant="outline"
                   size="sm"
                   onClick={() => onEdit(caseItem.id)}
@@ -100,7 +100,7 @@ const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleSt
                 >
                   Editar
                 </Button>
-                <Button 
+                <Button
                   variant="destructive"
                   size="sm"
                   onClick={() => onDelete(caseItem.id)}
@@ -250,9 +250,9 @@ const CaseUploadComponent: React.FC = () => {
         },
         body: JSON.stringify(data),
       });
-  
+
       const result = await response.json();
-  
+
       // Manejar específicamente el caso de duplicado
       if (response.status === 409) {
         setDuplicateCase(result.existingCase);
@@ -260,23 +260,23 @@ const CaseUploadComponent: React.FC = () => {
         setIsLoading(false);
         return; // Importante: retornar aquí para no continuar con el resto del código
       }
-  
+
       if (!response.ok) {
         throw new Error(result.error || 'Error al crear el caso');
       }
-  
+
       toast({
         title: "Caso creado",
         description: "El caso ha sido creado exitosamente.",
       });
-  
+
       if (socket && session?.user?.teamId) {
         socket.emit('new-case', {
           teamId: session.user.teamId,
           caseNumber: result.data.caseNumber,
         });
       }
-  
+
       form.reset();
       fetchCases();
       fetchCounts();
@@ -290,11 +290,11 @@ const CaseUploadComponent: React.FC = () => {
       setIsLoading(false);
     }
   };
-  
+
   // Función para crear un caso reiterado
   const createReiteratedCase = async () => {
     if (!duplicateCase) return;
-  
+
     try {
       setIsLoading(true);
       const values = form.getValues();
@@ -308,18 +308,18 @@ const CaseUploadComponent: React.FC = () => {
           reiteratedFrom: duplicateCase.id,
         }),
       });
-  
+
       const result = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(result.error || 'Error al crear el caso reiterado');
       }
-  
+
       toast({
         title: "Caso reiterado creado",
         description: "El caso ha sido creado como reiteración exitosamente.",
       });
-  
+
       setShowDuplicateDialog(false);
       form.reset();
       fetchCases();
@@ -488,14 +488,14 @@ const CaseUploadComponent: React.FC = () => {
         <div className="col-span-12">
           <Tabs defaultValue="list" className="w-full">
             <TabsList className="grid w-full grid-cols-2 dark:bg-gray-800/50 dark:border-gray-700">
-              <TabsTrigger 
-                value="list" 
+              <TabsTrigger
+                value="list"
                 className="dark:text-gray-100 data-[state=active]:dark:bg-gray-700"
               >
                 Lista de Casos
               </TabsTrigger>
-              <TabsTrigger 
-                value="new" 
+              <TabsTrigger
+                value="new"
                 className="dark:text-gray-100 data-[state=active]:dark:bg-gray-700"
               >
                 Nuevo Caso
@@ -530,8 +530,8 @@ const CaseUploadComponent: React.FC = () => {
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <FormControl>
-                                    <Button 
-                                      variant="outline" 
+                                    <Button
+                                      variant="outline"
                                       className="w-full justify-start text-left font-normal dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                                     >
                                       {field.value ? (
@@ -542,8 +542,8 @@ const CaseUploadComponent: React.FC = () => {
                                     </Button>
                                   </FormControl>
                                 </PopoverTrigger>
-                                <PopoverContent 
-                                  className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700" 
+                                <PopoverContent
+                                  className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700"
                                   align="start"
                                 >
                                   <Calendar
@@ -569,8 +569,8 @@ const CaseUploadComponent: React.FC = () => {
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <FormControl>
-                                    <Button 
-                                      variant="outline" 
+                                    <Button
+                                      variant="outline"
                                       className="w-full justify-start text-left font-normal dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                                     >
                                       {field.value ? (
@@ -581,8 +581,8 @@ const CaseUploadComponent: React.FC = () => {
                                     </Button>
                                   </FormControl>
                                 </PopoverTrigger>
-                                <PopoverContent 
-                                  className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700" 
+                                <PopoverContent
+                                  className="w-auto p-0 dark:bg-gray-800 dark:border-gray-700"
                                   align="start"
                                 >
                                   <Calendar
@@ -606,7 +606,7 @@ const CaseUploadComponent: React.FC = () => {
                             <FormItem>
                               <FormLabel className="dark:text-gray-100">Número de caso</FormLabel>
                               <FormControl>
-                                <Input 
+                                <Input
                                   {...field}
                                   onChange={(e) => handleCaseNumberChange(e.target.value)}
                                   placeholder="Ingrese el número de caso"
@@ -634,7 +634,39 @@ const CaseUploadComponent: React.FC = () => {
                                   <SelectItem value="Medicamentos" className="dark:text-gray-100 dark:focus:bg-gray-700">Medicamentos</SelectItem>
                                   <SelectItem value="Cirugías" className="dark:text-gray-100 dark:focus:bg-gray-700">Cirugías</SelectItem>
                                   <SelectItem value="Ambulatorio" className="dark:text-gray-100 dark:focus:bg-gray-700">Ambulatorio</SelectItem>
-                                  <SelectItem value="Leches medicamentosas" className="dark:text-gray-100 dark:focus:bg-gray-700">Leches medicamentosas</SelectItem>
+                                  <SelectItem value="leches" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Leches medicamentosas
+                                  </SelectItem>
+                                  <SelectItem value="ambulatorio" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Ambulatorio
+                                  </SelectItem>
+                                  <SelectItem value="cirugias-pat-ba" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Cirugías Patagonia y Bs As
+                                  </SelectItem>
+                                  <SelectItem value="cirugias-interior" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Cirugías Interior del país
+                                  </SelectItem>
+                                  <SelectItem value="internaciones" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Internaciones
+                                  </SelectItem>
+                                  <SelectItem value="auditoria" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Auditoría Médica
+                                  </SelectItem>
+                                  <SelectItem value="protesis" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Prótesis
+                                  </SelectItem>
+                                  <SelectItem value="control" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Puntos de control
+                                  </SelectItem>
+                                  <SelectItem value="contrataciones" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Contrataciones
+                                  </SelectItem>
+                                  <SelectItem value="medicamentos" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Medicamentos
+                                  </SelectItem>
+                                  <SelectItem value="fertilidad" className="dark:text-gray-100 dark:focus:bg-gray-700">
+                                    Fertilidad
+                                  </SelectItem>                                  
                                   <SelectItem value="Otros" className="dark:text-gray-100 dark:focus:bg-gray-700">Otros</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -651,8 +683,8 @@ const CaseUploadComponent: React.FC = () => {
                               <FormItem>
                                 <FormLabel className="dark:text-gray-100">Especificar tipo</FormLabel>
                                 <FormControl>
-                                  <Input 
-                                    {...field} 
+                                  <Input
+                                    {...field}
                                     placeholder="Describa el tipo de autorización"
                                     className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-400"
                                   />
@@ -701,8 +733,8 @@ const CaseUploadComponent: React.FC = () => {
                         )}
                       />
 
-                      <Button 
-                        type="submit" 
+                      <Button
+                        type="submit"
                         className="w-full dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
                         disabled={isLoading}
                       >
