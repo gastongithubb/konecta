@@ -15,7 +15,7 @@ const leadershipQuotes = [
 ];
 
 const handleMetricsClick = () => {
-  window.location.href = '/dashboard/team_leader/metrics';
+  window.location.href = '/metrics';
 };
 
 const LeaderHero = () => {
