@@ -108,19 +108,19 @@ model SemanalMetrics {
 }
 
 model DailyMetrics {
-  id           Int      @id @default(autoincrement())
+  id           Int       @id @default(autoincrement())
   name         String
   q            Int
   nps          Float
   csat         Float
   ces          Float
   rd           Float
-  teamId       Int
+  teamId       Int?
   teamLeaderId Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  team         Team     @relation(fields: [teamId], references: [id])
-  teamLeader   User     @relation(fields: [teamLeaderId], references: [id])
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  team         Team?     @relation(fields: [teamId], references: [id])
+  teamLeader   User      @relation(fields: [teamLeaderId], references: [id])
 
   @@index([teamId])
   @@index([teamLeaderId])
@@ -135,11 +135,11 @@ model TMOMetrics {
   hold         String   @default("00:00:00")
   ring         String   @default("00:00:00")
   tmo          String   @default("00:00:00")
-  teamId       Int
+  teamId       Int?
   teamLeaderId Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  team         Team     @relation(fields: [teamId], references: [id])
+  team         Team?     @relation(fields: [teamId], references: [id])
   teamLeader   User     @relation(fields: [teamLeaderId], references: [id])
 
   @@index([teamId])
