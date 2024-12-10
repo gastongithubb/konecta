@@ -107,8 +107,8 @@ const NavLink: React.FC<NavLinkProps> = ({
     href={href}
     target={target}
     className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-all ${isActive
-        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
-        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
+      ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100'
       } ${className || ''}`}
   >
     {Icon && <Icon className={`mr-2 h-4 w-4 ${isActive ? 'text-blue-700 dark:text-blue-300' : 'text-gray-500 dark:text-gray-400'}`} />}
@@ -192,12 +192,12 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
   const navLinks: NavLink[] = user.role.toLowerCase() === 'user' ? [
     {
       type: 'dropdown',
-      label: 'Metricas',
+      label: 'Servicio',
       icon: Activity,
       dropdown: [
-        { type: 'link', href: '/nps-individual', label: 'NPS Individual' },
-        { type: 'link', href: '/trimestral', label: 'NPS Trimestral' },
-        { type: 'link', href: '/balance-mensual', label: 'Balance Mensual' },
+        { type: 'link', href: '/metrics', label: 'Metricas' },
+        { type: 'link', href: '/error', label: 'Calidad' },
+        // { type: 'link', href: '/balance-mensual', label: 'Balance Mensual' },
       ]
     },
     {
@@ -269,9 +269,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
           label: 'Metricas',
           icon: Activity,
           subDropdown: [
-            { type: 'link', href: '/nps-individual', label: 'NPS Individual' },
-            { type: 'link', href: '/trimestral', label: 'NPS Trimestral' },
-            { type: 'link', href: '/balance-mensual', label: 'Balance Mensual' },
+            { type: 'link', href: '/metrics', label: 'Metricas' },
+            { type: 'link', href: '/error', label: 'Calidad' },
+            // { type: 'link', href: '/balance-mensual', label: 'Balance Mensual' },
           ]
         },
         {
@@ -331,7 +331,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
         },
       ]
     },
-    
+
     {
       type: 'dropdown',
       label: 'Herramientas',

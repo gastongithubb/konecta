@@ -1,11 +1,10 @@
-// components/metrics/layout/MetricsSidebar.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/app/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Upload,
   BarChart2,
@@ -27,53 +26,96 @@ interface SideNavProps {
   children: React.ReactNode;
 }
 
-const metricsLinks = [
-  {
-    title: "NPS Diario",
-    links: [
-      {
-        title: "Cargar NPS",
-        href: "/metrics/daily/upload",
-        icon: Upload,
-      },
-      {
-        title: "Visualizar NPS",
-        href: "/metrics/daily/view",
-        icon: BarChart2,
-      },
-      {
-        title: "Análisis de NPS",
-        href: "/metrics/daily/analytics",
-        icon: LineChart,
-      },
-    ]
-  },
-  {
-    title: "Métricas TMO",
-    links: [
-      {
-        title: "Cargar TMO",
-        href: "/metrics/tmo/upload",
-        icon: Clock,
-      },
-      {
-        title: "Visualizar TMO",
-        href: "/metrics/tmo/view",
-        icon: BarChart,
-      },
-      {
-        title: "Análisis TMO",
-        href: "/metrics/tmo/analytics",
-        icon: LineChart,
-      },
-    ]
-  }
-];
+interface User {
+  role: string;
+}
+
+const createMetricsLinks = (role: string) => {
+  const baseLinks = [
+    {
+      title: "NPS Diario",
+      links: [
+        ...(role === 'team_leader' ? [
+          {
+            title: "Cargar NPS",
+            href: "/metrics/daily/upload",
+            icon: Upload,
+          }
+        ] : []),
+        {
+          title: "Visualizar NPS",
+          href: "/metrics/daily/view",
+          icon: BarChart2,
+        },
+        ...(role === 'team_leader' ? [
+          {
+            title: "Análisis de NPS",
+            href: "/metrics/daily/analytics",
+            icon: LineChart,
+          }
+        ] : []),
+      ]
+    },
+    {
+      title: "Métricas TMO",
+      links: [
+        ...(role === 'team_leader' ? [
+          {
+            title: "Cargar TMO",
+            href: "/metrics/tmo/upload",
+            icon: Clock,
+          }
+        ] : []),
+        {
+          title: "Visualizar TMO",
+          href: "/metrics/tmo/view",
+          icon: BarChart,
+        },
+        ...(role === 'team_leader' ? [
+          {
+            title: "Análisis TMO",
+            href: "/metrics/tmo/analytics",
+            icon: LineChart,
+          }
+        ] : []),
+      ]
+    }
+  ];
+
+  return baseLinks;
+};
 
 export default function MetricsSidebar({ children, className }: SideNavProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openSections, setOpenSections] = useState<string[]>(['NPS Diario', 'Métricas TMO']);
+  const [user, setUser] = useState<User | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+
+          // Redirect normal users to view pages if they try to access restricted paths
+          if (userData.role === 'user') {
+            const currentPath = pathname;
+            if (currentPath.includes('/upload') || currentPath.includes('/analytics')) {
+              const redirectPath = currentPath.replace(/(upload|analytics)/, 'view');
+              router.push(redirectPath);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    checkAuth();
+  }, [pathname, router]);
 
   const toggleSection = (section: string) => {
     setOpenSections(current =>
@@ -82,6 +124,8 @@ export default function MetricsSidebar({ children, className }: SideNavProps) {
         : [...current, section]
     );
   };
+
+  const metricsLinks = createMetricsLinks(user?.role || 'user');
 
   return (
     <div className="flex h-screen overflow-hidden">

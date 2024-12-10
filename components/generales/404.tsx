@@ -30,7 +30,7 @@ const Error404: React.FC = () => {
               No te preocupes, nuestra lider está en camino para apagar este error 404.
             </p>
             <div className="flex flex-col space-y-4">
-              <Link href="/" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded text-center transition duration-300">
+              <Link href="/dashboard" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded text-center transition duration-300">
                 Volver a la página de inicio
               </Link>
               
