@@ -10,8 +10,12 @@ export async function POST(req: NextRequest) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const token = await createAccessToken({ sub: user.id.toString(), role: user.role, isPasswordChanged: user.isPasswordChanged });
+  const token = await createAccessToken({ 
+    sub: user.id.toString(), 
+    email: user.email,       // Añadir el email
+    role: user.role, 
+    isPasswordChanged: user.isPasswordChanged 
+  });
 
-  // Return token or set cookies with the token
   return new Response(JSON.stringify({ token }), { status: 200 });
 }

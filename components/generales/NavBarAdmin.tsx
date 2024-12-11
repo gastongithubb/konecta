@@ -1,20 +1,14 @@
+// components/generales/NavBarAdmin.tsx
 import React from 'react';
-import { authenticateRequest } from '@/app/lib/auth.server';
+import { getSession } from '@/app/lib/auth.server';
 import ClientNavbar from './ClientNavbar';
 
-const NavbarAdmin = async () => {
-  try {
-    const user = await authenticateRequest();
+interface NavbarAdminProps {
+  shouldRedirect?: boolean;
+}
 
-    if (!user) {
-      return null;
-    }
-
-    return <ClientNavbar user={user} />;
-  } catch (error) {
-    console.error('Error authenticating user:', error);
-    return null;
-  }
+const NavbarAdmin = ({ shouldRedirect = false }: NavbarAdminProps) => {
+  return <ClientNavbar />;
 };
 
 export default NavbarAdmin;

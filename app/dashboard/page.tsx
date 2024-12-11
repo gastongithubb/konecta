@@ -1,39 +1,22 @@
-import { cookies } from 'next/headers';
-import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
+// app/dashboard/page.tsx
+import { getSession } from '@/app/lib/auth.server';
 import { redirect } from 'next/navigation';
 
 export default async function DashboardPage() {
-  const cookieStore = cookies();
-  const token = cookieStore.get('auth_token')?.value;
+  const session = await getSession();
 
-  if (!token) {
+  if (!session) {
     redirect('/login');
   }
 
-  try {
-    const decoded = await verifyAccessToken(token);
-    if (!decoded || !decoded.sub) {
-      redirect('/login');
-    }
-
-    const userData = await getUserData(decoded.sub);
-
-    if (!userData) {
-      throw new Error('User data not found');
-    }
-
-    switch (userData.role) {
-      case 'agent':
-        redirect('/dashboard/user');
-      case 'leader':
-        redirect('/dashboard/team_leader');
-      case 'manager':
-        redirect('/dashboard/manager');
-      default:
-        redirect('/unauthorized');
-    }
-  } catch (error) {
-    console.error('Error fetching user data:', error);
-    redirect('/login');
+  switch (session.role) { // Usar role en lugar de userRole
+    case 'agent':
+      redirect('/dashboard/user');
+    case 'leader':
+      redirect('/dashboard/team_leader');
+    case 'manager':
+      redirect('/dashboard/manager');
+    default:
+      redirect('/unauthorized');
   }
 }

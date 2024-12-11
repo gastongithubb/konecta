@@ -1,37 +1,15 @@
-//app/api/cases/check-duplicate/[caseNumber]/route.ts
+// app/api/cases/check-duplicate/[caseNumber]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import { authenticateRequest } from '@/app/lib/auth.server';
+import { getSession } from '@/app/lib/auth.server';
+import { unstable_cache } from 'next/cache';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { caseNumber: string } }
-) {
-  try {
-    // Verificar autenticación usando tu sistema personalizado
-    const user = await authenticateRequest();
-    if (!user) {
-      return NextResponse.json(
-        { error: 'No autorizado' },
-        { status: 401 }
-      );
-    }
-
-    const { caseNumber } = params;
-
-    if (!caseNumber) {
-      return NextResponse.json(
-        { error: 'Número de caso inválido' },
-        { status: 400 }
-      );
-    }
-
-    // Buscar caso existente
-    const existingCase = await prisma.case.findFirst({
+const getCaseByNumber = unstable_cache(
+  async (caseNumber: string, teamId: number | null) => {
+    return prisma.case.findFirst({
       where: {
-        caseNumber: caseNumber,
-        // Opcionalmente, puedes filtrar por teamId si quieres que solo vean casos de su equipo
-        teamId: user.teamId || undefined,
+        caseNumber,
+        teamId: teamId ?? undefined,
       },
       select: {
         id: true,
@@ -51,13 +29,39 @@ export async function GET(
         }
       }
     });
+  },
+  ['case-by-number'],
+  { revalidate: 60, tags: ['case-duplicate'] }
+);
 
-    // Si no existe caso, retornar null
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { caseNumber: string } }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const { caseNumber } = params;
+
+    if (!caseNumber) {
+      return NextResponse.json(
+        { error: 'Número de caso inválido' },
+        { status: 400 }
+      );
+    }
+
+    const existingCase = await getCaseByNumber(caseNumber, session.teamId);
+
     if (!existingCase) {
       return NextResponse.json({ duplicate: null });
     }
 
-    // Si existe, retornar la información del caso
     return NextResponse.json({
       duplicate: {
         ...existingCase,
@@ -67,10 +71,12 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Error checking duplicate case:', error);
+    console.error('Error verificando caso duplicado:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

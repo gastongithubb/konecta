@@ -36,12 +36,12 @@ export const ThemeToggle = () => {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+      className="rounded-full hover:bg-blue-600 dark:hover:bg-blue-600 transition-all"
     >
       {theme === "light" ? (
-        <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <Moon className="h-5 w-5 text-white dark:text-gray-400" />
       ) : (
-        <Sun className="h-5 w-5 text-gray-400 dark:text-gray-300" />
+        <Sun className="h-5 w-5 text-white dark:text-gray-300" />
       )}
     </Button>
   );

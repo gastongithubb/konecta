@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { verifyAccessToken } from '@/app/lib/auth.server';
+import type { UserRole } from '@/types/auth';
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
@@ -17,7 +18,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (request.nextUrl.pathname.startsWith('/dashboard') || request.nextUrl.pathname.startsWith('/api/users')) {
+  if (request.nextUrl.pathname.startsWith('/dashboard') || 
+      request.nextUrl.pathname.startsWith('/api/users')) {
     if (!token) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
@@ -29,7 +31,7 @@ export async function middleware(request: NextRequest) {
       }
 
       const path = request.nextUrl.pathname;
-      const userRole = decodedToken.role;
+      const userRole = decodedToken.role as UserRole;
 
       if (path === '/dashboard') {
         return NextResponse.redirect(new URL(`/dashboard/${userRole}`, request.url));

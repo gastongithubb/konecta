@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { verifyAccessToken, getUserData } from '@/app/lib/auth.server';
+import { verifyAccessToken, getUserData } from '@/app/lib/auth.server'
 import { cookies } from 'next/headers'
+import type { UserRole } from '@/types/auth'
 
 export async function GET() {
   const cookieStore = cookies()
@@ -22,15 +23,11 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Ensure user role is one of the expected values
-    const userRole = ['user', 'manager', 'team_leader'].includes(userData.role) 
-      ? userData.role 
-      : 'user'; // Default to 'user' if role is unexpected
-
     return NextResponse.json({
       name: userData.name,
-      role: userRole,
-      // Add any other necessary user data fields here
+      role: userData.role,
+      email: userData.email,
+      isPasswordChanged: userData.isPasswordChanged
     })
   } catch (error) {
     console.error('Error fetching user data:', error)

@@ -1,19 +1,24 @@
 // app/api/user-team-info/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { authenticateRequest } from '@/app/lib/auth.server';
+import { getSession } from '@/app/lib/auth.server';
+import { unstable_cache } from 'next/cache';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
-  try {
-    const user = await authenticateRequest();
-    if (!user) {
-      return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
-    }
+interface UserTeamInfo {
+  name: string;
+  team: {
+    name: string;
+    teamLeader: string;
+  } | null;
+}
 
+// Cache para obtener información del usuario y su equipo
+const getUserTeamInfo = unstable_cache(
+  async (userId: number): Promise<UserTeamInfo | null> => {
     const userWithTeam = await prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: userId },
       include: {
         team: {
           include: {
@@ -23,20 +28,46 @@ export async function GET() {
       }
     });
 
-    if (!userWithTeam) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
-    }
+    if (!userWithTeam) return null;
 
-    return NextResponse.json({
+    return {
       name: userWithTeam.name,
       team: userWithTeam.team ? {
         name: userWithTeam.team.name,
         teamLeader: userWithTeam.team.teamLeader.name
       } : null
-    });
+    };
+  },
+  ['user-team-info'],
+  { revalidate: 60, tags: ['user-team'] }
+);
+
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'No autenticado' }, 
+        { status: 401 }
+      );
+    }
+
+    const userInfo = await getUserTeamInfo(session.id);
+    
+    if (!userInfo) {
+      return NextResponse.json(
+        { error: 'Usuario no encontrado' }, 
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(userInfo);
   } catch (error) {
-    console.error('Error fetching user info:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error('Error obteniendo información del usuario:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' }, 
+      { status: 500 }
+    );
   } finally {
     await prisma.$disconnect();
   }

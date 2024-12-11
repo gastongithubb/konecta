@@ -1,4 +1,5 @@
-'use client'
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,7 +10,7 @@ import { useTheme } from "next-themes";
 import { ThemeToggle } from '@/components/ThemeProvider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { LucideIcon } from 'lucide-react';
-
+import { useSession } from '@/app/SessionProvider';
 
 // Interfaces base
 interface User {
@@ -21,8 +22,12 @@ interface User {
   teamId: number | null;
 }
 
-interface ClientNavbarProps {
-  user: User;
+export interface SessionUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  teamId: number | null;
 }
 
 // Menu interfaces
@@ -32,29 +37,25 @@ interface BaseMenuItem {
   target?: string;
 }
 
-// Link item - type es requerido
 interface LinkItem extends BaseMenuItem {
   type: 'link';
   href: string;
 }
 
-// Submenu item - type es requerido
 interface SubMenuDropdownItem extends BaseMenuItem {
   type: 'submenu';
   subDropdown: LinkItem[];
 }
 
-// Dropdown item - union type for items that can appear in a dropdown
 type DropdownItem = LinkItem | SubMenuDropdownItem;
 
-// NavLink interface - separado de LinkItem para manejar diferentes requisitos
 interface NavLink extends BaseMenuItem {
-  type: 'link' | 'dropdown';  // type es requerido aquí también
+  type: 'link' | 'dropdown';
   href?: string;
   dropdown?: DropdownItem[];
 }
 
-// Type guards mejorados
+// Type guards
 function isSubMenuItem(item: DropdownItem | NavLink): item is SubMenuDropdownItem {
   return item.type === 'submenu';
 }
@@ -67,8 +68,7 @@ function isNavLinkWithDropdown(item: NavLink): item is NavLink & { type: 'dropdo
   return item.type === 'dropdown' && !!item.dropdown;
 }
 
-
-// Interfaces para los componentes
+// Componentes auxiliares
 interface UserInitialsProps {
   name: string;
   className?: string;
@@ -83,9 +83,7 @@ interface NavLinkProps {
   className?: string;
 }
 
-// Componente UserInitials
 const UserInitials: React.FC<UserInitialsProps> = ({ name, className }) => {
-  // Agregar type annotation explícita para n
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
   return (
     <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 flex items-center justify-center text-white font-medium text-sm shadow-md hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all ${className || ''}`}>
@@ -94,7 +92,6 @@ const UserInitials: React.FC<UserInitialsProps> = ({ name, className }) => {
   );
 };
 
-// Componente NavLink
 const NavLink: React.FC<NavLinkProps> = ({
   href,
   isActive,
@@ -116,21 +113,21 @@ const NavLink: React.FC<NavLinkProps> = ({
   </Link>
 );
 
-export type { UserInitialsProps, NavLinkProps };
-export { UserInitials, NavLink };
-
-const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
+const ClientNavbar: React.FC = () => {
+  const session = useSession();
+  const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const { theme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -153,30 +150,6 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  const toggleNavDropdown = (label: string) => {
-    setOpenDropdown(openDropdown === label ? null : label);
-  };
-
-  async function fetchNotifications() {
-    try {
-      const response = await fetch('/api/notifications', {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
-      }
-
-      const data = await response.json();
-      setNotifications(data.notifications || []);
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      setIsLoading(false);
-    }
-  }
-
   const handleLogout = async () => {
     try {
       await logoutClient();
@@ -186,10 +159,56 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     }
   };
 
+  // Loading state
+  if (!mounted) {
+    return (
+      <nav className="fixed w-full top-0 z-50 backdrop-blur-md bg-white/30 dark:bg-gray-900/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <div className="w-[120px] h-[40px] bg-gray-200 dark:bg-gray-700 animate-pulse rounded" />
+            </div>
+            <div className="flex items-center">
+              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
-  const dashboardLink = `/dashboard/${user.role.toLowerCase()}`;
+  // Public navbar for unauthenticated users
+  if (!session) {
+    return (
+      <nav className="fixed w-full top-0 z-50 transition-all duration-300">
+        <div className="absolute inset-0 backdrop-blur-md bg-white/30 dark:bg-gray-900/30" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/" className="flex items-center transition-opacity hover:opacity-80">
+                <Image
+                  src={theme === 'dark' ? "/Logo-dark.png" : "/Logo.webp"}
+                  alt="Logo"
+                  width={120}
+                  height={40}
+                  priority
+                  className="mr-2 dark:brightness-200"
+                  unoptimized
+                />
+              </Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
-  const navLinks: NavLink[] = user.role.toLowerCase() === 'user' ? [
+  const dashboardLink = `/dashboard/${session.role.toLowerCase()}`;
+
+  const navLinks: NavLink[] = session.role.toLowerCase() === 'user' ? [
     {
       type: 'dropdown',
       label: 'Servicio',
@@ -258,7 +277,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     },
   ] : [];
 
-  const navLinksLeader: NavLink[] = user.role.toLowerCase() === 'team_leader' ? [
+  const navLinksLeader: NavLink[] = session.role.toLowerCase() === 'team_leader' ? [
     {
       type: 'dropdown',
       label: 'Reps',
@@ -344,6 +363,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
     }
   ] : [];
 
+  // Main navbar render
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 dark:text-white shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -365,7 +385,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
 
           {/* Desktop Navigation */}
           <div className="flex items-center space-x-4">
-            {user.role.toLowerCase() === 'manager' && (
+            {session.role.toLowerCase() === 'manager' && (
               <>
                 <NavLink
                   href="/incidents"
@@ -398,7 +418,8 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               </>
             )}
 
-            {user.role.toLowerCase() === 'team_leader' && (
+            {/* Team Leader Navigation */}
+            {session.role.toLowerCase() === 'team_leader' && (
               <>
                 {navLinksLeader.map((link, index) => (
                   <div key={index} className="relative">
@@ -474,7 +495,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                             </div>
                           ))}
                         </DropdownMenuContent>
-                      </DropdownMenu>
+                        </DropdownMenu>
                     )}
                   </div>
                 ))}
@@ -495,7 +516,8 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               </>
             )}
 
-            {user.role.toLowerCase() === 'user' && (
+            {/* User Navigation */}
+            {session.role.toLowerCase() === 'user' && (
               <>
                 {navLinks.map((link, index) => (
                   <div key={index} className="relative group">
@@ -548,7 +570,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
             )}
           </div>
 
-          {/* Right side items */}
+          {/* Right side items - Theme Toggle and User Menu */}
           <div className="flex items-center space-x-4">
             <ThemeToggle />
 
@@ -556,9 +578,9 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:block">
-                    {user.name}
+                    {session.name}
                   </span>
-                  <UserInitials name={user.name} />
+                  <UserInitials name={session.name} />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -571,7 +593,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                     <span>Perfil</span>
                   </Link>
                 </DropdownMenuItem>
-                {user.role.toLowerCase() === 'user' && (
+                {session.role.toLowerCase() === 'user' && (
                   <DropdownMenuItem>
                     <Link
                       href={`${dashboardLink}/equipoUsers`}
@@ -584,7 +606,7 @@ const ClientNavbar: React.FC<ClientNavbarProps> = ({ user }) => {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
                   onClick={handleLogout}
                 >
                   <LogOut className="mr-2 h-4 w-4" />

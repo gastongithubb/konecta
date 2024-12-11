@@ -1,14 +1,15 @@
+// types/case.ts
 export interface Case {
   id: number;
+  caseNumber: string;
   claimDate: Date;
   startDate: Date;
   withinSLA: boolean;
-  caseNumber: string;
   authorizationType: string;
   details: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  createdAt: Date;
-  updatedAt: Date;
+  status: string;
   userId: number;
-  teamId: number;
+  teamId: number | null;
+  reiteratedFrom?: number | null;
+  customType?: string | null;
 }

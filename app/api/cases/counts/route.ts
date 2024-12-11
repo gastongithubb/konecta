@@ -1,41 +1,71 @@
+// app/api/cases/counts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
-import { authenticateRequest } from '@/app/lib/auth.server';
-import { User } from '@/types/user';
+import { getSession } from '@/app/lib/auth.server';
+import { unstable_cache } from 'next/cache';
 
-export async function GET(request: NextRequest) {
-  const user = await authenticateRequest() as User | null;
-  if (!user) {
-    return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-  }
+interface CaseMetrics {
+  daily: number;
+  monthly: number;
+}
 
-  try {
+const getTeamMetrics = unstable_cache(
+  async (teamId: number | null): Promise<CaseMetrics> => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    const dailyCount = await prisma.case.count({
-      where: {
-        teamId: user.teamId ?? undefined,
-        createdAt: {
-          gte: today,
+    const [dailyCount, monthlyCount] = await Promise.all([
+      prisma.case.count({
+        where: {
+          teamId: teamId ?? undefined,
+          createdAt: {
+            gte: today,
+          },
         },
-      },
-    });
-
-    const monthlyCount = await prisma.case.count({
-      where: {
-        teamId: user.teamId ?? undefined,
-        createdAt: {
-          gte: firstDayOfMonth,
+      }),
+      prisma.case.count({
+        where: {
+          teamId: teamId ?? undefined,
+          createdAt: {
+            gte: firstDayOfMonth,
+          },
         },
-      },
-    });
+      }),
+    ]);
 
-    return NextResponse.json({ daily: dailyCount, monthly: monthlyCount });
+    return {
+      daily: dailyCount,
+      monthly: monthlyCount
+    };
+  },
+  ['case-metrics'],
+  { 
+    revalidate: 300, // Cache por 5 minutos para métricas
+    tags: ['case-metrics'] 
+  }
+);
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'No autorizado' }, 
+        { status: 401 }
+      );
+    }
+
+    const metrics = await getTeamMetrics(session.teamId);
+    return NextResponse.json(metrics);
   } catch (error) {
-    console.error('Error obteniendo conteos:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    console.error('Error obteniendo métricas:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' }, 
+      { status: 500 }
+    );
+  } finally {
+    await prisma.$disconnect();
   }
 }

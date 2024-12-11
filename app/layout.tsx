@@ -1,8 +1,10 @@
+// app/layout.tsx
 import './globals.css';
 import { Inter } from 'next/font/google';
-import Navbar from "../components/generales/NavBarAdmin";
-import ClientSessionProvider from './ClientSessionProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import SessionProvider from './SessionProvider';
+import NavbarAdmin from '@/components/generales/NavBarAdmin';
+import { getSession } from '@/app/lib/auth.server';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -11,21 +13,23 @@ export const metadata = {
   description: 'A dashboard for health metrics management',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getSession();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} min-h-screen bg-background font-sans antialiased`}>
         <ThemeProvider>
-          <ClientSessionProvider>
+          <SessionProvider session={session}>
             <div className="relative flex min-h-screen flex-col">
-              <Navbar />
+              <NavbarAdmin />
               <main className="flex-1 pt-16">{children}</main>
             </div>
-          </ClientSessionProvider>
+          </SessionProvider>
         </ThemeProvider>
       </body>
     </html>

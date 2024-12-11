@@ -6,16 +6,28 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 const prismaClientSingleton = () => {
+  if (!process.env.DATABASE_POSTGRES_PRISMA_URL) {
+    throw new Error('DATABASE_POSTGRES_PRISMA_URL is not defined')
+  }
+
   return new PrismaClient({
     datasources: {
       db: {
         url: process.env.DATABASE_POSTGRES_PRISMA_URL
       }
     },
-    log: ['query', 'error', 'warn']  // Add logging for better debugging
+    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error']
   })
 }
 
-export const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
+type GlobalWithPrisma = typeof globalThis & {
+  prisma: PrismaClient | undefined
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+const prisma = globalForPrisma.prisma ?? prismaClientSingleton()
+
+if (process.env.NODE_ENV !== 'production') {
+  (globalThis as GlobalWithPrisma).prisma = prisma
+}
+
+export { prisma }

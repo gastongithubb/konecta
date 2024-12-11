@@ -1,45 +1,60 @@
 // app/api/auth/refresh/route.ts
 import { NextResponse } from 'next/server';
-import { verifyRefreshToken, createAccessToken, createRefreshToken } from '@/app/lib/auth.server';
+import { cookies } from 'next/headers';
+import { verifyRefreshToken, createAccessToken } from '@/app/lib/auth.server';
+import type { TokenPayload } from '@/types/auth';
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const refreshToken = req.headers.get('Cookie')?.split('; ').find(row => row.startsWith('refresh_token='))?.split('=')[1];
+    const { refreshToken } = await request.json();
     
     if (!refreshToken) {
-      return NextResponse.json({ error: 'Refresh token is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Refresh token is required' },
+        { status: 400 }
+      );
     }
 
-    const decodedToken = await verifyRefreshToken(refreshToken);
-    if (!decodedToken) {
-      return NextResponse.json({ error: 'Invalid refresh token' }, { status: 401 });
+    const payload = await verifyRefreshToken(refreshToken);
+
+    if (!payload) {
+      return NextResponse.json(
+        { error: 'Invalid refresh token' },
+        { status: 401 }
+      );
     }
 
-    const newAccessToken = await createAccessToken({
-      sub: decodedToken.sub,
-      role: decodedToken.role,
-      isPasswordChanged: decodedToken.isPasswordChanged
-    });
+    const tokenData: TokenPayload = {
+      sub: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      isPasswordChanged: payload.isPasswordChanged // Añadido este campo
+    };
 
-    const newRefreshToken = await createRefreshToken({
-      sub: decodedToken.sub,
-      role: decodedToken.role,
-      isPasswordChanged: decodedToken.isPasswordChanged
-    });
+    const accessToken = await createAccessToken(tokenData);
+    
+    const response = NextResponse.json(
+      { accessToken },
+      { status: 200 }
+    );
 
-    const response = NextResponse.json({ accessToken: newAccessToken });
-
-    response.cookies.set('refresh_token', newRefreshToken, {
+    response.cookies.set({
+      name: 'auth_token',
+      value: accessToken,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
+      maxAge: 9 * 60 * 60, // 9 hours
       path: '/',
     });
 
     return response;
+
   } catch (error) {
-    console.error('Error refreshing token:', error);
-    return NextResponse.json({ error: 'Error refreshing token' }, { status: 500 });
+    console.error('Token refresh error:', error);
+    return NextResponse.json(
+      { error: 'Error refreshing token' },
+      { status: 500 }
+    );
   }
 }

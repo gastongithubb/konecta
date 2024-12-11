@@ -1,74 +1,50 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/app/lib/auth.server';
-import { prisma } from '@/app/lib/prisma'
-import { Prisma } from '@prisma/client';
 
-// Type definitions for better type safety
-type TeamCreateBody = {
+// app/api/teams/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { getSession } from '@/app/lib/auth.server';
+import { prisma } from '@/app/lib/prisma';
+import { Prisma } from '@prisma/client';
+import { revalidateTag, unstable_cache } from 'next/cache';
+
+// types/team.ts
+export interface TeamCreateBody {
   name: string;
   teamLeaderId: string | number;
   managerId: string | number;
   grupoNovedades?: string;
   grupoGeneral?: string;
   memberIds?: (string | number)[];
-};
+}
 
-// Validation functions
+
+// Validación de datos del equipo
 const validateTeamBody = (body: any): body is TeamCreateBody => {
-  const validationErrors = [];
+  if (!body || typeof body !== 'object') return false;
 
-  if (!body || typeof body !== 'object') {
-    validationErrors.push('El body debe ser un objeto');
-    return false;
-  }
-
-  if (!body.name || typeof body.name !== 'string') {
-    validationErrors.push('El nombre es requerido y debe ser un string');
-  }
-
-  if (!body.teamLeaderId) {
-    validationErrors.push('El teamLeaderId es requerido');
-  }
-
-  if (!body.managerId) {
-    validationErrors.push('El managerId es requerido');
-  }
-
-  if (validationErrors.length > 0) {
-    console.error('Errores de validación:', validationErrors);
-  }
+  const requiredString = (value: any) => 
+    typeof value === 'string' && value.trim().length > 0;
+  
+  const validId = (value: any) => 
+    typeof value === 'string' || typeof value === 'number';
 
   return (
-    typeof body === 'object' &&
-    body !== null &&
-    typeof body.name === 'string' &&
-    body.name.trim().length > 0 &&
-    (typeof body.teamLeaderId === 'string' || typeof body.teamLeaderId === 'number') &&
-    (typeof body.managerId === 'string' || typeof body.managerId === 'number') &&
+    requiredString(body.name) &&
+    validId(body.teamLeaderId) &&
+    validId(body.managerId) &&
     (!body.memberIds || Array.isArray(body.memberIds))
   );
 };
 
-export async function GET(request: NextRequest) {
-  try {
-    const user = await authenticateRequest();
-
-    if (!user?.id || !user?.role) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
-    const allowedRoles = ['team_leader', 'manager', 'user'];
-    if (!allowedRoles.includes(user.role)) {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
-    }
-
+// Cache para obtener equipos
+const getTeamsForUser = unstable_cache(
+  async (userId: number, role: string) => {
     const where: Prisma.TeamWhereInput = {
-      ...(user.role === 'manager' && { managerId: user.id }),
-      ...(user.role === 'team_leader' && { teamLeaderId: user.id }),
-      ...(user.role === 'user' && { members: { some: { id: user.id } } })
+      ...(role === 'manager' && { managerId: userId }),
+      ...(role === 'team_leader' && { teamLeaderId: userId }),
+      ...(role === 'user' && { members: { some: { id: userId } } })
     };
 
-    const teams = await prisma.team.findMany({
+    return prisma.team.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -98,48 +74,75 @@ export async function GET(request: NextRequest) {
         }
       }
     });
+  },
+  ['teams'],
+  { revalidate: 60, tags: ['teams'] }
+);
 
-    return NextResponse.json({ data: teams }, { status: 200 });
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'No autorizado' }, 
+        { status: 401 }
+      );
+    }
+
+    const allowedRoles = ['team_leader', 'manager', 'user'];
+    if (!allowedRoles.includes(session.role)) {
+      return NextResponse.json(
+        { error: 'Acceso denegado' }, 
+        { status: 403 }
+      );
+    }
+
+    const teams = await getTeamsForUser(session.id, session.role);
+    return NextResponse.json({ data: teams });
   } catch (error) {
     console.error('Error obteniendo equipos:', error);
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Error interno del servidor'
     }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await authenticateRequest();
-    
-    if (!user?.id || !user?.role) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'No autorizado' }, 
+        { status: 401 }
+      );
     }
 
-    if (!['manager', 'team_leader'].includes(user.role)) {
+    if (!['manager', 'team_leader'].includes(session.role)) {
       return NextResponse.json({ 
         error: 'Solo los managers y líderes de equipo pueden crear equipos' 
       }, { status: 403 });
     }
 
     const body = await request.json();
-
     if (!validateTeamBody(body)) {
       return NextResponse.json({ 
         error: 'Datos del equipo inválidos' 
       }, { status: 400 });
     }
 
-    // Validate team leader permissions
-    if (user.role === 'team_leader' && parseInt(String(body.teamLeaderId)) !== user.id) {
+    // Validaciones específicas por rol
+    if (session.role === 'team_leader' && 
+        parseInt(String(body.teamLeaderId)) !== session.id) {
       return NextResponse.json({ 
         error: 'Como líder de equipo, solo puedes crear equipos donde tú seas el líder' 
       }, { status: 403 });
     }
 
-    // For team leaders, find and assign a default manager
+    // Asignar manager por defecto para team leaders
     let finalManagerId = parseInt(String(body.managerId));
-    if (user.role === 'team_leader') {
+    if (session.role === 'team_leader') {
       const defaultManager = await prisma.user.findFirst({
         where: { role: 'manager' }
       });
@@ -153,22 +156,18 @@ export async function POST(request: NextRequest) {
       finalManagerId = defaultManager.id;
     }
 
-    // Create team with initial data
+    // Crear equipo
     const team = await prisma.team.create({
       data: {
         name: body.name.trim(),
-        teamLeader: {
-          connect: { id: parseInt(String(body.teamLeaderId)) }
-        },
-        manager: {
-          connect: { id: finalManagerId }
-        },
+        teamLeader: { connect: { id: parseInt(String(body.teamLeaderId)) } },
+        manager: { connect: { id: finalManagerId } },
         grupoNovedades: body.grupoNovedades?.trim() || '',
         grupoGeneral: body.grupoGeneral?.trim() || ''
       }
     });
 
-    // Add members if provided
+    // Agregar miembros si se proporcionaron
     if (body.memberIds?.length) {
       await prisma.team.update({
         where: { id: team.id },
@@ -182,7 +181,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Return complete team data
+    // Obtener equipo completo
     const updatedTeam = await prisma.team.findUniqueOrThrow({
       where: { id: team.id },
       include: {
@@ -213,6 +212,9 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Invalidar cache
+    await revalidateTag('teams');
+
     return NextResponse.json({ data: updatedTeam }, { status: 201 });
   } catch (error) {
     console.error('Error creando equipo:', error);
@@ -228,5 +230,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Error interno del servidor' 
     }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }

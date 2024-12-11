@@ -1,48 +1,58 @@
-export const runtime = 'nodejs'
+// app/api/auth/login/route.ts
+import { NextResponse } from 'next/server';
+import { authenticateUser, createAccessToken, createRefreshToken } from '@/app/lib/auth.server';
+import { prisma } from '@/app/lib/prisma';
+import { TokenPayload } from '@/types/auth';
+import { z } from 'zod';
 
-import { NextResponse } from 'next/server'
-import { authenticateUser, createAccessToken, createRefreshToken } from '@/app/lib/auth.server'
-import { prisma } from '@/app/lib/prisma'
+export const runtime = 'nodejs';
+
+// Response data validation schema
+const UserResponseSchema = z.object({
+  id: z.number(),
+  email: z.string().email(),
+  role: z.string(),
+  isPasswordChanged: z.boolean()
+});
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json()
+    const { email, password } = await request.json();
 
-    const user = await authenticateUser(email, password)
+    const user = await authenticateUser(email, password);
     if (!user) {
-      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    const accessToken = await createAccessToken({ 
-      sub: user.id.toString(), 
-      role: user.role, 
-      isPasswordChanged: user.isPasswordChanged 
-    })
-
-    const refreshToken = await createRefreshToken({
+    const tokenData: TokenPayload = {
       sub: user.id.toString(),
+      email: user.email,
+      role: user.role,
+      isPasswordChanged: user.isPasswordChanged  // Añadido este campo
+    };
+
+    const accessToken = await createAccessToken(tokenData);
+    const refreshToken = await createRefreshToken(tokenData);
+
+    // Validate user response data
+    const validatedUserData = UserResponseSchema.parse({
+      id: user.id,
+      email: user.email,
       role: user.role,
       isPasswordChanged: user.isPasswordChanged
-    })
+    });
 
     const response = NextResponse.json({ 
-      user: { 
-        id: user.id, 
-        email: user.email, 
-        role: user.role, 
-        isPasswordChanged: user.isPasswordChanged 
-      }
-    })
+      user: validatedUserData
+    });
 
-    const NINE_HOURS_IN_SECONDS = 9 * 60 * 60
-    
     response.cookies.set('auth_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: NINE_HOURS_IN_SECONDS,
+      maxAge: 9 * 60 * 60,
       path: '/',
-    })
+    });
 
     response.cookies.set('refresh_token', refreshToken, {
       httpOnly: true,
@@ -50,16 +60,26 @@ export async function POST(request: Request) {
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60,
       path: '/',
-    })
+    });
 
-    return response
+    return response;
   } catch (error) {
-    console.error('Error en autenticación:', error)
+    console.error('Authentication error:', error);
+    
+    // Type guard for Zod error
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid data structure', details: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    // Generic error handling
     return NextResponse.json(
-      { error: 'Error interno del servidor' }, 
+      { error: 'Internal server error' },
       { status: 500 }
-    )
+    );
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
