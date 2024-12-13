@@ -56,12 +56,14 @@ const Banner: React.FC = () => {
     if (userInfo.team) {
       return (
         <>
-          <h1 className="text-4xl font-bold leading-tight text-gray-900 dark:text-white md:text-5xl lg:text-6xl transition-colors">
-            {userInfo.team.teamLeader} <br />
-            <span className="text-blue-600 dark:text-blue-400 transition-colors">Team Work</span>
+          <h1 className="text-6xl font-bold leading-tight text-gray-900 dark:text-white md:text-5xl lg:text-[64px] transition-colors">
+            <span className="text-blue-600 dark:text-blue-400 transition-colors block mb-4">
+              Equipo
+            </span>
+            {userInfo.team.teamLeader}
           </h1>
-          <p className="text-xl font-medium leading-relaxed text-gray-700 dark:text-gray-300 transition-colors">
-            {userInfo.team.name} - Sancor Salud - Konecta
+          <p className="text-xl font-semibold leading-relaxed text-gray-700 dark:text-gray-300 transition-colors">
+            Sancor Salud - Konecta
           </p>
         </>
       );
@@ -86,8 +88,8 @@ const Banner: React.FC = () => {
           <div className="space-y-8 text-left">
             {renderTeamInfo()}
             <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
-              <Link 
-                href="/news" 
+              <Link
+                href="/news"
                 className="px-8 py-4 text-lg font-semibold text-center 
                   transition-all duration-300 transform 
                   bg-transparent border-2 rounded-lg

@@ -6,12 +6,14 @@ import type { TokenPayload } from '@/types/auth';
 
 export async function POST(request: Request) {
   try {
-    const { refreshToken } = await request.json();
+    // Get refresh token from cookies instead of request body
+    const cookieStore = cookies();
+    const refreshToken = cookieStore.get('refresh_token')?.value;
     
     if (!refreshToken) {
       return NextResponse.json(
         { error: 'Refresh token is required' },
-        { status: 400 }
+        { status: 401 }
       );
     }
 
@@ -28,7 +30,7 @@ export async function POST(request: Request) {
       sub: payload.sub,
       email: payload.email,
       role: payload.role,
-      isPasswordChanged: payload.isPasswordChanged // Añadido este campo
+      isPasswordChanged: payload.isPasswordChanged
     };
 
     const accessToken = await createAccessToken(tokenData);
@@ -38,6 +40,7 @@ export async function POST(request: Request) {
       { status: 200 }
     );
 
+    // Set new access token in cookies
     response.cookies.set({
       name: 'auth_token',
       value: accessToken,
@@ -53,7 +56,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Token refresh error:', error);
     return NextResponse.json(
-      { error: 'Error refreshing token' },
+      { error: 'Internal server error during token refresh' },
       { status: 500 }
     );
   }
