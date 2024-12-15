@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getApiUrl } from '@/app/lib/api';
+import { fetchApi, getApiUrl } from '@/app/lib/api';
 
 interface EmailResponse {
   success: boolean;
@@ -46,18 +46,12 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(getApiUrl('/api/auth/forgot-password'), {
+      const response = await fetchApi(getApiUrl('/api/auth/forgot-password'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
-      const data: EmailResponse = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al procesar la solicitud');
-      }
-
+      const data = await response.json();
       setStep('confirmation');
       setSuccess('Se ha enviado un enlace de recuperación a su correo electrónico.');
     } catch (error) {

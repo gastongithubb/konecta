@@ -1,4 +1,3 @@
-// app/api/auth/forgot-password/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { createAccessToken } from '@/app/lib/auth.server';
@@ -6,6 +5,24 @@ import { sendPasswordResetEmail } from '@/app/lib/forgot-password';
 import { z } from 'zod';
 import crypto from 'crypto';
 import { UserRole } from '@/types/auth';
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://sancor-konectagroup.vercel.app'
+];
+
+const corsHeaders = (origin: string | null) => ({
+  'Access-Control-Allow-Origin': origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400',
+});
+
+export async function OPTIONS(request: Request) {
+  const origin = request.headers.get('origin');
+  return NextResponse.json({}, { headers: corsHeaders(origin) });
+}
 
 const validDomains = ['@sancor.konecta.ar', '@konecta-group.com'];
 
@@ -25,6 +42,8 @@ function isValidUserRole(role: string): role is UserRole {
 }
 
 export async function POST(request: Request) {
+  const origin = request.headers.get('origin');
+  
   try {
     const body = await request.json();
     const { email } = EmailSchema.parse(body);
@@ -43,14 +62,14 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json(
         { error: 'No existe una cuenta con este correo electrónico' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders(origin) }
       );
     }
 
     if (!isValidUserRole(user.role)) {
       return NextResponse.json(
         { error: 'Role de usuario inválido' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
 
@@ -76,27 +95,34 @@ export async function POST(request: Request) {
       isPasswordChanged: user.isPasswordChanged
     }, '30m');
 
-    const resetLink = `${process.env.NEXTAUTH_URL}/reset-password?token=${verificationToken}`;
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://sancor-konectagroup.vercel.app'
+      : 'http://localhost:3000';
+
+    const resetLink = `${baseUrl}/reset-password?token=${verificationToken}`;
     
     await sendPasswordResetEmail(user.email, user.name, resetLink);
 
-    return NextResponse.json({
-      success: true,
-      message: 'Se ha enviado un enlace de recuperación a su correo electrónico'
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Se ha enviado un enlace de recuperación a su correo electrónico'
+      },
+      { headers: corsHeaders(origin) }
+    );
   } catch (error) {
     console.error('Error en solicitud de restablecimiento:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: error.errors[0].message },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
 
     return NextResponse.json(
       { error: 'Error al procesar la solicitud' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders(origin) }
     );
   }
 }

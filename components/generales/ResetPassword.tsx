@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getApiUrl } from '@/app/lib/api';
+import { fetchApi, getApiUrl } from '@/app/lib/api';
 
 interface ResetPasswordData {
   password: string;
@@ -39,9 +39,8 @@ const ResetPassword = () => {
       }
 
       try {
-        const response = await fetch(getApiUrl('/api/auth/check-reset-token'), {
+        const response = await fetchApi(getApiUrl('/api/auth/check-reset-token'), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
         });
 
@@ -95,9 +94,8 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(getApiUrl('/api/auth/reset-password'), {
+      const response = await fetchApi(getApiUrl('/api/auth/reset-password'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           token,
           password: formData.password,
@@ -105,11 +103,6 @@ const ResetPassword = () => {
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al restablecer la contraseña');
-      }
-
       setSuccess('Contraseña restablecida exitosamente.');
       setTimeout(() => {
         router.push('/login');

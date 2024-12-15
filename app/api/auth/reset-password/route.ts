@@ -1,8 +1,25 @@
-// app/api/auth/reset-password/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/app/lib/prisma';
 import { verifyAccessToken, hashPassword } from '@/app/lib/auth.server';
 import { z } from 'zod';
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://sancor-konectagroup.vercel.app'
+];
+
+const corsHeaders = (origin: string | null) => ({
+  'Access-Control-Allow-Origin': origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400',
+});
+
+export async function OPTIONS(request: Request) {
+  const origin = request.headers.get('origin');
+  return NextResponse.json({}, { headers: corsHeaders(origin) });
+}
 
 const ResetPasswordSchema = z.object({
   token: z.string(),
@@ -14,21 +31,20 @@ const ResetPasswordSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const origin = request.headers.get('origin');
+
   try {
     const body = await request.json();
     const { token, password } = ResetPasswordSchema.parse(body);
 
-    // Verificar el token de acceso
     const payload = await verifyAccessToken(token);
     if (!payload || !payload.sub) {
-      console.error('Token inválido o sin sub:', payload);
       return NextResponse.json(
         { error: 'Token inválido o expirado' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
 
-    // Buscar usuario y verificar token
     const user = await prisma.user.findUnique({
       where: { id: parseInt(payload.sub) },
       select: {
@@ -41,24 +57,20 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      console.error('Usuario no encontrado:', payload.sub);
       return NextResponse.json(
         { error: 'Usuario no encontrado' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders(origin) }
       );
     }
 
     if (!user.resetToken || !user.resetTokenExpiry) {
-      console.error('Token de reset no encontrado para usuario:', user.email);
       return NextResponse.json(
         { error: 'No hay una solicitud de restablecimiento de contraseña activa' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
 
-    // Verificar expiración del token
     if (user.resetTokenExpiry < new Date()) {
-      console.error('Token expirado para usuario:', user.email);
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -69,13 +81,11 @@ export async function POST(request: Request) {
       });
       return NextResponse.json(
         { error: 'El enlace ha expirado. Por favor, solicite uno nuevo.' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
 
-    // Verificar intentos
     if (user.resetTokenAttempts >= 3) {
-      console.error('Máximo de intentos alcanzado para usuario:', user.email);
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -86,12 +96,11 @@ export async function POST(request: Request) {
       });
       return NextResponse.json(
         { error: 'Demasiados intentos. Por favor, solicite un nuevo enlace de recuperación' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
 
     try {
-      // Hashear y actualizar contraseña
       const hashedPassword = await hashPassword(password);
       
       await prisma.user.update({
@@ -105,14 +114,14 @@ export async function POST(request: Request) {
         }
       });
 
-      console.log('Contraseña actualizada exitosamente para:', user.email);
-      return NextResponse.json({
-        success: true,
-        message: 'Contraseña actualizada exitosamente'
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          message: 'Contraseña actualizada exitosamente'
+        },
+        { headers: corsHeaders(origin) }
+      );
     } catch (error) {
-      console.error('Error al actualizar contraseña:', error);
-      // Incrementar contador de intentos
       await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -132,15 +141,8 @@ export async function POST(request: Request) {
           error: 'La contraseña no cumple con los requisitos mínimos de seguridad',
           details: error.errors.map(e => e.message)
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(origin) }
       );
     }
-
-    return NextResponse.json(
-      { error: 'Error al restablecer la contraseña. Por favor, inténtelo de nuevo.' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
   }
 }
