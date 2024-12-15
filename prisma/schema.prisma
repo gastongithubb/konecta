@@ -14,7 +14,10 @@ model User {
   email              String              @unique
   password           String
   role               String
-  isPasswordChanged  Boolean             @default(false)
+  resetToken        String?   @db.Text
+  resetTokenExpiry  DateTime?
+  resetTokenAttempts Int      @default(0)
+  isPasswordChanged Boolean   @default(false)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   teamId             Int?

@@ -5,6 +5,8 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import SessionProvider from './SessionProvider';
 import NavbarAdmin from '@/components/generales/NavBarAdmin';
 import { getSession } from '@/app/lib/auth.server';
+import Template from '@/components/Template'
+
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,7 +29,7 @@ export default async function RootLayout({
           <SessionProvider session={session}>
             <div className="relative flex min-h-screen flex-col">
               <NavbarAdmin />
-              <main className="flex-1 pt-16">{children}</main>
+              <main className="flex-1 pt-16"><Template>{children}</Template></main>
             </div>
           </SessionProvider>
         </ThemeProvider>
