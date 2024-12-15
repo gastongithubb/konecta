@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getApiUrl } from '@/app/lib/api';
 
 interface ResetPasswordData {
   password: string;
@@ -38,7 +39,7 @@ const ResetPassword = () => {
       }
 
       try {
-        const response = await fetch('/api/auth/check-reset-token', {
+        const response = await fetch(getApiUrl('/api/auth/check-reset-token'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token }),
@@ -94,7 +95,7 @@ const ResetPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
+      const response = await fetch(getApiUrl('/api/auth/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -178,11 +179,9 @@ const ResetPassword = () => {
   // Main form
   return (
     <div className="min-h-screen w-full relative flex flex-col items-center justify-center p-4">
-      {/* Background */}
       <div className="absolute inset-0 bg-[url('/bg-konecta.jpg')] bg-cover bg-center" />
       <div className="absolute inset-0 bg-gradient-to-br from-[#001933]/90 via-[#001933]/80 to-[#1a1b4b]/90" />
 
-      {/* Logo */}
       <motion.div 
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -196,7 +195,6 @@ const ResetPassword = () => {
         </div>
       </motion.div>
 
-      {/* Form Container */}
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -213,7 +211,6 @@ const ResetPassword = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-4">
-            {/* Password field */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />
@@ -235,7 +232,6 @@ const ResetPassword = () => {
               </button>
             </div>
 
-            {/* Confirm Password field */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-400" />

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getApiUrl } from '@/app/lib/api';
 
 interface EmailResponse {
   success: boolean;
@@ -45,7 +46,7 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
+      const response = await fetch(getApiUrl('/api/auth/forgot-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
