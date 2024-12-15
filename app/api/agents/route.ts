@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyAccessToken } from '@/app/lib/auth.server';
 import { prisma } from '@/app/lib/prisma';
+export const dynamic = 'force-dynamic';
+
+
 
 export async function GET() {
   try {

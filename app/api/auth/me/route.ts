@@ -4,6 +4,9 @@ import { prisma } from '@/app/lib/prisma';
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import type { UserRole } from '@/types/auth';
+import { headers } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 // Definir los selectores para cada rol
 const roleSelectors = {

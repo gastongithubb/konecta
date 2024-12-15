@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { verifyAccessToken } from '@/app/lib/auth.server';
 import NavbarAdmin from '@/components/generales/NavBarAdmin';
+export const dynamic = 'force-dynamic';
+
 
 export default async function DashboardLayout({
   children,
