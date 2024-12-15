@@ -6,6 +6,7 @@ import SessionProvider from './SessionProvider';
 import NavbarAdmin from '@/components/generales/NavBarAdmin';
 import { getSession } from '@/app/lib/auth.server';
 import Template from '@/components/Template'
+import { Toaster } from 'react-hot-toast';
 
 
 const inter = Inter({ subsets: ['latin'] });
@@ -29,7 +30,11 @@ export default async function RootLayout({
           <SessionProvider session={session}>
             <div className="relative flex min-h-screen flex-col">
               <NavbarAdmin />
-              <main className="flex-1 pt-16"><Template>{children}</Template></main>
+              <main className="flex-1 pt-16">
+              <Template>
+                {children}        
+                <Toaster />
+              </Template></main>
             </div>
           </SessionProvider>
         </ThemeProvider>

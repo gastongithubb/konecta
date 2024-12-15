@@ -5,12 +5,33 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { logoutClient } from '@/app/lib/auth';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, ChevronDown, Menu, User, Users, Calendar, Activity, FileText, Wrench, Book, Grid, ChevronRight, BadgePlus } from 'lucide-react';
+import { 
+  LogOut, 
+  ChevronDown, 
+  Menu, 
+  User, 
+  Users, 
+  Calendar, 
+  Activity, 
+  FileText, 
+  Wrench, 
+  Book, 
+  Grid, 
+  ChevronRight, 
+  BadgePlus 
+} from 'lucide-react';
 import { useTheme } from "next-themes";
 import { ThemeToggle } from '@/components/ThemeProvider';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger, 
+  DropdownMenuSeparator 
+} from "@/components/ui/dropdown-menu";
 import { LucideIcon } from 'lucide-react';
 import { useSession } from '@/app/SessionProvider';
+import imageLoader from '@/app/lib/image-loader';
 
 // Interfaces base
 interface User {
@@ -20,6 +41,7 @@ interface User {
   role: string;
   isPasswordChanged: boolean;
   teamId: number | null;
+  avatarUrl?: string | null;
 }
 
 export interface SessionUser {
@@ -28,6 +50,9 @@ export interface SessionUser {
   email: string;
   role: string;
   teamId: number | null;
+  avatarUrl?: string | null;
+  userRole?: string;
+  isPasswordChanged: boolean;
 }
 
 // Menu interfaces
@@ -71,6 +96,7 @@ function isNavLinkWithDropdown(item: NavLink): item is NavLink & { type: 'dropdo
 // Componentes auxiliares
 interface UserInitialsProps {
   name: string;
+  imageUrl?: string | null;
   className?: string;
 }
 
@@ -83,8 +109,26 @@ interface NavLinkProps {
   className?: string;
 }
 
-const UserInitials: React.FC<UserInitialsProps> = ({ name, className }) => {
+const UserInitials: React.FC<UserInitialsProps> = ({ name, imageUrl, className }) => {
   const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+
+  if (imageUrl) {
+    return (
+      <div className={`w-9 h-9 rounded-full overflow-hidden ${className || ''}`}>
+        <Image
+          loader={imageLoader}
+          src={imageUrl}
+          alt={name}
+          width={36}
+          height={36}
+          className="w-full h-full object-cover"
+          priority
+          unoptimized
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 flex items-center justify-center text-white font-medium text-sm shadow-md hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all ${className || ''}`}>
       {initials}
@@ -114,7 +158,7 @@ const NavLink: React.FC<NavLinkProps> = ({
 );
 
 const ClientNavbar: React.FC = () => {
-  const session = useSession();
+  const session = useSession() as SessionUser;
   const [mounted, setMounted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -572,49 +616,52 @@ const ClientNavbar: React.FC = () => {
 
           {/* Right side items - Theme Toggle and User Menu */}
           <div className="flex items-center space-x-4">
-            <ThemeToggle />
+    <ThemeToggle />
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:block">
-                    {session.name}
-                  </span>
-                  <UserInitials name={session.name} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem>
-                  <Link
-                    href={`${dashboardLink}/profile`}
-                    className="flex items-center w-full"
-                  >
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Perfil</span>
-                  </Link>
-                </DropdownMenuItem>
-                {session.role.toLowerCase() === 'user' && (
-                  <DropdownMenuItem>
-                    <Link
-                      href={`${dashboardLink}/equipoUsers`}
-                      className="flex items-center w-full"
-                    >
-                      <Users className="mr-2 h-4 w-4" />
-                      <span>Miembros del Equipo</span>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Cerrar Sesión</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:block">
+            {session.name}
+          </span>
+          <UserInitials 
+            name={session.name} 
+            imageUrl={session.avatarUrl}
+          />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuItem>
+          <Link
+            href={`${dashboardLink}/profile`}
+            className="flex items-center w-full"
+          >
+            <User className="mr-2 h-4 w-4" />
+            <span>Perfil</span>
+          </Link>
+        </DropdownMenuItem>
+        {session.role.toLowerCase() === 'user' && (
+          <DropdownMenuItem>
+            <Link
+              href={`${dashboardLink}/equipoUsers`}
+              className="flex items-center w-full"
+            >
+              <Users className="mr-2 h-4 w-4" />
+              <span>Miembros del Equipo</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/10"
+          onClick={handleLogout}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Cerrar Sesión</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
         </div>
       </div>
     </nav>

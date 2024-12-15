@@ -6,17 +6,17 @@ export type UserRole = 'user' | 'manager' | 'team_leader' | 'agent' | 'leader';
 // Zod schema for UserRole
 export const UserRoleSchema = z.enum(['user', 'manager', 'team_leader', 'agent', 'leader']);
 
-// Token payload schema actualizado para incluir isPasswordChanged
+// Token payload schema actualizado
 export const TokenPayloadSchema = z.object({
   sub: z.string(),
   email: z.string().email(),
   role: UserRoleSchema,
-  isPasswordChanged: z.boolean(),  // Añadido este campo
+  isPasswordChanged: z.boolean(),
   iat: z.number().optional(),
   exp: z.number().optional()
 });
 
-// User schema
+// User schema actualizado
 export const UserSchema = z.object({
   id: z.number(),
   email: z.string().email(),
@@ -24,7 +24,8 @@ export const UserSchema = z.object({
   isPasswordChanged: z.boolean(),
   name: z.string(),
   teamId: z.number().nullable(),
-  userRole: UserRoleSchema.optional()
+  userRole: UserRoleSchema.optional(),
+  avatarUrl: z.string().nullable().optional() // Agregado avatarUrl
 });
 
 // Type interfaces derived from schemas

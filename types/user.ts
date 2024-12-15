@@ -1,3 +1,4 @@
+// types/user.ts
 export interface User {
   id: number;
   name: string;
@@ -7,18 +8,24 @@ export interface User {
   teamId: number | null;
   createdAt: Date;
   updatedAt: Date;
+  avatarUrl?: string | null;
 }
 
-// types/user.ts
+export interface UserResponse {
+  user: User;
+}
+
 export type UserRole = 'user' | 'team_leader' | 'manager';
 
 export interface UserData {
   name: string;
   role: UserRole;
+  avatarUrl?: string | null; // Agregado avatarUrl
 }
 
 export interface TeamLeader {
-  id: number;  // Cambiado de number a string para coincidir con el tipo de Prisma
+  id: number;
   name: string;
   email: string;
+  avatarUrl?: string | null; // Agregado avatarUrl
 }

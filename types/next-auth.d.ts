@@ -10,6 +10,7 @@ declare module "next-auth" {
       image?: string | null;
       teamId?: number | null;
       role?: string;
+      avatarUrl?: string | null; // Agregado avatarUrl
     }
   }
 }

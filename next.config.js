@@ -2,7 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['media.giphy.com'],
+    loader: 'custom',
+    loaderFile: './app/lib/image-loader.ts',
+    disableStaticImages: true, // Esto es importante para imágenes locales
   },
   async redirects() {
     return [
@@ -26,7 +28,6 @@ const nextConfig = {
     ];
   },
   webpack: (config, { isServer }) => {
-    // Desactivar la optimización de módulos
     config.optimization.splitChunks = false;
     return config;
   },

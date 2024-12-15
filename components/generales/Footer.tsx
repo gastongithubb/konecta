@@ -1,4 +1,3 @@
-// components/Footer.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,6 +7,7 @@ import { useTheme } from "next-themes";
 import { SurveyButton } from './SurveyButton';
 import SurveyModal from './SurveyModal';
 import type { SurveyData } from '@/types/survey';
+import imageLoader from '@/app/lib/image-loader';
 
 const Footer: React.FC = () => {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -58,11 +58,13 @@ const Footer: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center justify-between py-6">
             <div className="mb-4 md:mb-0">
               <Image 
+                loader={imageLoader}
                 src={theme === 'dark' ? "/logo-footer-dark.png" : "/logo-footer.png"} 
                 alt="Logo" 
                 width={200} 
                 height={50} 
-                className="w-44 transition-opacity duration-300" 
+                className="w-44 transition-opacity duration-300"
+                unoptimized // Añadido para imágenes locales
               />
             </div>
             <div className="text-center md:text-right">
