@@ -32,6 +32,10 @@ model User {
   team               Team?               @relation(fields: [teamId], references: [id])
 
   CaseTracking CaseTracking[]
+
+  TeamWeeklyTracking TeamWeeklyTracking[]
+
+  WeekConfiguration WeekConfiguration[]
 }
 
 model Nomina {
@@ -300,4 +304,35 @@ model Incident {
   @@index([ticketNumber])
   @@index([system])
   @@index([status])
+}
+
+model TeamWeeklyTracking {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  weekId    Int
+  callType  String?
+  audio     String?
+  score     Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, weekId])
+  @@index([userId])
+  @@index([weekId])
+}
+
+model WeekConfiguration {
+  id        Int      @id @default(autoincrement())
+  weekNumber Int
+  label     String
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy Int
+  creator   User     @relation(fields: [createdBy], references: [id])
+
+  @@index([createdBy])
 }

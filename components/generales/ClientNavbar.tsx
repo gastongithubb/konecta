@@ -215,7 +215,7 @@ const ClientNavbar: React.FC = () => {
       icon: Activity,
       dropdown: [
         { type: 'link', href: '/metrics', label: 'Metricas' },
-        { type: 'link', href: '/error', label: 'Calidad' },
+        { type: 'link', href: '/team-monitoring/view', label: 'Calidad' },
         // { type: 'link', href: '/balance-mensual', label: 'Balance Mensual' },
       ]
     },
@@ -289,7 +289,7 @@ const ClientNavbar: React.FC = () => {
           icon: Activity,
           subDropdown: [
             { type: 'link', href: '/metrics', label: 'Metricas' },
-            { type: 'link', href: '/error', label: 'Calidad' },
+            { type: 'link', href: '/team-monitoring/view', label: 'Calidad' },
             // { type: 'link', href: '/balance-mensual', label: 'Balance Mensual' },
           ]
         },
@@ -358,7 +358,7 @@ const ClientNavbar: React.FC = () => {
       dropdown: [
         { type: 'link', href: '/dashboard/team_leader/caseSeguimiento', label: 'Derivar/Finalizar' },
         { type: 'link', href: '/dashboard/team_leader/caselist', label: 'Reclamos F4' },
-        { type: 'link', href: '/dashboard/team_leader/calidad', label: 'Calidad' }
+        { type: 'link', href: '/team-monitoring', label: 'Calidad' }
       ]
     }
   ] : [];
