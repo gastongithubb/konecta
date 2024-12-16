@@ -2,6 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      }
+    ],
+    domains: ['*'],
     loader: 'custom',
     loaderFile: './app/lib/image-loader.ts',
     disableStaticImages: true, // Esto es importante para imágenes locales

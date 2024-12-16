@@ -1,7 +1,9 @@
+// app/api/auth/session/route.ts
 import { NextResponse } from 'next/server';
 import { getSession } from '@/app/lib/auth.server';
+import { prisma } from '@/app/lib/prisma';
 
-// Esta es la forma correcta de desactivar el cache en App Router
+// Desactivar cache en App Router
 export const revalidate = 0;
 
 export async function GET() {
@@ -15,7 +17,28 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json(session);
+    // Obtener datos actualizados del usuario
+    const user = await prisma.user.findUnique({
+      where: { id: session.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        teamId: true,
+        isPasswordChanged: true,
+        avatarUrl: true
+      }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(user);
   } catch (error) {
     console.error('Session error:', error);
     return NextResponse.json(

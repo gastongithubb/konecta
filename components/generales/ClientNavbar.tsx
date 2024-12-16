@@ -30,7 +30,7 @@ import {
   DropdownMenuSeparator 
 } from "@/components/ui/dropdown-menu";
 import { LucideIcon } from 'lucide-react';
-import { useSession } from '@/app/SessionProvider';
+import { useSession, useUpdateSession } from '@/app/SessionProvider';
 import imageLoader from '@/app/lib/image-loader';
 
 // Interfaces base
@@ -110,25 +110,62 @@ interface NavLinkProps {
 }
 
 const UserInitials: React.FC<UserInitialsProps> = ({ name, imageUrl, className }) => {
-  const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+  const [imageError, setImageError] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null | undefined>(null);
 
-  if (imageUrl) {
+  useEffect(() => {
+    // Solo actualizar la URL de la imagen si es diferente a la actual
+    if (imageUrl !== currentImageUrl) {
+      setCurrentImageUrl(imageUrl);
+      setImageError(false);
+    }
+  }, [currentImageUrl, imageUrl]);
+
+  // Efecto para escuchar actualizaciones de sesión
+  useEffect(() => {
+    const handleSessionUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.avatarUrl) {
+        setCurrentImageUrl(customEvent.detail.avatarUrl);
+        setImageError(false);
+      }
+    };
+
+    window.addEventListener('session-updated', handleSessionUpdate);
+    return () => {
+      window.removeEventListener('session-updated', handleSessionUpdate);
+    };
+  }, []);
+
+  // Reintentar cargar la imagen si hay un error
+  const handleImageError = () => {
+    setImageError(true);
+    // Intentar recargar la imagen después de un breve retraso
+    setTimeout(() => {
+      setImageError(false);
+      setCurrentImageUrl(imageUrl);
+    }, 1000);
+  };
+
+  if (currentImageUrl && !imageError) {
     return (
       <div className={`w-9 h-9 rounded-full overflow-hidden ${className || ''}`}>
         <Image
           loader={imageLoader}
-          src={imageUrl}
+          src={currentImageUrl}
           alt={name}
           width={36}
           height={36}
           className="w-full h-full object-cover"
           priority
           unoptimized
+          onError={handleImageError}
         />
       </div>
     );
   }
 
+  const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
   return (
     <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 flex items-center justify-center text-white font-medium text-sm shadow-md hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all ${className || ''}`}>
       {initials}
@@ -160,6 +197,7 @@ const NavLink: React.FC<NavLinkProps> = ({
 const ClientNavbar: React.FC = () => {
   const session = useSession() as SessionUser;
   const [mounted, setMounted] = useState(false);
+  const updateSession = useUpdateSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const { theme } = useTheme();
@@ -168,6 +206,18 @@ const ClientNavbar: React.FC = () => {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Efecto para cargar la sesión inicial
+  useEffect(() => {
+    const initializeSession = async () => {
+      if (session) {
+        await updateSession();
+      }
+    };
+
+    setMounted(true);
+    initializeSession();
+  }, [session, updateSession]);
 
   useEffect(() => {
     setMounted(true);

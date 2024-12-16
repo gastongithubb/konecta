@@ -1,49 +1,80 @@
+// app/SessionProvider.tsx
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { User } from '@/types/auth';
 
-export const SessionContext = createContext<User | null>(null);
+interface SessionContextType {
+  session: User | null;
+  updateSession: () => Promise<void>;
+}
+
+const SessionContext = createContext<SessionContextType>({
+  session: null,
+  updateSession: async () => {},
+});
 
 export function useSession() {
-  return useContext(SessionContext);
+  const context = useContext(SessionContext);
+  if (!context) {
+    throw new Error('useSession must be used within SessionProvider');
+  }
+  return context.session;
 }
 
-interface SessionProviderProps {
-  session: User | null;
+export function useUpdateSession() {
+  const context = useContext(SessionContext);
+  if (!context) {
+    throw new Error('useUpdateSession must be used within SessionProvider');
+  }
+  return context.updateSession;
+}
+
+export default function SessionProvider({ 
+  session: initialSession, 
+  children 
+}: { 
+  session: User | null; 
   children: React.ReactNode;
-}
+}) {
+  const [session, setSession] = useState<User | null>(initialSession);
 
-export default function SessionProvider({ session: initialSession, children }: SessionProviderProps) {
-  const [session, setSession] = useState(initialSession);
-  const router = useRouter();
+  const updateSession = async () => {
+    try {
+      const response = await fetch('/api/auth/session', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch session');
+      }
+
+      const data = await response.json();
+      setSession(data);
+      
+      // Disparar evento de actualización
+      window.dispatchEvent(new CustomEvent('session-updated', { detail: data }));
+      
+      return data;
+    } catch (error) {
+      console.error('Error updating session:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
-    setSession(initialSession);
+    if (initialSession) {
+      setSession(initialSession);
+    }
   }, [initialSession]);
 
-  // Este efecto ya no es tan necesario en Next.js 15 pero puede mantenerse como fallback
-  useEffect(() => {
-    if (!session) {
-      const checkSession = async () => {
-        try {
-          const response = await fetch('/api/auth/session');
-          if (response.ok) {
-            const data = await response.json();
-            setSession(data);
-            router.refresh();
-          }
-        } catch (error) {
-          console.error('Error checking session:', error);
-        }
-      };
-      checkSession();
-    }
-  }, [session, router]);
-
   return (
-    <SessionContext.Provider value={session}>
+    <SessionContext.Provider value={{ session, updateSession }}>
       {children}
     </SessionContext.Provider>
   );

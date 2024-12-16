@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, User, Loader2 } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import imageLoader from '@/app/lib/image-loader';
 import { profileService } from '@/app/lib/profile';
 import { getUser } from '@/app/lib/auth';
@@ -11,6 +12,7 @@ import ChangePasswordForm from './ChangePasswordForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUpdateSession } from '@/app/SessionProvider';
 
 interface ProfileState {
   name: string;
@@ -20,7 +22,9 @@ interface ProfileState {
   avatarUrl?: string | null;
 }
 
-const ProfilePage: React.FC = () => {
+const PerfilUsuario: React.FC = () => {
+  const router = useRouter();
+  const updateSession = useUpdateSession();
   const [profile, setProfile] = useState<ProfileState>({
     name: '',
     email: '',
@@ -28,11 +32,10 @@ const ProfilePage: React.FC = () => {
     teamId: 0,
     avatarUrl: null
   });
-  const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
   const [newAvatarUrl, setNewAvatarUrl] = useState('');
   const [updatingAvatar, setUpdatingAvatar] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -46,24 +49,28 @@ const ProfilePage: React.FC = () => {
           avatarUrl: user.avatarUrl
         });
       } catch (error) {
-        console.error('Error loading user data:', error);
-        toast.error('Error loading user data');
+        console.error('Error al cargar datos del usuario:', error);
+        toast.error('Error al cargar datos del usuario');
       }
     };
 
     loadUserData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const handleAvatarClick = () => {
     setIsAvatarDialogOpen(true);
+    setPreviewError(false);
+    setNewAvatarUrl('');
+  };
+
+  const validateImageUrl = (url: string): boolean => {
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    try {
+      const urlObj = new URL(url);
+      return validExtensions.some(ext => urlObj.pathname.toLowerCase().endsWith(ext));
+    } catch {
+      return false;
+    }
   };
 
   const handleAvatarSubmit = async (e: React.FormEvent) => {
@@ -76,52 +83,39 @@ const ProfilePage: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({ avatarUrl: newAvatarUrl }),
       });
   
-      if (!response.ok) throw new Error('Failed to update avatar');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al actualizar el avatar');
+      }
   
       const data = await response.json();
+      
       setProfile(prev => ({ ...prev, avatarUrl: data.avatarUrl }));
       setIsAvatarDialogOpen(false);
       setNewAvatarUrl('');
+      setPreviewError(false);
       
-      // Actualizar la sesión
-      window.location.reload(); // Solución temporal
-      // O mejor aún, actualizar el estado global si estás usando un manejador de estado
-  
-      toast.success('Avatar updated successfully');
+      await updateSession();
+      
+      window.dispatchEvent(new Event('storage'));
+      
+      toast.success('Avatar actualizado exitosamente');
     } catch (error) {
-      console.error('Error updating avatar:', error);
-      toast.error('Error updating avatar');
+      console.error('Error al actualizar avatar:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al actualizar avatar');
     } finally {
       setUpdatingAvatar(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    
-    try {
-      setIsLoading(true);
-      const { user } = await profileService.updateProfile({
-        name: profile.name
-      });
-      
-      setProfile(prev => ({
-        ...prev,
-        name: user.name
-      }));
-      
-      setIsEditing(false);
-      toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Error updating profile');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleNewAvatarUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewAvatarUrl(e.target.value);
+    setPreviewError(false);
   };
 
   return (
@@ -129,14 +123,14 @@ const ProfilePage: React.FC = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-            User Profile
+            Perfil de Usuario
           </h1>
         </div>
         
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6 space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Avatar Section */}
+            <div className="space-y-8">
+              {/* Sección Avatar */}
               <div className="flex flex-col items-center space-y-4">
                 <div 
                   className="relative group cursor-pointer"
@@ -147,11 +141,14 @@ const ProfilePage: React.FC = () => {
                       <Image 
                         loader={imageLoader}
                         src={profile.avatarUrl} 
-                        alt="Profile"
+                        alt="Perfil"
                         width={128}
                         height={128}
                         className="object-cover"
                         priority
+                        onError={(e: any) => {
+                          e.currentTarget.src = '/api/placeholder/128/128';
+                        }}
                       />
                     ) : (
                       <User className="w-16 h-16 text-gray-400" />
@@ -164,30 +161,28 @@ const ProfilePage: React.FC = () => {
                 </div>
                 
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Click to change avatar
+                  Haz clic para cambiar el avatar
                 </p>
               </div>
 
-              {/* Form Fields */}
+              {/* Campos del Formulario */}
               <div className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Name
+                    Nombre
                   </label>
                   <input
                     id="name"
                     type="text"
-                    name="name"
                     value={profile.name}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:text-white sm:text-sm"
+                    disabled
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm bg-gray-50 dark:bg-gray-600 dark:text-gray-300 sm:text-sm"
                   />
                 </div>
                 
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Email
+                    Correo electrónico
                   </label>
                   <input
                     id="email"
@@ -200,7 +195,7 @@ const ProfilePage: React.FC = () => {
 
                 <div>
                   <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Role
+                    Rol
                   </label>
                   <input
                     id="role"
@@ -211,69 +206,31 @@ const ProfilePage: React.FC = () => {
                   />
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3">
-                {isEditing ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditing(false)}
-                      disabled={isLoading}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      {isLoading ? (
-                        <div className="flex items-center space-x-2">
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Saving...</span>
-                        </div>
-                      ) : (
-                        'Save changes'
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Edit profile
-                  </button>
-                )}
-              </div>
-            </form>
+            </div>
           </div>
         </div>
 
-        {/* Password Change Section */}
+        {/* Sección Cambio de Contraseña */}
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg">
           <div className="px-4 py-5 sm:p-6">
             <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-6">
-              Change Password
+              Cambiar Contraseña
             </h2>
             <ChangePasswordForm />
           </div>
         </div>
 
-        {/* Avatar URL Dialog */}
+        {/* Diálogo de URL del Avatar */}
         <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Update Avatar</DialogTitle>
+              <DialogTitle>Actualizar Avatar</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleAvatarSubmit} className="space-y-6">
-              {/* Current Avatar Section */}
+              {/* Sección Avatar Actual */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Current Avatar URL
+                  URL del Avatar Actual
                 </label>
                 <Input
                   type="text"
@@ -283,41 +240,42 @@ const ProfilePage: React.FC = () => {
                 />
               </div>
 
-              {/* New Avatar Section */}
+              {/* Sección Nuevo Avatar */}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    New Avatar URL
+                    URL del Nuevo Avatar
                   </label>
                   <Input
                     type="url"
-                    placeholder="Enter new image URL"
+                    placeholder="Ingresa la URL de la nueva imagen"
                     value={newAvatarUrl}
-                    onChange={(e) => setNewAvatarUrl(e.target.value)}
+                    onChange={handleNewAvatarUrlChange}
                     required
                   />
                   <p className="text-sm text-gray-500">
-                    Enter a direct image URL (.jpg, .jpeg, .png, .gif, .webp)
+                    Ingresa una URL directa de imagen (.jpg, .jpeg, .png, .gif, .webp)
                   </p>
                 </div>
 
-                {/* Preview Section */}
-                {newAvatarUrl && (
+                {/* Sección Vista Previa */}
+                {newAvatarUrl && !previewError && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Preview
+                      Vista Previa
                     </label>
                     <div className="flex justify-center">
                       <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
                         <Image
                           loader={imageLoader}
                           src={newAvatarUrl}
-                          alt="Avatar Preview"
+                          alt="Vista Previa del Avatar"
                           width={128}
                           height={128}
                           className="object-cover"
-                          onError={(e: any) => {
-                            e.currentTarget.src = '/placeholder-avatar.jpg';
+                          onError={() => {
+                            setPreviewError(true);
+                            toast.error('Error al cargar la vista previa. Por favor verifica la URL');
                           }}
                           priority
                         />
@@ -334,19 +292,23 @@ const ProfilePage: React.FC = () => {
                   onClick={() => {
                     setIsAvatarDialogOpen(false);
                     setNewAvatarUrl('');
+                    setPreviewError(false);
                   }}
                   disabled={updatingAvatar}
                 >
-                  Cancel
+                  Cancelar
                 </Button>
-                <Button type="submit" disabled={updatingAvatar || !newAvatarUrl}>
+                <Button 
+                  type="submit" 
+                  disabled={updatingAvatar || !newAvatarUrl || previewError}
+                >
                   {updatingAvatar ? (
                     <div className="flex items-center space-x-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Updating...</span>
+                      <span>Actualizando...</span>
                     </div>
                   ) : (
-                    'Update Avatar'
+                    'Actualizar Avatar'
                   )}
                 </Button>
               </DialogFooter>
@@ -358,4 +320,4 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-export default ProfilePage;
+export default PerfilUsuario;
