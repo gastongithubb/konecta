@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   images: {
     remotePatterns: [
@@ -11,7 +12,7 @@ const nextConfig = {
     domains: ['*'],
     loader: 'custom',
     loaderFile: './app/lib/image-loader.ts',
-    disableStaticImages: true, // Esto es importante para imágenes locales
+    disableStaticImages: true,
   },
   async redirects() {
     return [

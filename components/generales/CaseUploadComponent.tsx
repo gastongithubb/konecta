@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useSession } from 'next-auth/react';
+import { useSession } from '@/app/SessionProvider';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Search, Loader2, Sun, Moon } from 'lucide-react';
-import { useTheme } from 'next-themes';
-// Tipos
+// Interfaces
 export interface Case {
   id: number;
   caseNumber: string;
@@ -45,6 +44,7 @@ interface CaseListProps {
   onToggleStatus: (id: number, status: string) => Promise<void>;
 }
 
+// Schema de validación
 const formSchema = z.object({
   claimDate: z.date(),
   startDate: z.date(),
@@ -58,8 +58,8 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Componente CaseList
-const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleStatus }) => {
+// Componente CaseList optimizado
+const CaseList = React.memo<CaseListProps>(({ cases, onDelete, onEdit, onToggleStatus }) => {
   return (
     <div className="space-y-4">
       {cases.map((caseItem) => (
@@ -131,17 +131,25 @@ const CaseList: React.FC<CaseListProps> = ({ cases, onDelete, onEdit, onToggleSt
       )}
     </div>
   );
-};
+});
 
-// Componente Principal
+CaseList.displayName = 'CaseList';
+
+// Componente Principal Optimizado
 const CaseUploadComponent: React.FC = () => {
-  const { theme, setTheme } = useTheme();
-  const { data: session, status } = useSession();
+  const [mounted, setMounted] = useState(false);
+
+  // useEffect para manejar la hidratación
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const session = useSession();
   const { toast } = useToast();
-  const socket = useSocket(session?.user?.id ? session.user.id.toString() : '');
+  const socket = useSocket(session ? session.id.toString() : '');
+  
+  // Estados
   const [cases, setCases] = useState<Case[]>([]);
-  const [dailyCount, setDailyCount] = useState(0);
-  const [monthlyCount, setMonthlyCount] = useState(0);
+  const [counts, setCounts] = useState({ daily: 0, monthly: 0 });
   const [searchTerm, setSearchTerm] = useState('');
   const [showCustomType, setShowCustomType] = useState(false);
   const [duplicateCase, setDuplicateCase] = useState<Case | null>(null);
@@ -162,51 +170,50 @@ const CaseUploadComponent: React.FC = () => {
     },
   });
 
-  const fetchCases = useCallback(async () => {
+  // Función fetchData optimizada
+  const fetchData = useCallback(async () => {
+    if (!session) return;
+    
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const response = await fetch('/api/cases');
-      if (!response.ok) {
-        throw new Error('Error al obtener los casos');
+      const [casesResponse, countsResponse] = await Promise.all([
+        fetch('/api/cases'),
+        fetch('/api/cases/counts')
+      ]);
+
+      if (!casesResponse.ok || !countsResponse.ok) {
+        throw new Error('Error al obtener los datos');
       }
-      const data = await response.json();
-      setCases(data.data);
+
+      const [casesData, countsData] = await Promise.all([
+        casesResponse.json(),
+        countsResponse.json()
+      ]);
+
+      setCases(casesData.data);
+      setCounts({
+        daily: countsData.daily,
+        monthly: countsData.monthly
+      });
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudieron cargar los casos. Por favor, intente de nuevo.",
+        description: "No se pudieron cargar los datos. Por favor, intente de nuevo.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [session, toast]);
 
-  const fetchCounts = useCallback(async () => {
-    try {
-      const response = await fetch('/api/cases/counts');
-      if (!response.ok) {
-        throw new Error('Error al obtener los conteos');
-      }
-      const data = await response.json();
-      setDailyCount(data.daily);
-      setMonthlyCount(data.monthly);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los conteos.",
-        variant: "destructive",
-      });
-    }
-  }, [toast]);
-
+  // Efecto inicial
   useEffect(() => {
     if (session) {
-      fetchCases();
-      fetchCounts();
+      fetchData();
     }
-  }, [fetchCases, fetchCounts, session]);
+  }, [fetchData, session]);
 
+  // Verificación de casos duplicados
   const checkDuplicateCase = useCallback(async (caseNumber: string) => {
     try {
       const response = await fetch(`/api/cases/check-duplicate/${caseNumber}`);
@@ -221,7 +228,8 @@ const CaseUploadComponent: React.FC = () => {
     }
   }, []);
 
-  const handleCaseNumberChange = async (value: string) => {
+  // Manejadores de eventos optimizados
+  const handleCaseNumberChange = useCallback(async (value: string) => {
     form.setValue('caseNumber', value);
     if (value) {
       const duplicate = await checkDuplicateCase(value);
@@ -230,17 +238,94 @@ const CaseUploadComponent: React.FC = () => {
         setShowDuplicateDialog(true);
       }
     }
-  };
+  }, [form, checkDuplicateCase]);
 
-  const handleTypeChange = (value: string) => {
+  const handleTypeChange = useCallback((value: string) => {
     form.setValue('authorizationType', value);
     setShowCustomType(value === 'Otros');
     if (value !== 'Otros') {
       form.setValue('customType', '');
     }
-  };
+  }, [form]);
 
-  const onSubmit = async (data: FormValues) => {
+  const handleDelete = useCallback(async (id: number) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/cases/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar el caso');
+      }
+
+      toast({
+        title: "Caso eliminado",
+        description: "El caso ha sido eliminado exitosamente.",
+      });
+
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el caso.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchData, toast]);
+
+  const handleEdit = useCallback((id: number) => {
+    const caseToEdit = cases.find(c => c.id === id);
+    if (caseToEdit) {
+      form.reset({
+        claimDate: new Date(caseToEdit.claimDate),
+        startDate: new Date(caseToEdit.startDate),
+        withinSLA: caseToEdit.withinSLA,
+        caseNumber: caseToEdit.caseNumber,
+        authorizationType: caseToEdit.authorizationType,
+        customType: caseToEdit.customType,
+        details: caseToEdit.details,
+        status: caseToEdit.status
+      });
+      setShowCustomType(caseToEdit.authorizationType === 'Otros');
+    }
+  }, [cases, form]);
+
+  const handleToggleStatus = useCallback(async (id: number, status: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/cases/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar el caso');
+      }
+
+      toast({
+        title: "Caso actualizado",
+        description: `El estado del caso ha sido actualizado a ${status}.`,
+      });
+
+      fetchData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el caso.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [fetchData, toast]);
+
+  const onSubmit = useCallback(async (data: FormValues) => {
     try {
       setIsLoading(true);
       const response = await fetch('/api/cases', {
@@ -253,12 +338,10 @@ const CaseUploadComponent: React.FC = () => {
 
       const result = await response.json();
 
-      // Manejar específicamente el caso de duplicado
       if (response.status === 409) {
         setDuplicateCase(result.existingCase);
         setShowDuplicateDialog(true);
-        setIsLoading(false);
-        return; // Importante: retornar aquí para no continuar con el resto del código
+        return;
       }
 
       if (!response.ok) {
@@ -270,16 +353,15 @@ const CaseUploadComponent: React.FC = () => {
         description: "El caso ha sido creado exitosamente.",
       });
 
-      if (socket && session?.user?.teamId) {
+      if (socket && session?.teamId) {
         socket.emit('new-case', {
-          teamId: session.user.teamId,
+          teamId: session.teamId,
           caseNumber: result.data.caseNumber,
         });
       }
 
       form.reset();
-      fetchCases();
-      fetchCounts();
+      fetchData();
     } catch (error) {
       toast({
         title: "Error",
@@ -289,10 +371,9 @@ const CaseUploadComponent: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [form, socket, session, fetchData, toast]);
 
-  // Función para crear un caso reiterado
-  const createReiteratedCase = async () => {
+  const createReiteratedCase = useCallback(async () => {
     if (!duplicateCase) return;
 
     try {
@@ -322,8 +403,7 @@ const CaseUploadComponent: React.FC = () => {
 
       setShowDuplicateDialog(false);
       form.reset();
-      fetchCases();
-      fetchCounts();
+      fetchData();
     } catch (error) {
       toast({
         title: "Error",
@@ -333,93 +413,19 @@ const CaseUploadComponent: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [duplicateCase, form, fetchData, toast]);
 
-  const handleDelete = async (id: number) => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`/api/cases/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar el caso');
-      }
-
-      toast({
-        title: "Caso eliminado",
-        description: "El caso ha sido eliminado exitosamente.",
-      });
-
-      fetchCases();
-      fetchCounts();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el caso.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEdit = (id: number) => {
-    const caseToEdit = cases.find(c => c.id === id);
-    if (caseToEdit) {
-      form.reset({
-        claimDate: new Date(caseToEdit.claimDate),
-        startDate: new Date(caseToEdit.startDate),
-        withinSLA: caseToEdit.withinSLA,
-        caseNumber: caseToEdit.caseNumber,
-        authorizationType: caseToEdit.authorizationType,
-        customType: caseToEdit.customType,
-        details: caseToEdit.details,
-        status: caseToEdit.status
-      });
-      setShowCustomType(caseToEdit.authorizationType === 'Otros');
-    }
-  };
-
-  const handleToggleStatus = async (id: number, status: string) => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`/api/cases/${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar el caso');
-      }
-
-      toast({
-        title: "Caso actualizado",
-        description: `El estado del caso ha sido actualizado a ${status}.`,
-      });
-
-      fetchCases();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el caso.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filteredCases = cases.filter(caseItem =>
-    caseItem.caseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    caseItem.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    caseItem.authorizationType.toLowerCase().includes(searchTerm.toLowerCase())
+  // Memoización de casos filtrados
+  const filteredCases = useMemo(() => 
+    cases.filter(caseItem =>
+      caseItem.caseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      caseItem.details.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      caseItem.authorizationType.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
+    [cases, searchTerm]
   );
 
-  if (status === "loading" || isLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -440,16 +446,6 @@ const CaseUploadComponent: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4 bg-background dark:bg-[#020817] min-h-screen transition-colors duration-200">
-      <div className="flex justify-end mb-4">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-gray-700"
-        >
-          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
-      </div>
 
       <div className="grid grid-cols-12 gap-4">
         {/* Stats Cards */}
@@ -457,13 +453,13 @@ const CaseUploadComponent: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <Card className="dark:bg-gray-800/50 dark:border-gray-700">
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold dark:text-gray-100">{dailyCount}</div>
+                <div className="text-2xl font-bold dark:text-gray-100">{counts.daily}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Casos Hoy</div>
               </CardContent>
             </Card>
             <Card className="dark:bg-gray-800/50 dark:border-gray-700">
               <CardContent className="pt-6">
-                <div className="text-2xl font-bold dark:text-gray-100">{monthlyCount}</div>
+                <div className="text-2xl font-bold dark:text-gray-100">{counts.monthly}</div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Casos del Mes</div>
               </CardContent>
             </Card>
@@ -634,39 +630,15 @@ const CaseUploadComponent: React.FC = () => {
                                   <SelectItem value="Medicamentos" className="dark:text-gray-100 dark:focus:bg-gray-700">Medicamentos</SelectItem>
                                   <SelectItem value="Cirugías" className="dark:text-gray-100 dark:focus:bg-gray-700">Cirugías</SelectItem>
                                   <SelectItem value="Ambulatorio" className="dark:text-gray-100 dark:focus:bg-gray-700">Ambulatorio</SelectItem>
-                                  <SelectItem value="leches" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Leches medicamentosas
-                                  </SelectItem>
-                                  <SelectItem value="ambulatorio" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Ambulatorio
-                                  </SelectItem>
-                                  <SelectItem value="cirugias-pat-ba" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Cirugías Patagonia y Bs As
-                                  </SelectItem>
-                                  <SelectItem value="cirugias-interior" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Cirugías Interior del país
-                                  </SelectItem>
-                                  <SelectItem value="internaciones" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Internaciones
-                                  </SelectItem>
-                                  <SelectItem value="auditoria" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Auditoría Médica
-                                  </SelectItem>
-                                  <SelectItem value="protesis" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Prótesis
-                                  </SelectItem>
-                                  <SelectItem value="control" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Puntos de control
-                                  </SelectItem>
-                                  <SelectItem value="contrataciones" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Contrataciones
-                                  </SelectItem>
-                                  <SelectItem value="medicamentos" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Medicamentos
-                                  </SelectItem>
-                                  <SelectItem value="fertilidad" className="dark:text-gray-100 dark:focus:bg-gray-700">
-                                    Fertilidad
-                                  </SelectItem>                                  
+                                  <SelectItem value="leches" className="dark:text-gray-100 dark:focus:bg-gray-700">Leches medicamentosas</SelectItem>
+                                  <SelectItem value="cirugias-pat-ba" className="dark:text-gray-100 dark:focus:bg-gray-700">Cirugías Patagonia y Bs As</SelectItem>
+                                  <SelectItem value="cirugias-interior" className="dark:text-gray-100 dark:focus:bg-gray-700">Cirugías Interior del país</SelectItem>
+                                  <SelectItem value="internaciones" className="dark:text-gray-100 dark:focus:bg-gray-700">Internaciones</SelectItem>
+                                  <SelectItem value="auditoria" className="dark:text-gray-100 dark:focus:bg-gray-700">Auditoría Médica</SelectItem>
+                                  <SelectItem value="protesis" className="dark:text-gray-100 dark:focus:bg-gray-700">Prótesis</SelectItem>
+                                  <SelectItem value="control" className="dark:text-gray-100 dark:focus:bg-gray-700">Puntos de control</SelectItem>
+                                  <SelectItem value="contrataciones" className="dark:text-gray-100 dark:focus:bg-gray-700">Contrataciones</SelectItem>
+                                  <SelectItem value="fertilidad" className="dark:text-gray-100 dark:focus:bg-gray-700">Fertilidad</SelectItem>
                                   <SelectItem value="Otros" className="dark:text-gray-100 dark:focus:bg-gray-700">Otros</SelectItem>
                                 </SelectContent>
                               </Select>
@@ -767,10 +739,16 @@ const CaseUploadComponent: React.FC = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+            <AlertDialogCancel 
+              className="dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
+              onClick={() => setShowDuplicateDialog(false)}
+            >
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction className="dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90">
+            <AlertDialogAction
+              className="dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+              onClick={createReiteratedCase}
+            >
               Crear reiteración
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -780,4 +758,4 @@ const CaseUploadComponent: React.FC = () => {
   );
 };
 
-export default CaseUploadComponent;
+export default React.memo(CaseUploadComponent);
