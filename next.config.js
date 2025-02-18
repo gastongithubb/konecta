@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    runtime: 'nodejs'
+  },
   output: 'standalone',
   reactStrictMode: true,
   images: {
